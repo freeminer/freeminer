@@ -18,7 +18,7 @@ class Connection : public con_sctp::Connection
 {
 public:
 	Connection(u32 protocol_id, u32 max_packet_size, float timeout, bool ipv6,
-			con::PeerHandler *peerhandler = nullptr);
+			con::PeerHandler *peerhandler = nullptr, bool local = false);
 	~Connection() override;
 	bool hasPeer(session_t id) { return m_peers.count(id) != 0; }
 
@@ -43,6 +43,7 @@ private:
 	u16 m_port = 0;
 	session_t m_next_id = FIRST_PEER_ID;
 	bool m_ipv6 = false;
+	bool m_local = false;
 
 	bool m_connecting = false;
 	void processCommand(con::ConnectionCommandPtr command) override;

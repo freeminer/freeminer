@@ -32,8 +32,10 @@ namespace ws_transport
 {
 namespace
 {
-std::string connectionUri(const Address &address, bool secure)
+std::string connectionUri(const Address &address, bool secure, std::string_view host_name)
 {
+	if (!host_name.empty())
+		return makeUri(address, secure, host_name);
 	std::string uri = makeUri(address, secure);
 	// Allows a DNS name matching a TLS certificate, or a reverse-proxy path.
 	std::string configured_uri;
@@ -45,6 +47,21 @@ std::string connectionUri(const Address &address, bool secure)
 }
 struct Transport::Impl
 {
+	bool local = false;
+	bool local_client = false;
+	u16 local_port = 0;
+	std::weak_ptr<Impl> local_peer;
+	static std::mutex local_mutex;
+	static std::map<u16, std::weak_ptr<Impl>> local_listeners;
+	static std::map<u16, std::weak_ptr<Impl>> local_pending;
+	static void pairLocal(const std::shared_ptr<Impl> &server,
+			const std::shared_ptr<Impl> &client, const Address &address)
+	{
+		server->local_peer = client;
+		client->local_peer = server;
+		server->push({Type::Open, 1, false, address, {}});
+		client->push({Type::Open, 1, true, {}, {}});
+	}
 	std::mutex mutex;
 	std::vector<Event> events;
 	struct Send
@@ -181,27 +198,57 @@ struct Transport::Impl
 	}
 #endif
 };
+std::mutex Transport::Impl::local_mutex;
+std::map<u16, std::weak_ptr<Transport::Impl>> Transport::Impl::local_listeners;
+std::map<u16, std::weak_ptr<Transport::Impl>> Transport::Impl::local_pending;
 #ifdef __EMSCRIPTEN__
 std::mutex Transport::Impl::registry_mutex;
 std::map<uintptr_t, std::weak_ptr<Transport::Impl>> Transport::Impl::registry;
 std::atomic<uintptr_t> Transport::Impl::next_key{1};
 #endif
-Transport::Transport() : m_impl(std::make_shared<Impl>())
+Transport::Transport(bool local) : m_impl(std::make_shared<Impl>())
 {
+	m_impl->local = local;
 }
 Transport::~Transport()
 {
 	stop();
 }
-bool Transport::connect(const Address &address)
+bool Transport::connect(const Address &address, std::string_view host_name)
 {
 	auto &state = *m_impl;
+	if (state.local) {
+		std::lock_guard lock(Impl::local_mutex);
+		if (state.running || !state.local_peer.expired())
+			return false;
+		const auto port = address.getPort();
+		auto pending = Impl::local_pending.find(port);
+		if (pending != Impl::local_pending.end() && !pending->second.expired())
+			return false;
+		state.local_client = true;
+		state.local_port = port;
+		state.running = true;
+		auto listener = Impl::local_listeners.find(port);
+		auto server = listener == Impl::local_listeners.end() ? nullptr
+															  : listener->second.lock();
+		if (server && !server->running.load(std::memory_order_acquire))
+			server.reset();
+		if (server) {
+			if (!server->local_peer.expired()) {
+				state.running = false;
+				return false;
+			}
+			Impl::pairLocal(server, m_impl, address);
+		} else {
+			Impl::local_pending[port] = m_impl;
+		}
+		return true;
+	}
 #ifdef __EMSCRIPTEN__
 	if (!emscripten_websocket_is_supported() || state.socket)
 		return false;
-	const bool secure =
-			MAIN_THREAD_EM_ASM_INT({ return location.protocol == = 'https:'; });
-	const auto uri = connectionUri(address, secure);
+	const bool secure = MAIN_THREAD_EM_ASM_INT({ return location.protocol == 'https:'; });
+	const auto uri = connectionUri(address, secure, host_name);
 	EmscriptenWebSocketCreateAttributes attributes = {};
 	attributes.url = uri.c_str();
 	attributes.createOnMainThread = true;
@@ -264,8 +311,8 @@ bool Transport::connect(const Address &address)
 #else
 	state.client.reset();
 	websocketpp::lib::error_code error;
-	auto connection =
-			state.client.get_connection(connectionUri(address, USE_WS_SCTP_SSL), error);
+	auto connection = state.client.get_connection(
+			connectionUri(address, USE_WS_SCTP_SSL, host_name), error);
 	if (error) {
 		errorstream << "WebSocket connect: " << error.message() << std::endl;
 		return false;
@@ -277,6 +324,23 @@ bool Transport::connect(const Address &address)
 }
 bool Transport::listen(const Address &address)
 {
+	if (m_impl->local) {
+		std::lock_guard lock(Impl::local_mutex);
+		const auto port = address.getPort();
+		auto listener = Impl::local_listeners.find(port);
+		if (listener != Impl::local_listeners.end() && !listener->second.expired())
+			return false;
+		m_impl->local_port = port;
+		m_impl->running = true;
+		Impl::local_listeners[port] = m_impl;
+		auto pending = Impl::local_pending.find(port);
+		if (pending != Impl::local_pending.end()) {
+			if (auto client = pending->second.lock())
+				Impl::pairLocal(m_impl, client, address);
+			Impl::local_pending.erase(pending);
+		}
+		return true;
+	}
 #ifdef __EMSCRIPTEN__
 	return false; // Browsers expose outbound WebSockets only.
 #else
@@ -316,6 +380,17 @@ int Transport::send(Id id, const void *data, size_t size)
 }
 void Transport::close(Id id)
 {
+	if (m_impl->local) {
+		std::lock_guard lock(Impl::local_mutex);
+		if (id != 1)
+			return;
+		if (auto peer = m_impl->local_peer.lock()) {
+			peer->local_peer.reset();
+			peer->push({Type::Closed, 1, peer->local_client, {}, {}});
+		}
+		m_impl->local_peer.reset();
+		return;
+	}
 #ifdef __EMSCRIPTEN__
 	if (m_impl->socket)
 		emscripten_websocket_close(m_impl->socket, 1000, "peer removed");
@@ -343,6 +418,16 @@ std::vector<Transport::Event> Transport::poll()
 		state.outgoing_bytes = 0;
 	}
 	for (auto &packet : outgoing) {
+		if (state.local) {
+			std::lock_guard lock(Impl::local_mutex);
+			if (auto peer = state.local_peer.lock())
+				peer->push({Type::Message, 1, peer->local_client, {},
+						std::move(packet.data)});
+			else
+				state.push(
+						{Type::Failed, 1, state.local_client, {}, "local peer closed"});
+			continue;
+		}
 #ifdef __EMSCRIPTEN__
 		if (state.socket &&
 				emscripten_websocket_send_binary(state.socket, packet.data.data(),
@@ -365,21 +450,22 @@ std::vector<Transport::Event> Transport::poll()
 #endif
 	}
 #ifndef __EMSCRIPTEN__
-	try {
-		for (unsigned i = 0; i < 64; ++i) {
-			const auto server_work = state.server.poll_one();
-			const auto client_work = state.client.poll_one();
-			if (!server_work && !client_work)
-				break;
+	if (!state.local)
+		try {
+			for (unsigned i = 0; i < 64; ++i) {
+				const auto server_work = state.server.poll_one();
+				const auto client_work = state.client.poll_one();
+				if (!server_work && !client_work)
+					break;
+			}
+		} catch (const std::exception &error) {
+			errorstream << "WebSocket poll: " << error.what() << std::endl;
+			if (state.peers.empty())
+				state.push({Type::Failed, 0, true, {}, error.what()});
+			else
+				for (const auto &[id, peer] : state.peers)
+					state.push({Type::Failed, id, peer.client, {}, error.what()});
 		}
-	} catch (const std::exception &error) {
-		errorstream << "WebSocket poll: " << error.what() << std::endl;
-		if (state.peers.empty())
-			state.push({Type::Failed, 0, true, {}, error.what()});
-		else
-			for (const auto &[id, peer] : state.peers)
-				state.push({Type::Failed, id, peer.client, {}, error.what()});
-	}
 #endif
 	std::lock_guard lock(state.mutex);
 	std::vector<Event> result;
@@ -392,6 +478,23 @@ void Transport::stop()
 {
 	auto &state = *m_impl;
 	state.running.store(false, std::memory_order_release);
+	if (state.local) {
+		close(1);
+		{
+			std::lock_guard lock(Impl::local_mutex);
+			auto &entries =
+					state.local_client ? Impl::local_pending : Impl::local_listeners;
+			auto entry = entries.find(state.local_port);
+			if (entry != entries.end() && entry->second.lock() == m_impl)
+				entries.erase(entry);
+		}
+		std::lock_guard lock(state.mutex);
+		state.events.clear();
+		state.outgoing.clear();
+		state.outgoing_bytes = state.incoming_bytes = 0;
+		state.overflow = false;
+		return;
+	}
 #ifdef __EMSCRIPTEN__
 	{
 		std::lock_guard lock(Impl::registry_mutex);

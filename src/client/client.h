@@ -139,7 +139,6 @@ class Client : public con::PeerHandler, public InventoryManager, public IGameDef
 
 private:
 	//fm:
-	bool is_simple_singleplayer_game {};
 	float m_timelapse_timer {-1};
 	video::E_MATERIAL_TYPE m_far_light_material = video::EMT_SOLID;
 

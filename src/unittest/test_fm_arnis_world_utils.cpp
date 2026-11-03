@@ -1,5 +1,6 @@
 #include "test.h"
 
+#include "mapgen/earth/arnis_ground.h"
 #include "mapgen/earth/arnis-cpp/src/world_utils.h"
 
 class TestFmArnisWorldUtils : public TestBase
@@ -13,6 +14,7 @@ public:
 		TEST(testCustomWorldNameCharacterLimit);
 		TEST(testAreaFilenameUnicodeSanitization);
 		TEST(testAreaFilenameByteLimit);
+		TEST(testWorldTopUsesSelectedTallRange);
 	}
 
 	void testCustomWorldNameUnicodeSanitization()
@@ -52,6 +54,14 @@ public:
 		const auto output = sanitize_for_filename(input);
 		UASSERT(output.size() == 22 * 3);
 		UASSERT(output == input.substr(0, 22 * 3));
+	}
+
+	void testWorldTopUsesSelectedTallRange()
+	{
+		arnis::Args args;
+		args.disable_height_limit = true;
+		args.tall_range = std::pair<std::int32_t, std::int32_t>{-512, 399};
+		UASSERT(arnis::world_top_y_for(args) == 399);
 	}
 };
 

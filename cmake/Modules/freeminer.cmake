@@ -113,13 +113,13 @@ int main(int argc, char *argv[]) {
 
 
 
-option(MINETEST_PROTO "Use minetest protocol (Slow and buggy)" 1)
+option(MINETEST_PROTO "Use minetest protocol" 1)
 if(MINETEST_PROTO)
     set(MINETEST_TRANSPORT 1 CACHE BOOL "")
-    message(STATUS "Using minetest compatible protocol (some features missing)")
+    message(STATUS "Using minetest compatible protocol")
 endif()
 if(MINETEST_TRANSPORT)
-    message(STATUS "Using minetest compatible transport (slow)")
+    message(STATUS "Using minetest compatible transport")
 endif()
 
 #

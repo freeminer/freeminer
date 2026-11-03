@@ -2,19 +2,19 @@ local S = core.get_translator("__builtin")
 
 local builtin_shared = ...
 
-core.register_chatcommand( "stat", {
-	params = "[name]",
-	description = "show in-game action statistics",
-	func = function(name, param)
-		if param == "" then
-			param = name
-		elseif not core.get_player_by_name(param) then
-			return false, "No such player."
-		end
-		local formspec = core.stat_formspec(param)
-		core.show_formspec(name, 'stat', formspec)
-		return true, core.stat_text(param)
-	end
+core.register_chatcommand("stat", {
+    params = "[name]",
+    description = "show in-game action statistics",
+    func = function(name, param)
+        if param == "" then
+            param = name
+        elseif not core.get_player_by_name(param) then
+            return false, "No such player."
+        end
+        local formspec = core.stat_formspec(param)
+        core.show_formspec(name, 'stat', formspec)
+        return true, core.stat_text(param)
+    end,
 })
 
 core.register_chatcommand("emerge_smart", {

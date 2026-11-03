@@ -149,6 +149,7 @@ Block POWERED_RAIL;
 Block RED_FLOWER;
 Block RED_NETHER_BRICK;
 Block RED_SAND;
+Block RED_SANDSTONE;
 Block RED_TERRACOTTA;
 Block RED_WOOL;
 Block SAND;
@@ -258,6 +259,9 @@ Block DECAL_FRAME;
 Block ANDESITE_WALL;
 Block STONE_BRICK_WALL;
 Block CARROTS;
+Block CARROTS_YOUNG;
+Block BEETROOTS;
+Block BEETROOTS_YOUNG;
 Block DARK_OAK_DOOR_LOWER;
 Block DARK_OAK_DOOR_UPPER;
 Block DARK_OAK_LOG;
@@ -267,7 +271,9 @@ Block JUNGLE_LEAVES;
 Block ACACIA_LOG;
 Block ACACIA_LEAVES;
 Block POTATOES;
+Block POTATOES_YOUNG;
 Block WHEAT;
+Block WHEAT_YOUNG;
 Block BEDROCK;
 Block RAIL_NORTH_SOUTH;
 Block RAIL_EAST_WEST;
@@ -1077,6 +1083,9 @@ void init(MapgenEarth *mg)
 			{"mcl_core:red_sand", "mcl_core:redsand", "default:red_sand",
 					"default:redsand", "default:desert_sand", "mcl_core:desert_sand",
 					"basenodes:desert_sand", "mapgen_desert_sand"});
+	RED_SANDSTONE = g("red_sandstone",
+			{"mcl_core:redsandstone", "default:redsandstone", "default:red_sandstone",
+					"basenodes:redsandstone", "default:sandstone"});
 	SANDSTONE = g("sandstone", "default:sandstone");
 	SCAFFOLDING = g("scaffolding", "default:ladder_steel");
 	SMOOTH_QUARTZ = g("smooth_quartz", "default:stone");
@@ -1298,6 +1307,9 @@ void init(MapgenEarth *mg)
 	STONE_BRICK_WALL = g("stone_brick_wall", "default:stonebrick");
 	CARROTS = g("carrots", {"farming:carrot_4", "mcl_farming:carrot_7",
 								   "mcl_farming:carrot_4", "default:grass_5"});
+	CARROTS_YOUNG = optional_g("carrots_young", CARROTS,
+			{"farming:carrot_1", "mcl_farming:carrot_1", "mcl_farming:carrot_2",
+					"mcl_farming:carrot_3", "mcl_farming:carrot_4"});
 	DARK_OAK_DOOR_LOWER = g("dark_oak_door_lower", "doors:door_wood_a");
 	DARK_OAK_DOOR_UPPER = g("dark_oak_door_upper", "doors:door_wood_b");
 	DARK_OAK_LOG = g("dark_oak_log", {"default:tree", "default:jungletree"});
@@ -1308,8 +1320,18 @@ void init(MapgenEarth *mg)
 	ACACIA_LEAVES = g("acacia_leaves", {"default:acacia_leaves", "default:leaves"});
 	POTATOES = g("potatoes", {"farming:potato_4", "mcl_farming:potato_7",
 									 "mcl_farming:potato_4", "default:grass_5"});
+	POTATOES_YOUNG = optional_g("potatoes_young", POTATOES,
+			{"farming:potato_1", "mcl_farming:potato_1", "mcl_farming:potato_2",
+					"mcl_farming:potato_3", "mcl_farming:potato_4"});
 	WHEAT = g("wheat", {"farming:wheat_4", "mcl_farming:wheat_7", "mcl_farming:wheat_4",
 							   "default:grass_5"});
+	WHEAT_YOUNG = optional_g("wheat_young", WHEAT,
+			{"farming:wheat_1", "mcl_farming:wheat_1", "mcl_farming:wheat_2",
+					"mcl_farming:wheat_3", "mcl_farming:wheat_4"});
+	BEETROOTS = optional_g("beetroots", WHEAT,
+			{"farming:beetroot_4", "mcl_farming:beetroot", "mcl_farming:beetroot_3"});
+	BEETROOTS_YOUNG = optional_g("beetroots_young", BEETROOTS,
+			{"farming:beetroot_1", "mcl_farming:beetroot_1", "mcl_farming:beetroot_2"});
 	BEDROCK = g("bedrock", "default:obsidian");
 	RAIL_NORTH_SOUTH = prefer_arnis("rail_north_south", RAIL);
 	RAIL_EAST_WEST = prefer_arnis("rail_east_west", RAIL);

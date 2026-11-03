@@ -5,11 +5,17 @@
 
 #if USE_MULTI
 #include "network/multi/connection.h"
-#elif USE_ENET
+#endif
+#if USE_ENET
 #include "network/enet/connection.h"
-#elif USE_SCTP
+#endif
+#if USE_WEBSOCKET_SCTP
+#include "network/ws_sctp/connection.h"
+#endif
+#if USE_SCTP
 #include "network/sctp/connection.h"
-#elif MINETEST_TRANSPORT
+#endif
+#if MINETEST_TRANSPORT
 #include "network/mtp/impl.h"
 #endif
 
@@ -32,8 +38,18 @@ IConnection *createMTP(float timeout, bool ipv6, PeerHandler *handler, bool simp
 												   1350;
 #endif
 
+#if defined(__EMSCRIPTEN__) && USE_WEBSOCKET_SCTP
+	// Connect the embedded server and client through an in-process SCTP carrier.
+	if (simple_singleplayer_mode)
+		return new con_ws_sctp::Connection(
+				0, MAX_PACKET_SIZE, timeout, ipv6, handler, true);
+#endif
+
 #if USE_MULTI
 	return new con::ConnectionMulti(MAX_PACKET_SIZE, timeout, ipv6, handler);
+#elif USE_WEBSOCKET_SCTP
+	return new con_ws_sctp::Connection(
+			0, MAX_PACKET_SIZE, timeout, ipv6, handler);
 #elif USE_SCTP
 	return new con_sctp::Connection(MAX_PACKET_SIZE, timeout, ipv6, handler);
 #elif USE_ENET

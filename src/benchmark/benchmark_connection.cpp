@@ -2,6 +2,7 @@
 #include "benchmark/fm_benchmark.h"
 #include "config.h"
 #include "network/connection.h"
+#include "network/multi/connection_ports.h"
 #include "network/networkexceptions.h"
 #include "network/networkpacket.h"
 #include "network/peerhandler.h"
@@ -642,10 +643,10 @@ static void configureBenchmarkSettings(
 	g_settings->setBool("enable_ipv6", true);
 	g_settings->setBool("ipv6_server", true);
 	if (backend.multi) {
-		g_settings->setU16("port_enet", port + 200);
-		g_settings->setU16("port_sctp", port + 100);
-		g_settings->setU16("port_wss", port);
-		g_settings->setU16("port_sctp_wss", port + 100);
+		g_settings->setU16("port_enet", port + con::enet_port_diff);
+		g_settings->setU16("port_sctp", port + con::sctp_port_diff);
+		g_settings->setU16("port_wss", port + con::wss_port_diff);
+		g_settings->setU16("port_wss_sctp", port + con::wss_sctp_port_diff);
 		g_settings->set("remote_proto", backend.remote_proto);
 	}
 }

@@ -37,6 +37,13 @@
 #undef stof
 #endif
 
+namespace arnis::stations
+{
+class SparseCells;
+class TrackBedIndex;
+class TunnelPinIndex;
+}
+
 namespace arnis
 {
 class CoordinateBitmap;
@@ -70,6 +77,11 @@ struct RailNetwork;
 namespace fuel_stations
 {
 class FuelIndex;
+}
+
+namespace water_depth
+{
+class BigWaterField;
 }
 
 namespace trees::mapped
@@ -147,8 +159,16 @@ struct WorldEditor
 	// storage is written by parallel tile editors and read after generation.
 	std::shared_ptr<RailHeightMap> rail_heights;
 	std::shared_ptr<std::mutex> rail_heights_mutex;
+	// Surface rails whose overhead foliage gauge is cleared after ground decoration.
+	// Tile workers keep independent lists; the merged editor handles sequential passes.
+	std::shared_ptr<std::vector<std::tuple<int, int, int>>> laid_rails =
+			std::make_shared<std::vector<std::tuple<int, int, int>>>();
+	std::shared_ptr<std::mutex> laid_rails_mutex = std::make_shared<std::mutex>();
 	std::shared_ptr<const CoordinateBitmap> sealed_surface;
 	std::shared_ptr<const CoordinateBitmap> clear_corridors;
+	std::shared_ptr<const stations::SparseCells> station_tree_clearance;
+	std::shared_ptr<const stations::TrackBedIndex> station_track_beds;
+	std::shared_ptr<const stations::TunnelPinIndex> station_tunnel_pins;
 	std::shared_ptr<const fuel_stations::FuelIndex> fuel_index;
 	void enable_rail_height_collection()
 	{
@@ -157,10 +177,29 @@ struct WorldEditor
 	}
 	void register_rail(std::uint64_t way, int x, int z, int y) const
 	{
+		// Track all rails inside the generation rectangle for foliage-gauge cleanup;
+		// the per-way buried-rail height map below remains tile-owner-only.
+		if (in_bounds(x, z) && laid_rails && laid_rails_mutex) {
+			std::lock_guard<std::mutex> lock(*laid_rails_mutex);
+			laid_rails->emplace_back(x, z, y);
+		}
+		register_buried_rail(way, x, z, y);
+	}
+	void register_buried_rail(std::uint64_t way, int x, int z, int y) const
+	{
 		if (!owns(x, z) || !rail_heights || !rail_heights_mutex)
 			return;
 		std::lock_guard<std::mutex> lock(*rail_heights_mutex);
 		rail_heights->insert_or_assign(RailHeightKey{way, x, z}, y);
+	}
+	std::vector<std::tuple<int, int, int>> take_laid_rails()
+	{
+		if (!laid_rails || !laid_rails_mutex)
+			return {};
+		std::lock_guard<std::mutex> lock(*laid_rails_mutex);
+		std::vector<std::tuple<int, int, int>> rails;
+		rails.swap(*laid_rails);
+		return rails;
 	}
 	std::optional<int> rail_height(std::uint64_t way, int x, int z) const
 	{
@@ -185,6 +224,19 @@ struct WorldEditor
 	{
 		clear_corridors = std::move(mask);
 	}
+	void set_station_tree_clearance(std::shared_ptr<const stations::SparseCells> mask)
+	{
+		station_tree_clearance = std::move(mask);
+	}
+	void set_station_track_beds(std::shared_ptr<const stations::TrackBedIndex> index)
+	{
+		station_track_beds = std::move(index);
+	}
+	std::optional<int> station_track_bed(std::uint64_t way, int x, int z) const;
+	bool station_on_platform(int x, int z) const;
+	std::optional<std::pair<int, bool>> station_tunnel_pin(
+			std::uint64_t way, int x, int z) const;
+	std::optional<int> station_tunnel_joint_floor(int x, int z) const;
 	void set_fuel_index(std::shared_ptr<const fuel_stations::FuelIndex> index)
 	{
 		fuel_index = std::move(index);
@@ -194,6 +246,9 @@ struct WorldEditor
 	{
 		sealed_surface.reset();
 		clear_corridors.reset();
+		station_tree_clearance.reset();
+		station_track_beds.reset();
+		station_tunnel_pins.reset();
 		fuel_index.reset();
 		mapped_trunks.reset();
 	}
@@ -254,6 +309,9 @@ struct WorldEditor
 	// Projection-aware local frame. Flat worlds retain the legacy X/Z behavior.
 	ProjectionFrame projection_frame;
 	Ground *ground{};
+	// Rust Arc equivalent: the shared water-depth raster remains alive in all
+	// tile workers until carving and tunnel routing have finished.
+	std::shared_ptr<const water_depth::BigWaterField> water_field;
 	// Generation-format state shared by the C++ orchestration layer.
 	int generation_format = 0; // Java=0, Bedrock=1, Luanti=2
 	bool bake_lighting = false;
@@ -277,6 +335,7 @@ struct WorldEditor
 	std::shared_ptr<const trees::mapped::MappedTrunks> mapped_trunks;
 	std::shared_ptr<const std::vector<std::pair<int, int>>> mapped_cranes;
 	GameMode gamemode = GameMode::Creative;
+	MobSpawning mob_spawning = MobSpawning::Off;
 	std::int64_t world_time = 6000;
 	std::string level_name, projection_name;
 	std::filesystem::path output_path;
@@ -372,12 +431,18 @@ struct WorldEditor
 	// terrain passes, then transferred to the committed map at ordered merge.
 	RoadSurfaceOverrides road_surface_overrides;
 	RoadSurfaceOverrides active_road_surface_overrides;
+	// Station top levels are computed once before element dispatch and shared
+	// with tile workers so rail profiles can query them before station rendering.
+	std::shared_ptr<const RoadSurfaceOverrides> station_surface_levels;
 	// Lamps are installed before later water passes; retain their columns so
 	// quay-edge false positives can be removed once water has been carved.
 	std::vector<std::pair<int, int>> lamp_columns;
 	// Bounds of the full generation area. Tile merges keep the owning tile's
 	// road elevations and retain non-owned values only outside this area.
 	std::optional<std::tuple<int, int, int, int>> generation_bounds;
+	// Rust gives each tile editor its own clipped halo bbox. Keep that distinct
+	// from both the full world bounds and strict single-tile ownership bounds.
+	std::optional<std::tuple<int, int, int, int>> tile_editor_bounds;
 	bool tile_active = false;
 	using WrittenCellSet = std::unordered_set<std::tuple<int, int, int>, FrameCellHash>;
 	WrittenCellSet written_cells;
@@ -621,15 +686,31 @@ struct WorldEditor
 	}
 	void clear_strict_bounds() { strict_bounds.reset(); }
 	bool owns(int x, int z) const;
-	// Whether a cell is inside the full generation rectangle. Unlike pos_ok(),
-	// this is independent of the active mapgen buffer and is shared by tile
-	// workers; owned clip-margin cells may still be processed outside it.
+	// Tile editors use their own clipped halo bbox, matching Rust's editor bounds;
+	// otherwise use the full generation rectangle rather than the active mapgen
+	// buffer. Ownership remains a separate core-tile test.
 	bool in_bounds(int x, int z) const
 	{
+		if (tile_active && tile_editor_bounds) {
+			const auto &[min_x, min_z, max_x, max_z] = *tile_editor_bounds;
+			return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+		}
 		if (!generation_bounds)
 			return pos_ok(x, z);
 		const auto &[min_x, min_z, max_x, max_z] = *generation_bounds;
 		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+	}
+	std::tuple<int, int, int, int> bounds() const
+	{
+		if (tile_active && tile_editor_bounds)
+			return *tile_editor_bounds;
+		if (generation_bounds)
+			return *generation_bounds;
+		if (!mg)
+			return {0, 0, -1, -1};
+		const auto [min_x, min_z] = get_min_coords();
+		const auto [max_x, max_z] = get_max_coords();
+		return {min_x, min_z, max_x, max_z};
 	}
 	void register_hedge(int x, int z) { hedge_columns.emplace(x, z); }
 	bool is_hedge(int x, int z) const { return hedge_columns.contains({x, z}); }
@@ -653,10 +734,12 @@ struct WorldEditor
 			int x, int z, std::int8_t facing, int cols);
 	static std::int8_t facing_for_normal(int nx, int nz);
 	std::vector<DecalFrame> item_frames() const { return placed_frames; }
-	void set_game_settings(GameMode mode, std::int64_t time)
+	void set_game_settings(
+			GameMode mode, std::int64_t time, MobSpawning mobs = MobSpawning::Off)
 	{
 		gamemode = mode;
 		world_time = time;
+		mob_spawning = mobs;
 	}
 	void set_level_name(std::string n) { level_name = std::move(n); }
 	void set_spawn(int x, int y, int z)
@@ -741,6 +824,12 @@ struct WorldEditor
 		}
 		tile_active = true;
 		active_road_surface_overrides.clear();
+		if (station_surface_levels)
+			for (const auto &[cell, y] : *station_surface_levels) {
+				const auto &[x, z] = cell;
+				if (in_bounds(x, z))
+					active_road_surface_overrides.insert_or_assign(cell, y);
+			}
 		active_support_columns.clear();
 		active_frame_cells.clear();
 		active_placed_frames.clear();
@@ -755,6 +844,10 @@ struct WorldEditor
 	void set_generation_bounds(int min_x, int min_z, int max_x, int max_z)
 	{
 		generation_bounds = std::tuple{min_x, min_z, max_x, max_z};
+	}
+	void set_tile_editor_bounds(int min_x, int min_z, int max_x, int max_z)
+	{
+		tile_editor_bounds = std::tuple{min_x, min_z, max_x, max_z};
 	}
 	bool merge_tile(int min_x, int min_z, int max_x, int max_z)
 	{
@@ -876,8 +969,8 @@ struct WorldEditor
 			const std::optional<std::vector<Block>> &replacements);
 
 	void set_block_with_properties_absolute(const BlockWithProperties &bwp, int32_t x,
-			int32_t y, int32_t z, const std::optional<std::vector<Block>> &variants,
-			const std::optional<std::vector<Block>> &replacements);
+			int32_t y, int32_t z, const std::optional<std::vector<Block>> &variants = {},
+			const std::optional<std::vector<Block>> &replacements = {});
 
 	void set_block_with_properties_absolute(const BlockWithProperties &bwp, int32_t x,
 			int32_t y, int32_t z, const std::vector<Block> *variants,
@@ -930,8 +1023,18 @@ struct WorldEditor
 	std::optional<int> surface_override(int x, int z) const;
 	std::optional<int> road_surface_y(int x, int z) const;
 	std::optional<int> terrain_level(int x, int z) const;
+	void set_water_field(std::shared_ptr<const water_depth::BigWaterField> field)
+	{
+		water_field = std::move(field);
+	}
+	std::optional<int> carved_bed(int x, int z) const;
+	std::optional<int> lowest_carved_bed(int x, int z, int radius) const;
 	std::optional<double> terrain_level_exact(int x, int z) const;
 	void register_road_surface_y(int x, int z, int y);
+	void set_station_surface_levels(std::shared_ptr<const RoadSurfaceOverrides> levels)
+	{
+		station_surface_levels = std::move(levels);
+	}
 	RoadSurfaceOverrides take_road_surface_overrides();
 	void register_lamp(int x, int z) { lamp_columns.emplace_back(x, z); }
 	std::vector<std::pair<int, int>> take_lamps()

@@ -45,6 +45,9 @@
 #endif
 
 #include "arnis-cpp/src/data_processing.h"
+// fm: Keep C++ preprocessing aligned with the Rust highway pavement filter.
+#include "arnis-cpp/src/element_processing/highways.h"
+// ===
 // Native track geometry is planned before chunk-local feature clipping.
 #include "arnis-cpp/src/element_processing/advtrains.h"
 #include "arnis-cpp/src/fm_native_trains.h"
@@ -54,6 +57,7 @@
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/overture.h"
 #include "arnis-cpp/src/element_processing/way_segments.h"
+#include "arnis-cpp/src/models_3d/wikidata/prescan.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -627,14 +631,15 @@ public:
 			// represent an independent water or land-use feature.
 			const auto area_kind = arnis::element_processing::relation_area(tags);
 			if (holed && area_kind &&
-					arnis::element_processing::relation_area_draws_area(*area_kind, tags)) {
+					arnis::element_processing::relation_area_draws_area(
+							*area_kind, tags)) {
 				for (std::size_t i = 0; i < member_ways.size(); ++i) {
 					if (!member_ways[i] || !roles[i] ||
 							*roles[i] != arnis::ProcessedMemberRole::Outer ||
 							!closed_ring(*member_ways[i]))
 						continue;
 					if (arnis::osm_parser::repeats_relation_area_tags(
-							member_ways[i]->tags, tags))
+								member_ways[i]->tags, tags))
 						repeated_area_outer_ids.insert(member_ways[i]->id);
 				}
 			}
@@ -646,8 +651,8 @@ public:
 							   [&](const auto &element) {
 								   return element.is_way() &&
 										  (element.as_way().nodes.empty() ||
-												repeated_area_outer_ids.contains(
-													element.as_way().id));
+												  repeated_area_outer_ids.contains(
+														  element.as_way().id));
 							   }),
 				elements.end());
 		if (unresolved_node_refs > 0) {
@@ -806,7 +811,12 @@ arnis::Args earth_arnis_args()
 	read_bool("disasters", arnis.disasters);
 	read_bool("winter", arnis.winter);
 	read_bool("post_apocalyptic", arnis.post_apocalyptic);
+	read_bool("body_gravity", arnis.body_gravity);
 	read_bool("traffic_lights", arnis.traffic_lights);
+	read_bool("discoveries", arnis.discoveries);
+	read_bool("pause_menu", arnis.pause_menu);
+	read_bool("zombie_outbreak", arnis.zombie_outbreak);
+	read_bool("moving_vehicles", arnis.moving_vehicles);
 	read_bool("moving_cars", arnis.moving_cars);
 	read_bool("benchmark", arnis.benchmark);
 	read_bool("debug", arnis.debug);
@@ -845,6 +855,11 @@ arnis::Args earth_arnis_args()
 		std::string size;
 		if (get_setting("max_tree_size", size))
 			arnis.max_tree_size = ::arnis::trees::tree_size_from_string(size);
+	}
+	{
+		std::string fields;
+		if (get_setting("fields", fields))
+			arnis.fields = ::arnis::field_texture::field_preset_from_string(fields);
 	}
 
 	// Facade, Mapillary, signage, and Overture options.
@@ -927,6 +942,19 @@ arnis::Args earth_arnis_args()
 		std::string gamemode;
 		if (get_setting("gamemode", gamemode))
 			arnis.gamemode = ::arnis::game_mode_from_string(gamemode);
+	}
+	{
+		std::string world_type;
+		if (get_setting("world_type", world_type))
+			arnis.world_type = world_type == "flat" ? ::arnis::WorldType::Flat
+													: ::arnis::WorldType::Void;
+	}
+	{
+		std::string mob_spawning;
+		if (get_setting("mob_spawning", mob_spawning))
+			arnis.mob_spawning = mob_spawning == "animals" ? ::arnis::MobSpawning::Animals
+								 : mob_spawning == "all"   ? ::arnis::MobSpawning::All
+														   : ::arnis::MobSpawning::Off;
 	}
 	{
 		std::optional<double> seconds;
@@ -1444,8 +1472,13 @@ public:
 								<< "Earth: Overture skipped; cached OSM extract has no geographic bounds\n";
 					}
 				}
-				const auto dropped = arnis::drop_buildings_on_aircraft_pavement(
-						cached.elements, args.scale);
+				// fm: Runway suppression belongs to the shared highway preprocessing pass.
+				std::vector<arnis::ProcessedElement> aircraft_filtered;
+				const auto dropped = arnis::highways::drop_buildings_on_aircraft_pavement(
+						cached.elements, aircraft_filtered, args.scale);
+				if (dropped > 0)
+					cached.elements = std::move(aircraft_filtered);
+				// ===
 				if (dropped > 0)
 					actionstream << "Earth: skipped " << dropped
 								 << " building(s) on aircraft pavement\n";
@@ -1501,6 +1534,9 @@ public:
 			generation_stage = "chunk element selection";
 			std::call_once(chunk->elements_once, [&]() {
 				constexpr int extra = MAP_BLOCKSIZE * 2;
+				const auto args = earth_osmium_detail::earth_arnis_args();
+				const double model_halo =
+						arnis::models_3d::wikidata::MAX_XZ_EXTENT_M * args.scale;
 				const XZBBox context_bbox(mg->node_min.X - extra, mg->node_min.Z - extra,
 						mg->node_max.X + extra, mg->node_max.Z + extra);
 				// Native routing can detour up to 48 nodes from source geometry.
@@ -1509,6 +1545,24 @@ public:
 				for (std::size_t i = 0; i < cached.elements.size(); ++i) {
 					// Select routed tracks even when only their detour enters this chunk.
 					const auto &source = cached.elements[i];
+					const auto &tags = source.tags();
+					const auto wikidata = tags.find("wikidata");
+					const bool model =
+							args.use_3d && wikidata != tags.end() &&
+							arnis::models_3d::lookup_wikidata(wikidata->second);
+					const auto &bounds = cached.element_bounds[i];
+					const bool model_intersects =
+							model && bounds.valid &&
+							double(bounds.max_x) >= double(mg->node_min.X) - model_halo &&
+							double(bounds.min_x) <= double(mg->node_max.X) + model_halo &&
+							double(bounds.max_z) >= double(mg->node_min.Z) - model_halo &&
+							double(bounds.min_z) <= double(mg->node_max.Z) + model_halo;
+					// Model anchors and dimensions must use the same complete geometry
+					// in every chunk, including chunks touched only by the model.
+					if (model_intersects) {
+						chunk->elements.push_back(source);
+						continue;
+					}
 					const bool native_rail = arnis::railways::advtrains::available() &&
 											 source.is_way() &&
 											 source.as_way().tags.contains("railway");

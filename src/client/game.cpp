@@ -53,14 +53,16 @@
 #include "item_visuals_manager.h"
 
 
-#include "network/connection.h"
+// fm:
 #include "client/fm_farmesh.h"
+#include "gui/guiTable.h"
+#include "network/connection.h"
+#include "network/multi/connection_ports.h"
 #include "threading/async.h"
 #include "util/numeric.h"
 #include <future>
 #include <memory>
-#include "gui/guiTable.h"
-
+// ===
 
 #if USE_SOUND
 	#include "client/sound/sound_openal.h"
@@ -1140,8 +1142,14 @@ bool Game::connectToServer(const GameStartData &start_data,
 	Address connect_address(0, 0, 0, 0, start_data.socket_port);
 	Address fallback_address;
 
-	try {
+
+#if defined(__EMSCRIPTEN__) && USE_WEBSOCKET_SCTP
+	// The browser resolves the WebSocket hostname itself. Synchronous
+	// getaddrinfo here goes through emsocket's unrelated datagram proxy.
+#else
+    try {
 		connect_address.Resolve(address_name.c_str(), &fallback_address);
+#endif
 
 		if (connect_address.isAny()) {
 			// replace with localhost IP
@@ -1157,12 +1165,14 @@ bool Game::connectToServer(const GameStartData &start_data,
 				connect_address.setAddress(127, 0, 0, 1);
 			}
 		}
+#if !defined(__EMSCRIPTEN__) || !USE_WEBSOCKET_SCTP
 	} catch (ResolveError &e) {
 		*error_message = fmtgettext("Couldn't resolve address: %s", e.what());
 
 		errorstream << *error_message << std::endl;
 		return false;
 	}
+#endif
 
 	// this shouldn't normally happen since Address::Resolve() checks for enable_ipv6
 	if (g_settings->getBool("enable_ipv6")) {
@@ -1180,17 +1190,18 @@ bool Game::connectToServer(const GameStartData &start_data,
 		u16 port = 0;
 #if USE_SCTP
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
-			port = connect_address.getPort() + 100;
+			port = connect_address.getPort() + con::sctp_port_diff;
+		
 		}
 		g_settings->set("remote_proto", "sctp");
 #elif USE_ENET
 		if (!g_settings->getU16NoEx("port_enet", port)) {
-			port = connect_address.getPort() + 200;
+			port = connect_address.getPort() + con::enet_port_diff;
 		}
 		g_settings->set("remote_proto", "enet");
 #elif USE_WEBSOCKET
 		if (!g_settings->getU16NoEx("port_wss", port)) {
-			port = connect_address.getPort();
+			port = connect_address.getPort() + con::wss_port_diff;
 		}
 		g_settings->set("remote_proto", "wss");
 #else
