@@ -657,9 +657,7 @@ void Connection::serve(const Address &bind_address)
 		}
 	} else if (domain == AF_CONN) {
 
-		struct sockaddr_conn sconn
-		{
-		};
+		struct sockaddr_conn sconn{};
 
 		sconn.sconn_family = AF_CONN;
 #ifdef HAVE_SCONN_LEN

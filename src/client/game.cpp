@@ -1142,8 +1142,14 @@ bool Game::connectToServer(const GameStartData &start_data,
 	Address connect_address(0, 0, 0, 0, start_data.socket_port);
 	Address fallback_address;
 
-	try {
+
+#if defined(__EMSCRIPTEN__) && USE_WEBSOCKET_SCTP
+	// The browser resolves the WebSocket hostname itself. Synchronous
+	// getaddrinfo here goes through emsocket's unrelated datagram proxy.
+#else
+    try {
 		connect_address.Resolve(address_name.c_str(), &fallback_address);
+#endif
 
 		if (connect_address.isAny()) {
 			// replace with localhost IP
@@ -1159,12 +1165,14 @@ bool Game::connectToServer(const GameStartData &start_data,
 				connect_address.setAddress(127, 0, 0, 1);
 			}
 		}
+#if !defined(__EMSCRIPTEN__) || !USE_WEBSOCKET_SCTP
 	} catch (ResolveError &e) {
 		*error_message = fmtgettext("Couldn't resolve address: %s", e.what());
 
 		errorstream << *error_message << std::endl;
 		return false;
 	}
+#endif
 
 	// this shouldn't normally happen since Address::Resolve() checks for enable_ipv6
 	if (g_settings->getBool("enable_ipv6")) {
