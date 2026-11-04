@@ -547,11 +547,16 @@ public:
 			}
 			const auto &tags = pending.relation.tags;
 			const auto man_made = tags.get("man_made");
+			// fm: Golf-course relations need their outer member rings assembled before
+			// the per-relation golf renderer can rasterize them.
 			const bool filled_area = tags.contains("natural") ||
-									 tags.contains("landuse") ||
-									 tags.contains("leisure") ||
-									 (man_made == "pier" || man_made == "breakwater" ||
+								 tags.contains("landuse") ||
+								 tags.contains("leisure") ||
+								 arnis::element_processing::relation_area(tags) ==
+										 arnis::element_processing::RelationArea::Golf ||
+								 (man_made == "pier" || man_made == "breakwater" ||
 											 man_made == "groyne");
+			// ===
 			const bool water_area =
 					tags.contains("water") ||
 					(tags.get("natural") == "water" || tags.get("natural") == "bay") ||
