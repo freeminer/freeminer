@@ -1607,7 +1607,7 @@ void MapgenEarth::generateBuildings()
 		if (std::filesystem::exists(use_file) && std::filesystem::file_size(use_file)) {
 			const auto lock = std::lock_guard{maps_holder->osm_bbox_lock};
 			if (!maps_holder->osm_bbox.contains(bbox)) {
-				const auto osm = earth_osmium_detail::make_handler(this, use_file);
+				const auto osm = earth_osmium_detail::make_handler(this, use_file, bbox);
 				//const auto lock = maps_holder->osm_bbox.lock_unique_rec();
 				if (!maps_holder->osm_bbox.contains(bbox)) {
 					maps_holder->osm_bbox.emplace(bbox, osm);
