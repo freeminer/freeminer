@@ -5,6 +5,7 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
 #include <cstdlib>
 #include <exception>
 #include <filesystem>
@@ -547,11 +548,16 @@ public:
 			}
 			const auto &tags = pending.relation.tags;
 			const auto man_made = tags.get("man_made");
-			const bool filled_area = tags.contains("natural") ||
-									 tags.contains("landuse") ||
-									 tags.contains("leisure") ||
-									 (man_made == "pier" || man_made == "breakwater" ||
-											 man_made == "groyne");
+			// fm: Golf-course relations need their outer member rings assembled before
+			// the per-relation golf renderer can rasterize them.
+			const bool filled_area =
+					tags.contains("natural") || tags.contains("landuse") ||
+					tags.contains("leisure") ||
+					arnis::element_processing::relation_area(tags) ==
+							arnis::element_processing::RelationArea::Golf ||
+					(man_made == "pier" || man_made == "breakwater" ||
+							man_made == "groyne");
+			// ===
 			const bool water_area =
 					tags.contains("water") ||
 					(tags.get("natural") == "water" || tags.get("natural") == "bay") ||
@@ -1176,6 +1182,7 @@ struct CachedArnisChunk
 struct CachedArnisExtract
 {
 	std::once_flag parse_once;
+	std::optional<XZBBox> native_rail_bounds;
 	// Adjacent chunks must share topology, route tie-breaks, and rail grades.
 	mutable std::once_flag native_rails_once;
 	mutable std::shared_ptr<const arnis::railways::advtrains::RailNetwork> native_rails;
@@ -1266,8 +1273,15 @@ void generate_cached_arnis(
 	// Routing independently clipped ways changes endpoints and obstacles at seams.
 	if (arnis::railways::advtrains::available()) {
 		std::call_once(tile.native_rails_once, [&]() {
-			tile.native_rails =
-					arnis::railways::advtrains::build_network(tile.elements, editor);
+			if (tile.native_rail_bounds) {
+				const auto local = arnis::railways::advtrains::bounded_rail_elements(
+						tile.elements, *tile.native_rail_bounds);
+				tile.native_rails =
+						arnis::railways::advtrains::build_network(local, editor);
+			} else {
+				tile.native_rails =
+						arnis::railways::advtrains::build_network(tile.elements, editor);
+			}
 		});
 		editor.native_rail_network = tile.native_rails;
 	}
@@ -1342,7 +1356,32 @@ class hdl : public handler_i
 	earth_osmium_detail::CachedArnisExtract cached;
 
 public:
-	hdl(MapgenEarth *mg, const std::string &path_name) : path_name{path_name} {}
+	hdl(MapgenEarth *mg, const std::string &path_name, const std::string &bbox) :
+			path_name{path_name}
+	{
+		double min_lon, min_lat, max_lon, max_lat;
+		if (std::sscanf(bbox.c_str(), "%lf,%lf,%lf,%lf", &min_lon, &min_lat, &max_lon,
+					&max_lat) == 4 &&
+				std::isfinite(min_lon) && std::isfinite(min_lat) &&
+				std::isfinite(max_lon) && std::isfinite(max_lat) && min_lon < max_lon &&
+				min_lat < max_lat) {
+			const auto a = mg->ll_to_pos({min_lat, min_lon});
+			const auto b = mg->ll_to_pos({max_lat, max_lon});
+			// Retain enough surrounding geometry for routes and junctions near an
+			// extract edge, while excluding route-relation members many km away.
+			constexpr std::int64_t halo = 2048;
+			const auto safe = [](std::int64_t v) {
+				return static_cast<std::int32_t>(std::clamp(v,
+						std::int64_t(std::numeric_limits<std::int32_t>::min()),
+						std::int64_t(std::numeric_limits<std::int32_t>::max())));
+			};
+			cached.native_rail_bounds.emplace(
+					safe(std::int64_t(std::min(a.X, b.X)) - halo),
+					safe(std::int64_t(std::min(a.Y, b.Y)) - halo),
+					safe(std::int64_t(std::max(a.X, b.X)) + halo),
+					safe(std::int64_t(std::max(a.Y, b.Y)) + halo));
+		}
+	}
 
 	virtual ~hdl() = default;
 
@@ -1673,9 +1712,10 @@ public:
 namespace earth_osmium_detail
 {
 
-std::shared_ptr<handler_i> make_handler(MapgenEarth *mg, const std::string &path)
+std::shared_ptr<handler_i> make_handler(
+		MapgenEarth *mg, const std::string &path, const std::string &bbox)
 {
-	return std::make_shared<hdl>(mg, path);
+	return std::make_shared<hdl>(mg, path, bbox);
 }
 
 } // namespace earth_osmium_detail
