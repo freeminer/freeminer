@@ -70,6 +70,7 @@ public:
 	uint32_t farlights{0};
 	bool partial{};
 	bool require_lighting_complete{};
+	bool retry_deferred{};
 	uint32_t lazy_up{};
 	const NodeDefManager *const ndef{};
 	Map *const smap{};

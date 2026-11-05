@@ -62,11 +62,29 @@ else()
     message(STATUS "BZip2 not found; set FETCH_DEPS=ON to build bundled BZip2")
 endif()
 
-find_package(OpenSSL 3.0 QUIET)
+find_package(OpenSSL 3.0 QUIET COMPONENTS Crypto SSL)
 if(TARGET OpenSSL::SSL)
     message(STATUS "Using system OpenSSL: ${OPENSSL_VERSION}")
 elseif(FETCH_DEPS)
     message(STATUS "System OpenSSL 3.0 not found; using bundled OpenSSL")
+    if(MINGW AND NOT CMAKE_HOST_WIN32)
+        # openssl-cmake otherwise searches only for Windows' mingw32-make.
+        find_program(MAKE NAMES gmake make REQUIRED)
+        # OpenSSL's Configure does not inherit CMake's cross toolchain.
+        foreach(_fm_tool CC AR RANLIB RC)
+            if(_fm_tool STREQUAL "CC")
+                set(_fm_tool_path "${CMAKE_C_COMPILER}")
+            else()
+                set(_fm_tool_path "${CMAKE_${_fm_tool}_COMPILER}")
+                if(_fm_tool STREQUAL "AR" OR _fm_tool STREQUAL "RANLIB")
+                    set(_fm_tool_path "${CMAKE_${_fm_tool}}")
+                endif()
+            endif()
+            if(_fm_tool_path AND NOT "${OPENSSL_CONFIGURE_OPTIONS}" MATCHES "(^|;)${_fm_tool}=")
+                list(APPEND OPENSSL_CONFIGURE_OPTIONS "${_fm_tool}=${_fm_tool_path}")
+            endif()
+        endforeach()
+    endif()
     if((ANDROID AND CMAKE_ANDROID_ARCH_ABI STREQUAL "arm64-v8a") OR EMSCRIPTEN)
         # OpenSSL 4.0's AArch64 Poly1305 assembly has non-PIC SVE2 references.
         list(APPEND OPENSSL_CONFIGURE_OPTIONS no-asm)
@@ -83,7 +101,16 @@ elseif(FETCH_DEPS)
         GIT_PROGRESS TRUE
         ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
+    # FindOpenSSL leaves normal variables in this scope, shadowing the cache
+    # values published by openssl-cmake (including SSL_EAY-NOTFOUND).
+    foreach(_fm_openssl_var OPENSSL_FOUND OPENSSL_INCLUDE_DIR OPENSSL_CRYPTO_LIBRARY
+            OPENSSL_SSL_LIBRARY OPENSSL_LIBRARIES OPENSSL_VERSION)
+        unset(${_fm_openssl_var})
+    endforeach()
     FetchContent_MakeAvailable(openssl-cmake)
+    if(MINGW)
+        target_link_libraries(OpenSSL::Crypto INTERFACE bcrypt)
+    endif()
 endif()
 
 find_package(Boost 1.69 QUIET COMPONENTS program_options geometry)
