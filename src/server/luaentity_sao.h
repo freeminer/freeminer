@@ -9,6 +9,9 @@
 #include "util/guid.h"
 
 class FallingSAO;
+// fm: Let native entities inspect the result of their movement.
+struct CollisionMoveResult;
+// ===
 
 class LuaEntitySAO : public UnitSAO
 {
@@ -25,6 +28,9 @@ public:
 	ActiveObjectType getSendType() const { return ACTIVEOBJECT_TYPE_GENERIC; }
 	virtual void addedToEnvironment(u32 dtime_s);
 	virtual void step(float dtime, bool send_recommended);
+	// fm: Optional collision result for native entities.
+	void stepWithCollision(float dtime, bool send_recommended, CollisionMoveResult *result);
+	// ===
 	std::string getClientInitializationData(u16 protocol_version);
 
 	bool isStaticAllowed() const { return m_prop.static_save; }

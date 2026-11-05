@@ -26,6 +26,8 @@
 #include "contrib/creature.h"
 #endif
 #include "contrib/itemsao.h"
+#include "contrib/fallingsao.h"
+#include "map.h"
 #if 0
 #include "contrib/playersao.h"
 #endif
@@ -64,8 +66,8 @@ int ModApiEnv::l_spawn_item_activeobject(lua_State *L)
 	v3opos_t pos = checkOposPos(L, 1);
 	// item
 	//std::string itemstring = lua_tostring(L, 2);
-	ItemStack item = read_item(L, 2,getServer(L)->idef());
-	if(item.empty() || !item.isKnown(getServer(L)->idef()))
+	ItemStack item = read_item(L, 2, getServer(L)->idef());
+	if (item.empty() || !item.isKnown(getServer(L)->idef()))
 		return 0;
 
 	u16 stacksize = 1;
@@ -97,13 +99,28 @@ int ModApiEnv::l_spawn_falling_node(lua_State *L)
 
 	auto *ndef = env->getGameDef()->ndef();
 
-	// pos
 	v3opos_t pos = checkOposPos(L, 1);
-	MapNode n = readnode(L, 2);
-
-	// Drop item on the floor
-	env->spawnFallingActiveObject(ndef->get(n).name, pos, n);
-	return 1;
+	v3pos_t nodepos = floatToInt(pos, BS);
+	MapNode n = env->getMap().getNode(nodepos);
+	if (n.getContent() == CONTENT_AIR || n.getContent() == CONTENT_IGNORE) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	auto obj = env->spawnFallingActiveObject(ndef->get(n).name, pos, n);
+	if (!obj) {
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	if (!env->removeNode(nodepos, 0)) {
+		obj->markForRemoval();
+		lua_pushboolean(L, false);
+		return 1;
+	}
+	env->getMap().removeNodeMetadata(nodepos);
+	env->getMap().removeNodeTimer(nodepos);
+	lua_pushboolean(L, true);
+	push_objectRef(L, obj->getId());
+	return 2;
 }
 
 /**
