@@ -186,6 +186,7 @@ void fm_set_default_settings(Settings *settings)
 														 : "10000");
 	settings->setDefault("farmesh_surface_depth", "-1");
 	settings->setDefault("farmesh_fast_faces", medium ? "true" : "true");
+	settings->setDefault("farmesh_directional_light", "0.3");
 	settings->setDefault("volumetric_fog", slow ? "500" : medium ? "1500" : "3000");
 	settings->setDefault("volumetric_fog_quality", "1");
 	settings->setDefault("volumetric_fog_half_resolution", "true");
