@@ -161,6 +161,10 @@ farmesh_surface_depth (Far mesh underground depth) int -1 -1 16
 # Disable to emit one quad for every exposed coarse node face.
 farmesh_fast_faces (Fast far-mesh faces) bool true
 
+# Extra fixed-direction shading on far-mesh faces. 0 disables it.
+# Restart the client after changing this setting.
+farmesh_directional_light (Far-mesh directional shading) float 0.3 0.0 1.0
+
 farlights (Far lights) int 200000
 
 # Draw coarse far-block volumetric fog up to this distance in nodes.
