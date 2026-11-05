@@ -195,7 +195,9 @@ ServerEnvironment::ServerEnvironment(std::unique_ptr<ServerMap> map,
 	m_server(server)
 {
 
-    //fm:
+    // fm:
+	// Initialize the falling-object gravity cache before the first step.
+	m_falling_gravity = v3f(0.0f, -g_settings->getFloat("movement_gravity") * BS, 0.0f);
 	m_use_weather = g_settings->getBool("weather");
 	m_use_weather_biome = g_settings->getBool("weather_biome");
 
@@ -1967,10 +1969,11 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 				<< "failed to create active object from static object "
 				<< "in block " << block->getPos()
 				<< " type=" << (int)s_obj.type << " data:" << std::endl;
-			break;
+			// fm: Preserve failed static objects and continue activating the block.
 			print_hexdump(verbosestream, s_obj.data);
 
 			new_stored.push_back(s_obj);
+			// ===
 			continue;
 		}
 

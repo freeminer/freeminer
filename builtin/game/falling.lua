@@ -374,8 +374,9 @@ core.register_entity(":__builtin:falling_node_NOOOOOOOOOOOO", {
 })
 ]]
 
+-- fm: Use the native falling entity
 local function convert_to_falling_node(pos, node)
-	return true, core.spawn_falling_node(pos, node)
+	return core.spawn_falling_node(pos)
 
 --[[
 	local obj = core.add_entity(pos, "__builtin:falling_node")
@@ -407,6 +408,8 @@ function core.spawn_falling_node(pos)
 	return convert_to_falling_node(pos, node)
 end
 ]]
+
+-- ===
 
 local function drop_attached_node(p)
 	local n = core.get_node(p)
@@ -488,9 +491,8 @@ end
 -- Some common functions
 --
 
+-- fm: Restore individual and cascading falling checks
 function core.check_single_for_falling(p)
-    return core.nodeupdate(p)
---[[
 	local n = core.get_node(p)
 	if core.get_item_group(n.name, "falling_node") ~= 0 then
 		local p_bottom = vector.offset(p, 0, -1, 0)
@@ -503,8 +505,14 @@ function core.check_single_for_falling(p)
 			if same and d_bottom.paramtype2 == "leveled" and
 					core.get_node_level(p_bottom) <
 					core.get_node_max_level(p_bottom) then
-				local success, _ = convert_to_falling_node(p, n)
-				return success
+				-- Merging two nodes cannot retain metadata from both.
+				local meta = core.get_meta(p):to_table()
+				if (not meta or (not next(meta.fields or {}) and
+						not next(meta.inventory or {}))) and
+						not core.get_node_timer(p):is_started() then
+					local success, _ = convert_to_falling_node(p, n)
+					return success
+				end
 			end
 			local d_falling = core.registered_nodes[n.name]
 			local do_float = core.get_item_group(n.name, "float") > 0
@@ -534,7 +542,6 @@ function core.check_single_for_falling(p)
 	end
 
 	return false
-]]
 end
 
 -- This table is specifically ordered.
@@ -556,8 +563,6 @@ local check_for_falling_neighbors = {
 }
 
 function core.check_for_falling(p)
-     return core.nodeupdate(p)
---[[
 	-- Round p to prevent falling entities to get stuck.
 	p = vector.round(p)
 
@@ -606,8 +611,9 @@ function core.check_for_falling(p)
 			v = 1
 		end
 	end
-]]
 end
+
+-- ===
 
 --
 -- Global callbacks
