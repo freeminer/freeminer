@@ -267,7 +267,26 @@ if(ENABLE_SPATIAL)
 endif(ENABLE_SPATIAL)
 
 # fm: Detect OpenSSL after Freeminer's bundled dependencies are configured.
+if (0)
 # ===
+option(ENABLE_OPENSSL "Use OpenSSL's libcrypto for faster SHA implementations" TRUE)
+set(USE_OPENSSL FALSE)
+
+if(ENABLE_OPENSSL)
+	find_package(OpenSSL 3.0)
+	if(OPENSSL_FOUND)
+		set(USE_OPENSSL TRUE)
+		message(STATUS "OpenSSL's libcrypto SHA enabled.")
+	else()
+		message(STATUS "OpenSSL not found!")
+	endif()
+endif(ENABLE_OPENSSL)
+
+# fm: 
+endif()
+# ===
+
+
 find_package(ZLIB REQUIRED)
 find_package(Zstd REQUIRED)
 
