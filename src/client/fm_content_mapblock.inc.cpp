@@ -47,6 +47,66 @@ static bool isFmFarEmpty(content_t content)
 		   content == CONTENT_UNKNOWN;
 }
 
+static void getFmNodeVertexDirs(const auto &dir, v3pos_t vertex_dirs[4]);
+
+// Far samples are spaced by fscale. The normal smooth-lighting helper uses
+// unit offsets and step zero, so sample the three cells outside each corner
+// explicitly at the far-mesh resolution instead.
+static void getFmFarCornerLights(MeshMakeData *data, const v3pos_t &pos,
+		const v3pos_t &dir, u16 face_light, u8 emissive, u16 lights[4])
+{
+	v3pos_t corners[4];
+	getFmNodeVertexDirs(dir, corners);
+	const auto outside = pos + dir * data->fscale;
+	const auto occludes = [&](const v3pos_t &p) {
+		const auto node = data->m_vmanip.getNodeRefAndVisible(p, data->far_step).first;
+		const auto content = node.getContent();
+		if (content == CONTENT_AIR)
+			return false;
+		if (content == CONTENT_IGNORE || content == CONTENT_UNKNOWN)
+			return true;
+		const auto &features = data->m_nodedef->get(node);
+		return features.visuals->solidness == 2 || features.visuals->solidness_far == 2;
+	};
+	for (int i = 0; i < 4; ++i) {
+		if (emissive) {
+			lights[i] = face_light;
+			continue;
+		}
+		v3pos_t a, b;
+		if (dir.X) {
+			a.Y = corners[i].Y;
+			b.Z = corners[i].Z;
+		} else if (dir.Y) {
+			a.X = corners[i].X;
+			b.Z = corners[i].Z;
+		} else {
+			a.X = corners[i].X;
+			b.Y = corners[i].Y;
+		}
+		const bool side_a = occludes(outside + a * data->fscale);
+		const bool side_b = occludes(outside + b * data->fscale);
+		const bool corner = occludes(outside + (a + b) * data->fscale);
+		const int level = side_a && side_b ? 3 : side_a + side_b + corner;
+		const float factor = 1.0f - 0.16f * level;
+		const u16 day = static_cast<u16>((face_light & 0xff) * factor);
+		const u16 night = static_cast<u16>((face_light >> 8) * factor);
+		lights[i] = day | (night << 8);
+	}
+}
+
+// This is a fixed artistic light direction, not the animated sun position.
+static void applyFmFarDirectionalLight(video::SColor &color, const v3f &normal)
+{
+	static thread_local const float strength =
+			std::clamp(g_settings->getFloat("farmesh_directional_light"), 0.0f, 1.0f);
+	const float facing = std::clamp((normal.X + normal.Z) * 0.70710678f, -1.0f, 1.0f);
+	const float factor = 1.0f - strength * (1.0f - facing) * 0.5f;
+	color.setRed(core::round32(color.getRed() * factor));
+	color.setGreen(core::round32(color.getGreen() * factor));
+	color.setBlue(core::round32(color.getBlue() * factor));
+}
+
 static bool canMergeFmFarFaces(
 		const FmFarFace &first, const FmFarFace &second, bool along_u)
 {
@@ -216,8 +276,10 @@ static FastFace makeFastFace(const TileSpec &tile, const u16 input_lights[4],
 		// Preserve the rotated corner order when curved geometry replaces the
 		// axis-aligned normal and reapplies directional shading.
 		face.unshaded_colors[i] = color;
-		if (!emissive_light)
+		if (!emissive_light) {
 			applyFacesShading(color, normal);
+			applyFmFarDirectionalLight(color, normal);
+		}
 		face.vertices[i] =
 				video::S3DVertex(v3f::from(position), normal, color, texture_coords[i]);
 	}
@@ -412,16 +474,16 @@ bool MapblockMeshGenerator::drawFmScaledNode()
 				continue;
 
 			u16 face_lights[4];
-			if (data->m_smooth_lighting) {
-				v3pos_t corners[4];
-				getFmNodeVertexDirs(tile_dirs[face], corners);
-				for (int vertex = 0; vertex < 4; ++vertex) {
-					face_lights[vertex] = getSmoothLightSolid(blockpos_nodes + cur_node.p,
-							tile_dirs[face], corners[vertex], data);
-				}
-			} else {
-				std::fill_n(face_lights, 4, lights[face]);
-			}
+			getFmFarCornerLights(data, blockpos_nodes + cur_node.p, tile_dirs[face],
+					getFaceLight(cur_node.n,
+							data->m_vmanip
+									.getNodeRefAndVisible(
+											blockpos_nodes + cur_node.p +
+													tile_dirs[face] * data->fscale,
+											data->far_step)
+									.first,
+							nodedef),
+					cur_node.f->light_source, face_lights);
 
 			const auto fast_face = makeFastFace(tiles[face], face_lights, texture_pos,
 					center, tile_dirs[face], scale, data->fscale,
@@ -573,16 +635,9 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 		for (auto &layer : result.tile.layers)
 			layer.material_flags |= MATERIAL_FLAG_BACKFACE_CULLING;
 
-		if (data->m_smooth_lighting) {
-			v3pos_t corners[4];
-			getFmNodeVertexDirs(dir, corners);
-			for (int vertex = 0; vertex < 4; ++vertex) {
-				result.lights[vertex] = getSmoothLightSolid(
-						blockpos_nodes + pos, dir, corners[vertex], data);
-			}
-		} else {
-			std::fill_n(result.lights, 4, getFaceLight(cur_node.n, neighbor, nodedef));
-		}
+		getFmFarCornerLights(data, blockpos_nodes + pos, dir,
+				getFaceLight(cur_node.n, neighbor, nodedef), result.emissive_light,
+				result.lights);
 		return result;
 	};
 	const auto append_rectangle = [&](const FmFarFace &face, const v3pos_t &dir,
@@ -619,8 +674,10 @@ bool MapblockMeshGenerator::generateFmFarFastFaces()
 						(surface.position - v3opos_t::from(blockpos_nodes)) * BS);
 				vertex.Normal = v3f::from(surface.normal);
 				vertex.Color = fast_face.unshaded_colors[i];
-				if (!face.emissive_light)
+				if (!face.emissive_light) {
 					applyFacesShading(vertex.Color, vertex.Normal);
+					applyFmFarDirectionalLight(vertex.Color, vertex.Normal);
+				}
 			}
 		}
 		u16 indices[6];
