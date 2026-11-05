@@ -486,7 +486,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						sample_pos.Z %= MAP_BLOCKSIZE;
 						return sample_block_it->second->getNodeNoLock(sample_pos);
 					};
-			// TODO: tune block selector
+					// TODO: tune block selector
 
 #if 0
 // Simple grid aligned
@@ -782,8 +782,10 @@ bool WorldMerger::merge_one_step(
 					merge_one_block(dbase_current, dbase_up, bpos_aligned, step);
 			if (stat_block.deferred) {
 				blocks_deferred.emplace(bpos_aligned);
-				if (require_lighting_complete && !step)
+				if (require_lighting_complete && !step) {
+					retry_deferred = true;
 					smap->changed_blocks_for_merge.emplace(bpos);
+				}
 				continue;
 			}
 			blocks_processed.emplace(bpos_aligned);
@@ -808,6 +810,7 @@ bool WorldMerger::merge_one_step(
 #if !EXCEPTION_DEBUG
 		} catch (const std::exception &e) {
 			if (require_lighting_complete && !step) {
+				retry_deferred = true;
 				blocks_deferred.emplace(bpos_aligned);
 				smap->changed_blocks_for_merge.emplace(bpos);
 			}
@@ -815,6 +818,7 @@ bool WorldMerger::merge_one_step(
 						<< stacktrace() << '\n';
 		} catch (...) {
 			if (require_lighting_complete && !step) {
+				retry_deferred = true;
 				blocks_deferred.emplace(bpos_aligned);
 				smap->changed_blocks_for_merge.emplace(bpos);
 			}
@@ -833,6 +837,9 @@ bool WorldMerger::merge_one_step(
 	}
 
 	printstat();
+	if (!blocks_deferred.empty())
+		infostream << "World merge step " << (short)step << " deferred "
+				   << blocks_deferred.size() << " block groups for retry\n";
 
 	return !processed;
 }
@@ -842,7 +849,9 @@ bool WorldMerger::merge_list(std::unordered_set<v3bpos_t> &blocks_todo)
 	std::lock_guard<std::mutex> lock(merge_mutex);
 	for (block_step_t step = 0; step < FARMESH_STEP_MAX - 1; ++step) {
 		if (merge_one_step(step, blocks_todo)) {
-			return true;
+			// No work ready at this level ends this pass, not the merge thread.
+			// Deferred blocks remain queued and will be retried on the next pass.
+			return stop();
 		}
 	}
 	return false;
@@ -873,13 +882,15 @@ bool WorldMerger::merge_server_diff(
 	std::unordered_set<v3bpos_t> blocks_todo;
 	{
 		const auto lock = smap_changed_blocks_for_merge.lock_unique_rec();
-		if (smap_changed_blocks_for_merge.size() < min_blocks) {
+		if (smap_changed_blocks_for_merge.empty() ||
+				(!retry_deferred && smap_changed_blocks_for_merge.size() < min_blocks)) {
 			return false;
 		}
 
 		blocks_todo = smap_changed_blocks_for_merge;
 		smap_changed_blocks_for_merge.clear();
 	}
+	retry_deferred = false;
 	return merge_list(blocks_todo);
 }
 
