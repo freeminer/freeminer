@@ -661,11 +661,17 @@ bool ServerEnvironment::setNode(v3pos_t p, const MapNode &n, s16 fast, bool impo
 
 	const ContentFeatures &cf_old = ndef->get(n_old);
 
-	// Call destructor
+	// fm: Do not queue callbacks for a rejected write.
+	if (n.getContent() == CONTENT_IGNORE) {
+		return false;
+	}
+	// ===
+/* moved down
 	if (cf_old.has_on_destruct)
 	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_on_destruct(p, n_old);
 	   });
+*/
 	// Replace node
 	if (fast) {
 		try {
@@ -677,13 +683,22 @@ bool ServerEnvironment::setNode(v3pos_t p, const MapNode &n, s16 fast, bool impo
 					nn.param1 = 5; // will be recalculated by next light step
 			}
 			m_map->setNode(p, nn, important);
-		} catch(const InvalidPositionException &e) { }
+		} catch (const InvalidPositionException &e) {
+			return false;
+		}
 	} else {
 
 	if (!m_map->addNodeWithEvent(p, n, true, important))
 		return false;
 	}
 
+	// fm: Queue the destructor only after a successful map write.
+	// Call destructor
+	if (cf_old.has_on_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
+		m_script->node_on_destruct(p, n_old);
+	   });
+	// ===
 	m_circuit.addNode(p);
 
 	// Update active VoxelManipulator if a mapgen thread
@@ -713,10 +728,12 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 	MapNode n_old = m_map->getNode(p);
 
 	// Call destructor
+/*
 	if (ndef->get(n_old).has_on_destruct)
 	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_on_destruct(p, n_old);
 	   });
+*/
 
 	// Replace with air
 	// This is slightly optimized compared to addNodeWithEvent(air)
@@ -727,12 +744,21 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 			if (fast == 2)
 				n.param1 = n_old.param1;
 			m_map->setNode(p, n, important);
-		} catch(const InvalidPositionException &e) { }
+		} catch (const InvalidPositionException &e) {
+			return false;
+		}
 	} else
 
 	if (!m_map->removeNodeWithEvent(p, fast, important))
 		return false;
 
+	// fm: Queue the destructor only after a successful map write.
+	// Call destructor
+	if (ndef->get(n_old).has_on_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
+		m_script->node_on_destruct(p, n_old);
+	   });
+	// ===
 	m_circuit.removeNode(p, n_old);
 
 	// Update active VoxelManipulator if a mapgen thread
