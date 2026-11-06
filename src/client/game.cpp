@@ -133,6 +133,14 @@ class GameGlobalShaderUniformSetter : public IShaderUniformSetter
 	CachedPixelShaderSetting<float> m_moon_brightness_pixel{"moonBrightness"};
 	CachedPixelShaderSetting<float>
 		m_volumetric_light_strength_pixel{"volumetricLightStrength"};
+	// fm: coherent sun and depth parameters for the far-fog shaders
+	CachedPixelShaderSetting<float, 3> m_far_fog_sun_direction{"fmFogSunDirection"};
+	CachedVertexShaderSetting<float, 3> m_far_fog_sun_direction_vertex{"fmFogSunDirection"};
+	CachedPixelShaderSetting<float, 4> m_far_fog_sun{"fmFogSun"};
+	CachedPixelShaderSetting<float, 4> m_far_fog_light{"fmFogLight"};
+	CachedPixelShaderSetting<float, 2> m_far_fog_depth_range{"fmFogDepthRange"};
+	CachedPixelShaderSetting<float, 2> m_far_fog_cloud_layer{"fmFogCloudLayer"};
+	// ===
 
 	static constexpr std::array<const char*, 1> SETTING_CALLBACKS = {
 		"exposure_compensation",
@@ -293,6 +301,45 @@ public:
 
 		float saturation = lighting.saturation;
 		m_saturation_pixel.set(&saturation, services);
+
+		// fm: share the real sun and camera range with both far-fog stages.
+		if (m_sky && m_client->getCamera()) {
+			m_client->getEnv().getClientMap().setFarFogMoonDirection(
+					m_sky->getMoonDirection(), m_sky->getMoonVisible());
+			auto *camera_node = m_client->getCamera()->getCameraNode();
+			v3f sun_direction(0.0f, -1.0f, 0.0f);
+			v3f sun_position(0.0f, 0.0f, -1.0f);
+			float sun_brightness = 0.0f;
+			if (m_sky->getSunVisible()) {
+				sun_direction = m_sky->getSunDirection();
+				sun_position = sun_direction;
+				core::matrix4 transform = camera_node->getProjectionMatrix();
+				transform *= camera_node->getViewMatrix();
+				transform.transformVect(sun_position);
+				if (sun_position.getLengthSQ() > 0.000001f)
+					sun_position.normalize();
+				sun_brightness = core::clamp(107.143f * sun_direction.Y, 0.0f, 1.0f);
+			}
+
+			const float twilight =
+					core::clamp(1.0f - std::abs(sun_direction.Y) * 2.5f, 0.0f, 1.0f);
+			const std::array<float, 4> far_fog_sun = {
+					sun_position.X, sun_position.Y, sun_position.Z,
+					sun_brightness * (0.35f + 0.65f * twilight)};
+			m_far_fog_sun_direction.set(sun_direction, services);
+			m_far_fog_sun_direction_vertex.set(sun_direction, services);
+			m_far_fog_sun.set(far_fog_sun.data(), services);
+			const std::array<float, 4> far_fog_light = {1.0f,
+					0.97f - 0.30f * twilight, 0.90f - 0.52f * twilight,
+					far_fog_sun[3]};
+			m_far_fog_light.set(far_fog_light.data(), services);
+			m_far_fog_depth_range.set(
+					v2f(camera_node->getNearValue(), camera_node->getFarValue()), services);
+			m_far_fog_cloud_layer.set(
+					v2f(float(g_settings->getS16("cloud_height") - 90) * BS, 190.0f * BS),
+					services);
+		}
+		// ===
 
 		if (m_volumetric_light_enabled) {
 			// Map directional light to screen space
