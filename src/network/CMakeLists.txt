@@ -29,6 +29,9 @@ set(common_network_SRCS
 )
 
 set(server_network_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_serverpackethandler.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_serverpacketsender.cpp
+
 	${CMAKE_CURRENT_SOURCE_DIR}/serveropcodes.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/serverpackethandler.cpp
 	PARENT_SCOPE
@@ -36,7 +39,10 @@ set(server_network_SRCS
 
 if (BUILD_CLIENT)
 	set(client_network_SRCS
-		${CMAKE_CURRENT_SOURCE_DIR}/clientopcodes.cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/fm_clientpackethandler.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/fm_clientpacketsender.cpp
+
+     	${CMAKE_CURRENT_SOURCE_DIR}/clientopcodes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/clientpackethandler.cpp
 		PARENT_SCOPE
 	)

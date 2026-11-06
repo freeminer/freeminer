@@ -801,6 +801,7 @@ void ClientInterface::UpdatePlayerList()
 }
 
 #if !MINETEST_PROTO
+/*
 void ClientInterface::send(u16 peer_id,u8 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
@@ -813,9 +814,9 @@ void ClientInterface::send(u16 peer_id,u8 channelnum,
 	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
 	send(peer_id, channelnum, data, reliable);
 }
+*/
 #endif
 
-#if MINETEST_PROTO
 void ClientInterface::send(session_t peer_id, NetworkPacket *pkt)
 {
 	auto &ccf = clientCommandFactoryTable[pkt->getCommand()];
@@ -845,8 +846,9 @@ void ClientInterface::sendToAll(NetworkPacket *pkt, ClientState state_min)
 	}
 }
 
-#else
 
+#if !MINETEST_PROTO
+/*
 void ClientInterface::sendToAll(u16 channelnum,
 		SharedBuffer<u8> data, bool reliable)
 {
@@ -863,13 +865,13 @@ void ClientInterface::sendToAll(u16 channelnum,
 		}
 	}
 }
-
 void ClientInterface::sendToAll(u16 channelnum,
 		const msgpack::sbuffer &buffer, bool reliable)
 {
 	SharedBuffer<u8> data((unsigned char*)buffer.data(), buffer.size());
 	sendToAll(channelnum, data, reliable);
 }
+*/
 #endif
 
 //TODO: return here shared_ptr

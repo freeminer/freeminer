@@ -102,9 +102,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "server.h"
 #include "emerge.h"
 #include "fm_world_merge.h"
-#if !MINETEST_PROTO
-#include "network/fm_clientpacketsender.cpp"
-#endif
 #if !CHECK_CLIENT_BUILD() && !NDEBUG
 #include "network/serveropcodes.h"
 #endif
@@ -1247,6 +1244,7 @@ void Client::ReceiveAll()
 			if (!m_con->TryReceive(&pkt))
 				break;
 			ProcessData(&pkt);
+#if MINETEST_PROTO
 		} catch (const con::InvalidIncomingDataException &e) {
 			infostream << "Client::ReceiveAll(): "
 					"InvalidIncomingDataException: what()="
@@ -1259,7 +1257,6 @@ void Client::ReceiveAll()
 			enrich_exception(e, pkt, false);
 			throw;
 #endif
-#if MINETEST_PROTO
 		}
 #endif
 	}
@@ -1365,12 +1362,6 @@ void Client::Send(u16 channelnum, SharedBuffer<u8> data, bool reliable)
 }
 */
 
-#if !MINETEST_PROTO
-void Client::Send(u16 channelnum, const msgpack::sbuffer &data, bool reliable) {
-	g_profiler->add("Client::Send", 1);
-	m_con.Send(PEER_ID_SERVER, channelnum, data, reliable);
-}
-#else
 
 void Client::Send(NetworkPacket* pkt)
 {
@@ -1386,7 +1377,6 @@ void Client::Send(NetworkPacket* pkt)
 	FATAL_ERROR_IF(!scf.name, ("packet type missing in table " + std::to_string(pkt->getCommand())).c_str());
 	m_con->Send(PEER_ID_SERVER, scf.channel, pkt, scf.reliable);
 }
-#endif
 
 // Will fill up 12 + 12 + 4 + 4 + 4 + 1 + 1 + 1 + 4 + 4 bytes
 void writePlayerPos(LocalPlayer *myplayer, ClientMap *clientMap, NetworkPacket *pkt, bool camera_inverted)
@@ -2504,9 +2494,15 @@ bool Client::joinModChannel(const std::string &channel)
 	if (m_modchannel_mgr->channelRegistered(channel))
 		return false;
 
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOSERVER_MODCHANNEL_JOIN, 2 + channel.size());
 	pkt << channel;
 	Send(&pkt);
+#else
+	MSGPACK_PACKET_INIT((int)TOSERVER_MODCHANNEL_JOIN, 1);
+	PACK(TOSERVER_MODCHANNEL_JOIN_NAME, channel);
+	Send(0, buffer, true);
+#endif
 
 	m_modchannel_mgr->joinChannel(channel, 0);
 	return true;
@@ -2517,9 +2513,15 @@ bool Client::leaveModChannel(const std::string &channel)
 	if (!m_modchannel_mgr->channelRegistered(channel))
 		return false;
 
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOSERVER_MODCHANNEL_LEAVE, 2 + channel.size());
 	pkt << channel;
 	Send(&pkt);
+#else
+	MSGPACK_PACKET_INIT((int)TOSERVER_MODCHANNEL_LEAVE, 1);
+	PACK(TOSERVER_MODCHANNEL_LEAVE_NAME, channel);
+	Send(0, buffer, true);
+#endif
 
 	m_modchannel_mgr->leaveChannel(channel, 0);
 	return true;
@@ -2538,9 +2540,18 @@ bool Client::sendModChannelMessage(const std::string &channel, const std::string
 	}
 
 	// @TODO: do some client rate limiting
+	// fm:
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOSERVER_MODCHANNEL_MSG, 2 + channel.size() + 2 + message.size());
 	pkt << channel << message;
 	Send(&pkt);
+#else
+	MSGPACK_PACKET_INIT((int)TOSERVER_MODCHANNEL_MSG, 2);
+	PACK(TOSERVER_MODCHANNEL_MSG_CHANNEL, channel);
+	PACK(TOSERVER_MODCHANNEL_MSG_MESSAGE, message);
+	Send(0, buffer, true);
+#endif
+	// ===
 	return true;
 }
 

@@ -863,6 +863,8 @@ private:
 	void SendFreeminerInit(session_t peer_id, u16 protocol_version);
 	void SendActiveObjectMessages(
 			session_t peer_id, const ActiveObjectMessages &datas, bool reliable = true);
+	void sendNodeChangePkt(const msgpack::sbuffer &buffer, v3s16 block_pos,
+			v3f p, float far_d_nodes, std::unordered_set<u16> *far_players);
 
 public:
 	void SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver, u16 net_proto_version,

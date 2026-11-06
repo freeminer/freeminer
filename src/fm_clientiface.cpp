@@ -19,6 +19,7 @@ You should have received a copy of the GNU General Public License
 along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include "config.h"
 #include "fm_far_calc.h"
 #include "constants.h"
 #include "server/clientiface.h"
@@ -26,6 +27,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "map.h"
 #include "mapblock.h"
+#include "network/connection.h"
+#include "network/networkpacket.h"
 #include "profiler.h"
 #include "remoteplayer.h"
 #include "server/luaentity_sao.h"
@@ -858,6 +861,42 @@ uint32_t RemoteClient::SendFarBlocks(
 
 	return sent_cnt;
 }
+#if !MINETEST_PROTO
+void ClientInterface::send(
+		session_t peer_id, u8 channelnum, SharedBuffer<u8> data, bool reliable)
+{
+	NetworkPacket packet;
+	packet.putRawPacket(&data[0], data.getSize(), peer_id);
+	m_con->Send(peer_id, channelnum, &packet, reliable);
+}
+
+void ClientInterface::send(
+		session_t peer_id, u8 channelnum, const msgpack::sbuffer &buffer, bool reliable)
+{
+	SharedBuffer<u8> data(reinterpret_cast<const u8 *>(buffer.data()), buffer.size());
+	send(peer_id, channelnum, data, reliable);
+}
+
+void ClientInterface::sendToAll(u16 channelnum, SharedBuffer<u8> data, bool reliable)
+{
+	const auto lock = m_clients.lock_shared_rec();
+	for (const auto &[peer_id, client] : m_clients) {
+		if (client && client->net_proto_version != 0) {
+			NetworkPacket packet;
+			packet.putRawPacket(&data[0], data.getSize(), peer_id);
+			m_con->Send(peer_id, channelnum, &packet, reliable);
+		}
+	}
+}
+
+void ClientInterface::sendToAll(
+		u16 channelnum, const msgpack::sbuffer &buffer, bool reliable)
+{
+	SharedBuffer<u8> data(reinterpret_cast<const u8 *>(buffer.data()), buffer.size());
+	sendToAll(channelnum, data, reliable);
+}
+#endif
+
 /*
 RemoteClientVector ClientInterface::getClientList()
 {

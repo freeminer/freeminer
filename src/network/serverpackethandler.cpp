@@ -4,10 +4,7 @@
 
 #include "config.h"
 
-#if !MINETEST_PROTO
-#include "network/fm_serverpackethandler.cpp"
-
-#else //TODO
+#if MINETEST_PROTO
 
 #include "chatmessage.h"
 #include "server.h"

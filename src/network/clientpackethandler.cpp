@@ -3,12 +3,11 @@
 // Copyright (C) 2015 nerzhul, Loic Blot <loic.blot@unix-experience.fr>
 
 #include "config.h"
+
+#if MINETEST_PROTO
 #include "fm_world_merge.h"
 #include "server.h"
 
-#if !MINETEST_PROTO
-#include "network/fm_clientpackethandler.cpp"
-#else //TODO
 #include "emerge.h"
 #include "filesys.h"
 

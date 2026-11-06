@@ -88,9 +88,6 @@
 #include "tool.h"
 #include <iomanip>
 #include <sys/types.h>
-#if !MINETEST_PROTO
-#include "network/fm_serverpacketsender.cpp"
-#endif
 // ===
 
 /*
@@ -1830,7 +1827,6 @@ void Server::printToConsoleOnly(const std::string &text)
 	}
 }
 
-#if MINETEST_PROTO
 void Server::Send(NetworkPacket *pkt)
 {
 	FATAL_ERROR_IF(pkt->getPeerId() == 0, "Server::Send() missing peer ID");
@@ -1852,6 +1848,7 @@ void Server::Send(session_t peer_id, NetworkPacket *pkt)
 	m_clients.send(peer_id, pkt);
 }
 
+#if MINETEST_PROTO
 void Server::SendMovement(session_t peer_id)
 {
 	NetworkPacket pkt(TOCLIENT_MOVEMENT, 12 * sizeof(float), peer_id);
@@ -2951,6 +2948,8 @@ void Server::sendMetadataChanged(const std::unordered_set<v3s16> &positions, flo
 	}
 }
 
+#endif
+
 #if MINETEST_PROTO
 
 void Server::SendBlockNoLock(session_t peer_id, MapBlock *block, u8 ver,
@@ -3437,6 +3436,7 @@ void Server::stepPendingDynMediaCallbacks(float dtime)
 	}
 }
 
+#if MINETEST_PROTO
 void Server::SendMinimapModes(session_t peer_id,
 		std::vector<MinimapMode> &modes, size_t wanted_mode)
 {
@@ -3493,6 +3493,7 @@ void Server::sendDetachedInventories(session_t peer_id, bool incremental)
 
 	m_inventory_mgr->sendDetachedInventories(peer_name, incremental, send_cb);
 }
+#endif
 
 /*
 	Something random
@@ -3550,6 +3551,7 @@ void Server::DisconnectPeer(session_t peer_id)
 	m_con->DisconnectPeer(peer_id);
 }
 
+#if MINETEST_PROTO
 void Server::acceptAuth(session_t peer_id, bool forSudoMode)
 {
 	if (!forSudoMode) {
@@ -4349,6 +4351,7 @@ bool Server::dynamicAddMedia(const DynamicMediaArgs &a)
 
 	// Push file to existing clients
 	if (m_env) {
+#if MINETEST_PROTO
 		NetworkPacket pkt(TOCLIENT_MEDIA_PUSH, 0);
 		pkt << raw_hash << filename;
 		// NOTE: the meaning of this bit was accidentally inverted between proto 39 and 40,
@@ -4362,6 +4365,22 @@ bool Server::dynamicAddMedia(const DynamicMediaArgs &a)
 		pkt << a.token;
 		// Older clients have an awful hack that just throws the data at them
 		legacy_pkt.putLongString(filedata);
+
+#else
+		const auto send_media_push = [this, &raw_hash, &filename, &a, &filedata](
+				session_t peer_id, u8 channel, bool legacy) {
+			MSGPACK_PACKET_INIT((int)TOCLIENT_MEDIA_PUSH, legacy ? 5 : 4);
+			PACK(TOCLIENT_MEDIA_PUSH_HASH, raw_hash);
+			PACK(TOCLIENT_MEDIA_PUSH_FILENAME, filename);
+			PACK(TOCLIENT_MEDIA_PUSH_CACHED, (bool)a.client_cache);
+			if (legacy) {
+				PACK(TOCLIENT_MEDIA_PUSH_DATA, filedata);
+			} else {
+				PACK(TOCLIENT_MEDIA_PUSH_TOKEN, a.token);
+			}
+			m_clients.send(peer_id, channel, buffer, true);
+		};
+#endif
 
 		ClientInterface::AutoLock clientlock(m_clients);
 		for (auto &pair : m_clients.getClientList()) {
@@ -4397,11 +4416,21 @@ bool Server::dynamicAddMedia(const DynamicMediaArgs &a)
 					to push the media over ALL channels to ensure it is processed before
 					it is used. In practice this means channels 1 and 0.
 				*/
+
+#if MINETEST_PROTO
 				m_clients.sendCustom(peer_id, 1, &legacy_pkt, true);
 				m_clients.sendCustom(peer_id, 0, &legacy_pkt, true);
+#else
+				send_media_push(peer_id, 1, true);
+				send_media_push(peer_id, 0, true);
+#endif
 			} else {
 				waiting.emplace(peer_id);
+#if MINETEST_PROTO
 				Send(peer_id, &pkt);
+#else
+				send_media_push(peer_id, 0, false);
+#endif
 			}
 		}
 	}
@@ -4939,6 +4968,7 @@ ModChannel* Server::getModChannel(const std::string &channel)
 	return m_modchannel_mgr->getModChannel(channel);
 }
 
+#if MINETEST_PROTO
 void Server::broadcastModChannelMessage(const std::string &channel,
 		const std::string &message, session_t from_peer)
 {
@@ -4973,6 +5003,7 @@ void Server::broadcastModChannelMessage(const std::string &channel,
 		m_script->on_modchannel_message(channel, sender, message);
 	}
 }
+#endif
 
 Translations *Server::getTranslationLanguage(const std::string &lang_code)
 {
