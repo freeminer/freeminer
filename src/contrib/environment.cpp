@@ -30,6 +30,8 @@
 #endif
 #include "gamedef.h"
 #include "inventory.h"
+#include "nodemetadata.h"
+#include "nodetimer.h"
 #if 0
 #include "mg_schematic.h"
 #include "player.h"
@@ -40,6 +42,7 @@
 #include "script/lua_api/l_item.h"
 #endif
 #include "contrib/fallingsao.h"
+#include "contrib/falling_map_events.h"
 #include "contrib/itemsao.h"
 #if 0
 #include "contrib/playersao.h"
@@ -70,6 +73,9 @@ void ServerEnvironment::contrib_player_globalstep(RemotePlayer* player, float dt
 
 void ServerEnvironment::contrib_globalstep(const float dtime)
 {
+	// One settings lookup per server step instead of one per falling object.
+	m_falling_gravity = v3f(0.0f, -g_settings->getFloat("movement_gravity") * BS, 0.0f);
+
 #if 0
 	// Map autogenerator & updater
 	// This is only triggered when nobody is connected
@@ -122,19 +128,27 @@ void ServerEnvironment::contrib_globalstep(const float dtime)
 
 	// Differed nodeupdates
 	//if (m_nodeupdate_queue.size() > 0) {
-		std::deque<nodeUpdatePos> nuqueue; 
-		int i = 0;
+	std::deque<nodeUpdatePos> nuqueue;
+	int i = 0;
+	{
+		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
+		while (++i < 1000 && !m_nodeupdate_queue.empty()) {
+			const auto &update = m_nodeupdate_queue.front();
+			nuqueue.emplace_back(update);
+			m_nodeupdate_queue.pop_front();
+		}
+	}
+	//m_nodeupdate_queue.clear();
+	//std::sort(nuqueue.begin(), nuqueue.end());
+	//nuqueue.erase(std::unique(nuqueue.begin(), nuqueue.end()), nuqueue.end());
+
+	for (const auto &q : nuqueue) {
 		{
 			std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
-		while(++i < 1000 && !m_nodeupdate_queue.empty()) {nuqueue.emplace_back(m_nodeupdate_queue.front()); m_nodeupdate_queue.pop_front();}
+			m_nodeupdate_pending.erase(nodeUpdateKey(q));
 		}
-		//m_nodeupdate_queue.clear();
-		//std::sort(nuqueue.begin(), nuqueue.end());
-		//nuqueue.erase(std::unique(nuqueue.begin(), nuqueue.end()), nuqueue.end());
-
-		for (const auto &q: nuqueue) {
-			nodeUpdateReal(q.pos, q.recursion_limit, q.fast, q.destroy);
-		}
+		nodeUpdateReal(q.pos, q.recursion_limit, q.fast, q.destroy);
+	}
 	//}
 }
 
@@ -192,49 +206,52 @@ void ServerEnvironment::contrib_lookupitemtogather(RemotePlayer* player, v3f pla
 }
 #endif
 
-std::shared_ptr<epixel::ItemSAO> ServerEnvironment::spawnItemActiveObject(const std::string &itemName,
-		v3opos_t pos, const ItemStack &items)
+std::shared_ptr<epixel::ItemSAO> ServerEnvironment::spawnItemActiveObject(
+		const std::string &itemName, v3opos_t pos, const ItemStack &items)
 {
 	auto obj = std::make_shared<epixel::ItemSAO>(this, pos, "__builtin:item", "");
-		IItemDefManager* idef = m_gamedef->getItemDefManager();
-		float s = 0.2 + 0.1 * (items.count / items.getStackMax(idef));
-		ObjectProperties* objProps = obj->accessObjectProperties();
+	IItemDefManager *idef = m_gamedef->getItemDefManager();
+	float s = 0.2 + 0.1 * (items.count / items.getStackMax(idef));
+	ObjectProperties *objProps = obj->accessObjectProperties();
 
-		objProps->is_visible = true;
-		objProps->visual = OBJECTVISUAL_WIELDITEM;
-		objProps->mesh = "empty.obj";
-		objProps->textures.clear();
-		objProps->textures.push_back(itemName);
-		objProps->physical = true;
-		objProps->collideWithObjects = false;
-		objProps->visual_size = v3f(s, s, s);
-		objProps->collisionbox = core::aabbox3d<f32>(-s,-s,-s,s,s,s);
-		objProps->automatic_rotate = 3.1415 * 0.5;
-		obj->notifyObjectPropertiesModified();
-		obj->attachItems(items);
+	objProps->is_visible = true;
+	objProps->visual = OBJECTVISUAL_WIELDITEM;
+	objProps->mesh = "empty.obj";
+	objProps->textures.clear();
+	objProps->textures.push_back(itemName);
+	objProps->physical = true;
+	objProps->collideWithObjects = false;
+	objProps->visual_size = v3f(s, s, s);
+	objProps->collisionbox = core::aabbox3d<f32>(-s, -s, -s, s, s, s);
+	objProps->automatic_rotate = 3.1415 * 0.5;
+	obj->notifyObjectPropertiesModified();
+	obj->attachItems(items);
 	if (addActiveObject(obj)) {
 		return obj;
 	}
 	return {};
 }
 
-std::shared_ptr<epixel::FallingSAO> ServerEnvironment::spawnFallingActiveObject(const std::string &nodeName,
-		v3opos_t pos, const MapNode& n, int fast)
+std::shared_ptr<epixel::FallingSAO> ServerEnvironment::spawnFallingActiveObject(
+		const std::string &nodeName, v3opos_t pos, const MapNode &n, int fast)
 {
-	auto obj = std::make_shared<epixel::FallingSAO>(this, pos, "__builtin:falling_node", "", fast);
-		ObjectProperties* objProps = obj->accessObjectProperties();
-		objProps->is_visible = true;
-		objProps->visual = OBJECTVISUAL_WIELDITEM;
-		objProps->textures.clear();
-		objProps->textures.push_back(nodeName);
-		objProps->physical = true;
-		objProps->collideWithObjects = false;
-		obj->notifyObjectPropertiesModified();
-		obj->attachNode(n);
-		if (addActiveObject(obj)) {
-			return obj;
-		}
+	auto obj = std::make_shared<epixel::FallingSAO>(
+			this, pos, "__builtin:falling_node", "", fast);
+	ObjectProperties *objProps = obj->accessObjectProperties();
+	objProps->is_visible = true;
+	objProps->visual = OBJECTVISUAL_WIELDITEM;
+	objProps->textures.clear();
+	objProps->textures.push_back(nodeName);
+	objProps->physical = true;
+	objProps->collideWithObjects = false;
+	obj->notifyObjectPropertiesModified();
+	obj->attachNode(n);
+	if (!obj->captureNodeState(floatToInt(pos, BS)))
 		return {};
+	if (addActiveObject(obj)) {
+		return obj;
+	}
+	return {};
 }
 
 #if 0
@@ -337,33 +354,27 @@ const u8 ServerEnvironment::getNodeLight(const v3s16 pos)
  * When node is modified, update node and directly
  * linked nodes
  */
-size_t ServerEnvironment::nodeUpdateReal(const v3pos_t &pos, u8 recursion_limit, u8 fast, bool destroy)
+size_t ServerEnvironment::nodeUpdateReal(
+		const v3pos_t &pos, u8 recursion_limit, u8 fast, bool destroy)
 {
 
 	// Limit nodeUpdate recursion & differ updates to avoid stack overflow
 	if (--recursion_limit <= 0) {
-		std::lock_guard<std::mutex> lock(m_nodeupdate_queue_mutex);
-		m_nodeupdate_queue.emplace_back(nodeUpdatePos{pos});
+		nodeUpdate(pos, 5, fast, destroy);
 		return 1;
 	}
 
-	auto* ndef = m_gamedef->getNodeDefManager();
+	auto *ndef = m_gamedef->getNodeDefManager();
 	MapNode n, n_bottom;
 #if 0
 	ContentFeatures f;
 #endif
-	ItemGroupList groups;
 	size_t ret = 0;
 	// update nodes around
 	for (pos_t x = pos.X - 1; x <= pos.X + 1; x++) {
 		for (pos_t y = pos.Y - 1; y <= pos.Y + 1; y++) {
 			for (pos_t z = pos.Z - 1; z <= pos.Z + 1; z++) {
-				v3pos_t n_pos {x,y,z};
-
-				// If it's current node, ignore
-				if (x == 0 && y == 0 && z == 0) {
-					continue;
-				}
+				v3pos_t n_pos{x, y, z};
 
 				n = m_map->getNode(n_pos);
 				// Current mapblock not loaded, ignore
@@ -372,26 +383,56 @@ size_t ServerEnvironment::nodeUpdateReal(const v3pos_t &pos, u8 recursion_limit,
 				}
 
 				const ContentFeatures &f = ndef->get(n);
-				groups = f.groups;
+				const auto &groups = f.groups;
+				if (!destroy && !itemgroup_get(groups, "falling_node"))
+					continue;
 				n_bottom = m_map->getNode(v3pos_t(x, y - 1, z));
 
-				// Check is the node is considered valid to fall
-				if (n_bottom.getContent() != CONTENT_IGNORE && (destroy || itemgroup_get(groups, "falling_node"))) {
+				// Check if the node is considered valid to fall.
+				if (n_bottom.getContent() != CONTENT_IGNORE) {
 					const ContentFeatures &f_under = ndef->get(n_bottom);
+					const bool same_leveled =
+							n.getContent() == n_bottom.getContent() &&
+							(f_under.leveled || f_under.param_type_2 == CPT2_LEVELED);
+					const NodeMetadata *meta =
+							same_leveled ? m_map->getNodeMetadata(n_pos) : nullptr;
+					const bool has_timer = same_leveled && (!meta || meta->empty()) &&
+										   m_map->getNodeTimer(n_pos).timeout > 0;
 
-					if ((itemgroup_get(groups, "float") == 0 || f_under.liquid_type == LIQUID_NONE) &&
-						(f_under.liquid_type == LIQUID_NONE || f.liquid_type == LIQUID_NONE) &&
-						(f.name.compare(f_under.name) != 0 || (f_under.leveled &&
-							n_bottom.getLevel(ndef) < n_bottom.getMaxLevel(ndef))) &&
-						(!f_under.walkable || f_under.buildable_to)) {
-						if (spawnFallingActiveObject(f.name, intToFloat(v3pos_t(x,y,z),BS), n, fast)) {
-							removeNode(n_pos, fast, false);
-							ret += 1 + nodeUpdateReal(n_pos, recursion_limit, fast, destroy);
+					if ((!same_leveled || ((!meta || meta->empty()) && !has_timer)) &&
+							(itemgroup_get(groups, "float") == 0 ||
+									f_under.liquid_type == LIQUID_NONE ||
+									(f.liquid_type == LIQUID_SOURCE &&
+											f_under.liquid_type == LIQUID_FLOWING)) &&
+							(f.name.compare(f_under.name) != 0 ||
+									((f_under.leveled ||
+											 f_under.param_type_2 == CPT2_LEVELED) &&
+											n_bottom.getLevel(ndef) <
+													n_bottom.getMaxLevel(ndef))) &&
+							(!f_under.walkable || f_under.buildable_to ||
+									((f_under.leveled ||
+											 f_under.param_type_2 == CPT2_LEVELED) &&
+											n.getContent() == n_bottom.getContent() &&
+											n_bottom.getLevel(ndef) <
+													n_bottom.getMaxLevel(ndef)))) {
+						if (auto obj = spawnFallingActiveObject(
+									f.name, intToFloat(n_pos, BS), n, fast)) {
+							if (!removeNode(n_pos, fast, false)) {
+								obj->markForRemoval();
+								continue;
+							}
+							m_map->removeNodeMetadata(n_pos);
+							m_map->removeNodeTimer(n_pos);
+							if (fast)
+								epixel::notifyFallingNodeChange(
+										*m_map, n_pos, MEET_REMOVENODE);
+							ret += 1 +
+								   nodeUpdateReal(n_pos, recursion_limit, fast, destroy);
 						}
 					}
 				}
 
-/*
+				/*
 				if (itemgroup_get(groups, "attached_node")) {
 					if (!checkAttachedNode(n_pos, n, f)) {
 						removeNode(n_pos, fast);
@@ -671,28 +712,40 @@ void ServerEnvironment::handleNodeDrops(const ContentFeatures &f, v3f pos, Playe
 
 #endif
 
-bool ServerEnvironment::checkAttachedNode(const v3pos_t pos, MapNode n, const ContentFeatures &f)
+bool ServerEnvironment::checkAttachedNode(
+		const v3pos_t pos, MapNode n, const ContentFeatures &f)
 {
-	v3pos_t d(0,0,0);
+	v3pos_t d(0, 0, 0);
 	if (f.param_type_2 == CPT2_WALLMOUNTED) {
 		switch (n.param2) {
-			case 0: d.Y = 1; break;
-			case 1: d.Y = -1; break;
-			case 2: d.X = 1; break;
-			case 3: d.X = -1; break;
-			case 4: d.Z = 1; break;
-			case 5: d.Z = -1; break;
+		case 0:
+			d.Y = 1;
+			break;
+		case 1:
+			d.Y = -1;
+			break;
+		case 2:
+			d.X = 1;
+			break;
+		case 3:
+			d.X = -1;
+			break;
+		case 4:
+			d.Z = 1;
+			break;
+		case 5:
+			d.Z = -1;
+			break;
 		}
-	}
-	else {
+	} else {
 		d.Y = -1;
 	}
 
-/*
+	/*
 	bool exists = false;
 */
 	MapNode n2 = m_map->getNode(pos + d);
-	auto* ndef = m_gamedef->getNodeDefManager();
+	auto *ndef = m_gamedef->getNodeDefManager();
 	if (n2.getContent() != CONTENT_IGNORE && !ndef->get(n2).walkable) {
 		return false;
 	}

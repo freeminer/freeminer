@@ -263,9 +263,11 @@ private:
 
 public:
 	void deferFarFog(bool defer) { m_far_fog_deferred = defer; }
+	void setFarFogMoonDirection(const v3f &moon_direction, bool visible);
 	u32 renderFarFog(video::IVideoDriver *driver, video::ITexture *depth = nullptr);
 
 private:
+	std::atomic<float> m_far_fog_moon_brightness{0.0f};
 	bool m_far_fog_deferred = false;
 	core::matrix4 m_far_fog_view;
 	core::matrix4 m_far_fog_projection;
@@ -295,13 +297,11 @@ private:
 	std::mutex m_far_fog_terrain_cache_mutex;
 	std::atomic_uint8_t m_far_fog_cells_current = 0;
 	std::atomic_bool m_far_fog_cells_ready = false;
-	v3bpos_t m_far_fog_cells_origin;
 	uint32_t m_far_fog_cells_iteration_draw = 0;
 	async_step_runner m_far_fog_async;
 	bool m_far_fog_mesh_valid = false;
 	bool m_far_fog_mesh_cells_ready = false;
 	uint8_t m_far_fog_mesh_cells_current = 0;
-	v3pos_t m_far_fog_mesh_camera_bucket;
 	v3pos_t m_far_fog_mesh_camera_offset;
 	v3f m_far_fog_mesh_camera_direction = v3f(0.0f, 0.0f, 1.0f);
 	uint16_t m_far_fog_mesh_time_bucket = 0;

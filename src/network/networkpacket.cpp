@@ -578,6 +578,12 @@ NetworkPacket& NetworkPacket::operator<<(video::SColor src)
 
 Buffer<u8> NetworkPacket::oldForgePacket()
 {
+// fm: MessagePack owns its command field and has no binary command prefix.
+#if !MINETEST_PROTO
+	return Buffer<u8>(m_data.data(), m_datasize);
+#endif
+// ===
+
 	// this is the dummy packet used to first contact the server
 	if (m_command == 0) {
 		assert(m_datasize == 0);

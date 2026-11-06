@@ -140,7 +140,15 @@ void LuaEntitySAO::dispatchScriptDeactivate(bool removal)
 		m_env->getScriptIface()->luaentity_Deactivate(m_id, removal);
 }
 
+// fm: Share movement and network updates with native entities.
 void LuaEntitySAO::step(float dtime, bool send_recommended)
+{
+	stepWithCollision(dtime, send_recommended, nullptr);
+}
+
+// ===
+void LuaEntitySAO::stepWithCollision(
+		float dtime, bool send_recommended, CollisionMoveResult *result)
 {
 	if (!m_properties_sent) {
 		std::string str = getPropertyPacket();
@@ -227,6 +235,10 @@ void LuaEntitySAO::step(float dtime, bool send_recommended)
 			markForRemoval();
 	}
 
+	// fm: Return the same collision result that Lua entities receive.
+	if (result)
+		*result = moveresult;
+	// ===
 	if (!send_recommended)
 		return;
 

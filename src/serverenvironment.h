@@ -9,6 +9,9 @@
 
 #include <memory> // std::unique_ptr
 #include <set>
+// fm: Falling update queue keys
+#include <tuple>
+// ===
 #include <unordered_map>
 #include <utility> // std::function
 #include <vector>
@@ -326,11 +329,19 @@ private:
 	IntervalLimiter m_analyze_blocks_interval;
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3pos_t> m_abm_random_blocks;
+	v3f m_falling_gravity = v3f(0.0f, 0.0f, 0.0f);
 public:
 	size_t blockStep(MapBlockPtr block, float dtime = 0, uint8_t activate = 0);
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 	size_t nodeUpdate(const v3pos_t &pos, u8 recursion_limit = 5, u8 fast = 2, bool destroy = false);
+	// fm: Gravity is refreshed once per server step for falling objects.
+	v3f getFallingGravity(const v3bpos_t &block_pos) const
+	{
+		(void)block_pos; // Reserved for a spatially varying gravity field.
+		return m_falling_gravity;
+	}
+	// ===
 
 private:
 	struct nodeUpdatePos
@@ -353,6 +364,15 @@ private:
 /*
 	void explodeNode(const v3s16 pos);
 */
+
+	// Deduplicate only updates with identical behavior.
+	using NodeUpdateKey = std::tuple<pos_t, pos_t, pos_t, u8, int, bool>;
+	static NodeUpdateKey nodeUpdateKey(const nodeUpdatePos &update)
+	{
+		return {update.pos.X, update.pos.Y, update.pos.Z, update.recursion_limit,
+				update.fast, update.destroy};
+	}
+	std::set<NodeUpdateKey> m_nodeupdate_pending;
 
 	std::deque<nodeUpdatePos> m_nodeupdate_queue;
 	std::mutex m_nodeupdate_queue_mutex;

@@ -556,9 +556,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 
 void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 {
-	NetworkPacket pkt(TOCLIENT_FREEMINER_INIT, 0, peer_id);
-
-	MSGPACK_PACKET_INIT((int)TOCLIENT_INIT_LEGACY, 4);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_FREEMINER_INIT, 4);
 
 	Settings params;
 	m_emerge->mgparams->MapgenParams::writeParams(&params);
@@ -567,15 +565,17 @@ void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 	PACK(TOCLIENT_INIT_GAMEID, m_gamespec.id);
 
 	PACK(TOCLIENT_INIT_PROTOCOL_VERSION_FM, SERVER_PROTOCOL_VERSION_FM);
-
 	PACK(TOCLIENT_INIT_WEATHER, g_settings->getBool("weather"));
 
-	pkt.putLongString({buffer.data(), buffer.size()});
-
 	verbosestream << "Server: Sending freeminer init to id(" << peer_id
-				  << "): size=" << pkt.getSize() << std::endl;
-
+				  << "): size=" << buffer.size() << std::endl;
+#if MINETEST_PROTO
+	NetworkPacket pkt(TOCLIENT_FREEMINER_INIT, 0, peer_id);
+	pkt.putLongString({buffer.data(), buffer.size()});
 	Send(&pkt);
+#else
+	m_clients.send(peer_id, 0, buffer, true);
+#endif
 }
 
 void Server::handleCommand_InitFm(NetworkPacket *pkt)
@@ -809,9 +809,13 @@ void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1, block->data[0].param1);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2, block->data[0].param2);
 
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOCLIENT_BLOCKDATA_FM, buffer.size(), peer_id);
 	pkt.putLongString({buffer.data(), buffer.size()});
 	Send(&pkt);
+#else
+	m_clients.send(peer_id, 2, buffer, true);
+#endif
 }
 
 void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8 ver,
@@ -822,7 +826,7 @@ void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8
 
 	g_profiler->add("Connection: blocks sent", 1);
 
-	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATA_FM, 2);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATAS_FM, 2);
 	PACK(TOCLIENT_BLOCKDATA_BLOCKS, blocks.size());
 	msgpack::sbuffer buffer_blocks;
 	msgpack::packer<msgpack::sbuffer> pk_blocks(&buffer_blocks);
@@ -851,9 +855,13 @@ void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8
 	PACK(TOCLIENT_BLOCKDATA_BLOCKS_DATA,
 			std::string(buffer_blocks.data(), buffer_blocks.size()));
 
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOCLIENT_BLOCKDATAS_FM, buffer.size(), peer_id);
 	pkt.putLongString({buffer.data(), buffer.size()});
 	Send(&pkt);
+#else
+	m_clients.send(peer_id, 2, buffer, true);
+#endif
 }
 
 void Server::QueueFarBlockReady(const MapBlockPtr &block, block_step_t step)

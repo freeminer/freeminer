@@ -195,7 +195,9 @@ ServerEnvironment::ServerEnvironment(std::unique_ptr<ServerMap> map,
 	m_server(server)
 {
 
-    //fm:
+    // fm:
+	// Initialize the falling-object gravity cache before the first step.
+	m_falling_gravity = v3f(0.0f, -g_settings->getFloat("movement_gravity") * BS, 0.0f);
 	m_use_weather = g_settings->getBool("weather");
 	m_use_weather_biome = g_settings->getBool("weather_biome");
 
@@ -659,11 +661,17 @@ bool ServerEnvironment::setNode(v3pos_t p, const MapNode &n, s16 fast, bool impo
 
 	const ContentFeatures &cf_old = ndef->get(n_old);
 
-	// Call destructor
+	// fm: Do not queue callbacks for a rejected write.
+	if (n.getContent() == CONTENT_IGNORE) {
+		return false;
+	}
+	// ===
+/* moved down
 	if (cf_old.has_on_destruct)
 	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_on_destruct(p, n_old);
 	   });
+*/
 	// Replace node
 	if (fast) {
 		try {
@@ -675,13 +683,22 @@ bool ServerEnvironment::setNode(v3pos_t p, const MapNode &n, s16 fast, bool impo
 					nn.param1 = 5; // will be recalculated by next light step
 			}
 			m_map->setNode(p, nn, important);
-		} catch(const InvalidPositionException &e) { }
+		} catch (const InvalidPositionException &e) {
+			return false;
+		}
 	} else {
 
 	if (!m_map->addNodeWithEvent(p, n, true, important))
 		return false;
 	}
 
+	// fm: Queue the destructor only after a successful map write.
+	// Call destructor
+	if (cf_old.has_on_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
+		m_script->node_on_destruct(p, n_old);
+	   });
+	// ===
 	m_circuit.addNode(p);
 
 	// Update active VoxelManipulator if a mapgen thread
@@ -711,10 +728,12 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 	MapNode n_old = m_map->getNode(p);
 
 	// Call destructor
+/*
 	if (ndef->get(n_old).has_on_destruct)
 	   m_script->postponed.emplace_back([=, this]() {
 		m_script->node_on_destruct(p, n_old);
 	   });
+*/
 
 	// Replace with air
 	// This is slightly optimized compared to addNodeWithEvent(air)
@@ -725,12 +744,21 @@ bool ServerEnvironment::removeNode(v3pos_t p, s16 fast, bool important)
 			if (fast == 2)
 				n.param1 = n_old.param1;
 			m_map->setNode(p, n, important);
-		} catch(const InvalidPositionException &e) { }
+		} catch (const InvalidPositionException &e) {
+			return false;
+		}
 	} else
 
 	if (!m_map->removeNodeWithEvent(p, fast, important))
 		return false;
 
+	// fm: Queue the destructor only after a successful map write.
+	// Call destructor
+	if (ndef->get(n_old).has_on_destruct)
+	   m_script->postponed.emplace_back([=, this]() {
+		m_script->node_on_destruct(p, n_old);
+	   });
+	// ===
 	m_circuit.removeNode(p, n_old);
 
 	// Update active VoxelManipulator if a mapgen thread
@@ -1966,10 +1994,11 @@ void ServerEnvironment::activateObjects(MapBlock *block, u32 dtime_s)
 				<< "failed to create active object from static object "
 				<< "in block " << block->getPos()
 				<< " type=" << (int)s_obj.type << " data:" << std::endl;
-			break;
+			// fm: Preserve failed static objects and continue activating the block.
 			print_hexdump(verbosestream, s_obj.data);
 
 			new_stored.push_back(s_obj);
+			// ===
 			continue;
 		}
 

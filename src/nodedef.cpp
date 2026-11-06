@@ -923,7 +923,10 @@ void NodeDefManager::clear()
 	m_name_id_mapping.clear();
 	m_name_id_mapping_with_aliases.clear();
 	m_group_to_items.clear();
-	m_next_id = 0;
+	// fm: ID zero is CONTENT_IGNORE in the Freeminer protocol and must not
+	// be allocated to a registered node.
+	m_next_id = CONTENT_IGNORE + 1;
+	// ===
 	m_selection_box_union.reset(0,0,0);
 	m_selection_box_int_union.reset(0,0,0);
 #if CHECK_CLIENT_BUILD()
