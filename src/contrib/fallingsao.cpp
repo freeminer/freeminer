@@ -21,25 +21,21 @@
 #include "falling_map_events.h"
 #include "collision.h"
 #include "environment.h"
-#include "inventory.h"
 #include "irr_v3d.h"
 #include "map.h"
 #include "mapblock.h"
 #include "mapnode.h"
 #include "nodedef.h"
 #include "nodemetadata.h"
-#include "settings.h"
-#include "scripting_server.h"
 #include "server.h"
 //#include "scripting_game.h"
 #include "serverenvironment.h"
 #include "servermap.h"
+#include "util/numeric.h"
 #include "util/serialize.h"
 #include <cmath>
 #include <limits>
 #include <sstream>
-
-#include "log_types.h"
 
 namespace epixel
 {
@@ -200,12 +196,13 @@ bool FallingSAO::escapeFromNode(const v3opos_t &pos, const v3pos_t &node_pos)
 	aabb3f object_box = m_prop.collisionbox;
 	object_box.MinEdge *= BS;
 	object_box.MaxEdge *= BS;
-	aabb3f overlap_box = object_box;
+	aabb3o overlap_box = ToOpos(object_box);
 	overlap_box.MinEdge += pos + v3opos_t(0.1f * BS);
 	overlap_box.MaxEdge += pos - v3opos_t(0.1f * BS);
 	const v3opos_t node_origin = intToFloat(node_pos, BS);
 	bool embedded = false;
-	for (auto box : node_boxes) {
+	for (const auto &boxf : node_boxes) {
+		auto box = ToOpos(boxf);
 		box.MinEdge += node_origin;
 		box.MaxEdge += node_origin;
 		if (box.intersectsWithBox(overlap_box)) {
