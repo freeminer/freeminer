@@ -39,30 +39,13 @@ float smoothstep_f(float edge0, float edge1, float x)
 	return t * t * (3.0f - 2.0f * t);
 }
 
-float far_fog_wicked_time_of_day(float time_of_day)
+float far_fog_moon_elevation(v3f moon_direction, const v3f &local_up)
 {
-	constexpr float nightlength = 0.415f;
-	constexpr float wn = nightlength / 2.0f;
-	if (time_of_day > wn && time_of_day < 1.0f - wn)
-		return (time_of_day - wn) / (1.0f - wn * 2.0f) * 0.5f + 0.25f;
-	if (time_of_day < 0.5f)
-		return time_of_day / wn * 0.25f;
-	return 1.0f - ((1.0f - time_of_day) / wn * 0.25f);
-}
-
-float far_fog_moon_brightness(float time_of_day, const v3opos_t &camera_position)
-{
-	const float wicked_time = far_fog_wicked_time_of_day(time_of_day);
-	v3f moon_direction(0.0f, 0.0f, -1.0f);
-	moon_direction.rotateXZBy(270.0f);
-	moon_direction.rotateXYBy(wicked_time * 360.0f - 90.0f);
-
-	const v3pos_t player_position = floatToInt(camera_position, BS);
-	const float orbit_tilt =
-			-70.0f * static_cast<float>(player_position.Z) / MAX_MAP_GENERATION_LIMITF;
-	moon_direction.rotateYZBy(orbit_tilt);
-
-	return std::clamp(107.143f * moon_direction.Y, 0.0f, 1.0f);
+	if (moon_direction.getLengthSQ() < 0.0001f || local_up.getLengthSQ() < 0.0001f)
+		return 0.0f;
+	moon_direction.normalize();
+	const float elevation = moon_direction.dotProduct(local_up);
+	return std::pow(std::clamp(elevation, 0.0f, 1.0f), 1.4f);
 }
 
 u8 far_fog_color_channel(float value, float light)
@@ -429,6 +412,22 @@ float far_fog_average_terrain_y(
 }
 }
 
+void ClientMap::setFarFogMoonDirection(const v3f &moon_direction, bool visible)
+{
+	v3f local_up(0.0f, 1.0f, 0.0f);
+	if (m_client) {
+		const auto *earth = dynamic_cast<MapgenEarth *>(m_client->far_container.m_mg);
+		if (earth && earth->projection.curved) {
+			const v3pos_t player_position = floatToInt(m_camera_position, BS);
+			local_up = v3f::from(earth->projection.up(v3opos_t::from(player_position)));
+		}
+	}
+
+	const float brightness =
+			visible ? far_fog_moon_elevation(moon_direction, local_up) : 0.0f;
+	m_far_fog_moon_brightness.store(brightness, std::memory_order_relaxed);
+}
+
 void ClientMap::initFarFogMaterial()
 {
 	if (m_far_fog_material_ready)
@@ -437,8 +436,8 @@ void ClientMap::initFarFogMaterial()
 	auto *shader_source = m_client->getShaderSource();
 	const int quality =
 			std::clamp<int>(g_settings->getS32("volumetric_fog_quality"), 1, 2);
-	const ShaderConstants constants{
-			{"FM_FOG_QUALITY", quality}, {"FM_FOG_DEPTH_TEST", 0}};
+	const ShaderConstants constants{{"FM_FOG_QUALITY", quality}, {"FM_FOG_DEPTH_TEST", 0},
+			{"FM_FOG_DENSITY_TARGET", 0}};
 	const u32 shader_id = shader_source->getShader(
 			"far_fog_shader", constants, video::EMT_TRANSPARENT_ALPHA_CHANNEL);
 
@@ -474,7 +473,9 @@ void ClientMap::updateFarFogCells(pos_t fog_range)
 	const auto camera_scene_position =
 			far_fog_scene_camera_position(m_camera_position, m_camera_offset);
 	const auto far_iteration_clean_snapshot = far_iteration_clean;
-	if (m_far_fog_cells_ready && player_block_pos == m_far_fog_cells_origin &&
+	// Camera movement alone must not reseed or replace the existing fog cells.
+	// Geometry can still refresh when farmesh publishes a changed iteration.
+	if (m_far_fog_cells_ready &&
 			m_far_fog_cells_iteration_draw == far_iteration_draw_snapshot)
 		return;
 
@@ -739,7 +740,6 @@ void ClientMap::updateFarFogCells(pos_t fog_range)
 				}
 			});
 	if (async_status != async_step_runner::IN_PROGRESS) {
-		m_far_fog_cells_origin = player_block_pos;
 		m_far_fog_cells_iteration_draw = far_iteration_draw_snapshot;
 	}
 }
@@ -772,13 +772,7 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		forward = v3f(0.0f, 0.0f, 1.0f);
 	forward.normalize();
 
-	constexpr pos_t camera_bucket_size = MAP_BLOCKSIZE;
 	const v3pos_t camera_node = floatToInt(m_camera_position, BS);
-	const v3pos_t camera_bucket{
-			static_cast<pos_t>(camera_node.X / camera_bucket_size),
-			static_cast<pos_t>(camera_node.Y / camera_bucket_size),
-			static_cast<pos_t>(camera_node.Z / camera_bucket_size),
-	};
 	const float time_of_day = m_client->getEnv().getTimeOfDayF();
 	const auto time_bucket = static_cast<uint16_t>(
 			std::clamp<int>(static_cast<int>(std::lround(time_of_day * 240.0f)), 0, 240));
@@ -791,7 +785,6 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	if (m_far_fog_mesh_valid && m_far_fog_mesh_cells_ready == cells_ready &&
 			m_far_fog_mesh_cells_current == cells_current &&
 			m_far_fog_mesh_iteration_draw == cells_iteration &&
-			m_far_fog_mesh_camera_bucket == camera_bucket &&
 			m_far_fog_mesh_camera_offset == m_camera_offset &&
 			m_far_fog_mesh_time_bucket == time_bucket &&
 			m_far_fog_mesh_fov == m_camera_fov && !direction_changed) {
@@ -842,7 +835,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	const u32 daynight_ratio = m_client->getEnv().getDayNightRatio();
 	const float daylight =
 			smoothstep_f(175.0f, 700.0f, static_cast<float>(daynight_ratio));
-	const float moon_brightness = far_fog_moon_brightness(time_of_day, m_camera_position);
+	const float moon_brightness =
+			m_far_fog_moon_brightness.load(std::memory_order_relaxed);
 	const float night_brightness = 0.12f + moon_brightness * 0.48f;
 	const float fog_light =
 			std::clamp(daylight + (1.0f - daylight) * night_brightness, 0.10f, 1.0f);
@@ -874,8 +868,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	};
 	const auto fog_color_for_climate = [&](u8 alpha, const FarFogClimate &climate,
 											   const FarFogAltitudeProfile &altitude,
-											   float fog_y_relative_nodes, float density,
-											   float top_view) {
+											   float fog_y_relative_nodes,
+											   float density) {
 		const float cold = 1.0f - smoothstep_f(-5.0f, 35.0f, climate.heat);
 		const float humidity = std::clamp(climate.humidity, 0.0f, 100.0f);
 		const float thin_mist = 1.0f - smoothstep_f(52.0f, 78.0f, humidity);
@@ -888,12 +882,9 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 				altitude.cave || !storm_height
 						? 0.0f
 						: smoothstep_f(FAR_FOG_STORM_HUMIDITY, 100.0f, humidity);
-		const float storm_light = 1.0f - storm_cloud * (0.38f + daylight * 0.12f);
+		const float storm_light = 1.0f - storm_cloud * (0.10f + daylight * 0.06f);
 		const float density_light = std::clamp(
-				1.0f - density_shadow * (0.07f + humidity_shadow * 0.16f) -
-						top_view * (0.14f + density_shadow * 0.18f +
-										   humidity_shadow * 0.10f + daylight * 0.06f),
-				0.56f, 1.0f);
+				1.0f - density_shadow * (0.04f + humidity_shadow * 0.06f), 0.56f, 1.0f);
 		constexpr float light_r = 190.0f;
 		constexpr float light_g = 198.0f;
 		constexpr float light_b = 214.0f;
@@ -1056,14 +1047,12 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 				cell_min.Y + (visual_center_y_nodes - cell_min_y_nodes) * BS +
 						center_jitter.Y,
 				cell_min.Z + cell_size * 0.5f + center_jitter.Z);
-		v3f local_up(0, 1, 0);
 		if (projection) {
 			const auto sample = projection->sample(world_center);
 			const auto placed =
 					projection->place(sample.lat, sample.lon, visual_center_y_nodes);
 			visual_center = v3f::from((placed - v3opos_t::from(m_camera_offset)) * BS) +
 							center_jitter;
-			local_up = v3f::from(projection->up(placed));
 		}
 
 		const float cell_box_distance =
@@ -1097,15 +1086,8 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 		}
 		const auto alpha =
 				static_cast<u8>(std::clamp(alpha_f * fog_alpha_scale, 1.0f, 196.0f));
-		const float top_view =
-				altitude.cave
-						? 0.0f
-						: smoothstep_f(0.15f, 0.85f, -forward.dotProduct(local_up)) *
-								  smoothstep_f(30.0f, 220.0f,
-										  static_cast<float>(camera_altitude) -
-												  visual_center_y_nodes);
 		const auto color = fog_color_for_climate(alpha, climate, altitude,
-				visual_center_y_nodes - terrain_y_nodes, density, top_view);
+				visual_center_y_nodes - terrain_y_nodes, density);
 
 		const v3f rx = right * half_width;
 		const v3f uy = up * half_height;
@@ -1476,7 +1458,6 @@ u32 ClientMap::rebuildFarFogMeshBuffer()
 	m_far_fog_mesh_cells_ready = cells_ready;
 	m_far_fog_mesh_cells_current = cells_current;
 	m_far_fog_mesh_iteration_draw = cells_iteration;
-	m_far_fog_mesh_camera_bucket = camera_bucket;
 	m_far_fog_mesh_camera_offset = m_camera_offset;
 	m_far_fog_mesh_camera_direction = forward;
 	m_far_fog_mesh_time_bucket = time_bucket;
@@ -1524,11 +1505,14 @@ u32 ClientMap::renderFarFog(video::IVideoDriver *driver, video::ITexture *depth)
 			const int quality =
 					std::clamp<int>(g_settings->getS32("volumetric_fog_quality"), 1, 2);
 			m_far_fog_depth_shader = source->getShader("far_fog_shader",
-					{{"FM_FOG_QUALITY", quality}, {"FM_FOG_DEPTH_TEST", 1}},
+					{{"FM_FOG_QUALITY", quality}, {"FM_FOG_DEPTH_TEST", 1},
+							{"FM_FOG_DENSITY_TARGET", 1}},
 					video::EMT_SOLID);
 		}
 		material.MaterialType = source->getShaderInfo(m_far_fog_depth_shader).material;
-		// Accumulate premultiplied RGB and coverage in the transparent target.
+		// Accumulate premultiplied RGB, coverage, and underside optical depth.
+		// Alpha cancellation in the density output preserves the optical depth
+		// integral while sharing the existing object-space blend factors.
 		// Use explicit shader blending: fixed-pipeline blend materials are rejected
 		// by ShaderSource, and the alpha-channel base overrides separate factors.
 		material.BlendOperation = video::EBO_ADD;

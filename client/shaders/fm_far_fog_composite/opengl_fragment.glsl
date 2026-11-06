@@ -2,7 +2,14 @@
 uniform sampler2D texture0;
 uniform sampler2D texture1;
 uniform sampler2D texture2;
+uniform sampler2D texture3;
 uniform vec2 texelSize0;
+uniform lowp vec4 fogColor;
+uniform float fogDistance;
+uniform float fogShadingParameter;
+uniform lowp vec4 fmFogSun;
+uniform lowp vec4 fmFogLight;
+uniform vec2 fmFogDepthRange;
 VARYING_ highp vec2 varTexCoord;
 
 void main(void)
@@ -15,6 +22,8 @@ void main(void)
 	float total = 0.0;
 	vec4 closest = vec4(0.0);
 	float closest_error = 1e20;
+	float optical_depth = 0.0;
+	float closest_optical_depth = 0.0;
 	for (int y = 0; y < 2; ++y) {
 		for (int x = 0; x < 2; ++x) {
 			vec2 offset = vec2(float(x), float(y));
@@ -24,20 +33,59 @@ void main(void)
 			// Relative perspective-depth difference; reject across silhouettes.
 			float error = abs(sample_depth - depth) / max(1.0 - depth, 1e-7);
 			vec4 value = texture2D(texture0, uv);
+			float sample_optical_depth = texture2D(texture3, uv).r;
 			if (error < closest_error) {
 				closest_error = error;
 				closest = value;
+				closest_optical_depth = sample_optical_depth;
 			}
 			vec2 weights = mix(vec2(1.0) - fraction, fraction, offset);
 			float weight = weights.x * weights.y * (1.0 - smoothstep(0.01, 0.05, error));
 			fog += value * weight;
+			optical_depth += sample_optical_depth * weight;
 			total += weight;
 		}
 	}
 	// If no low-res sample represents this surface, suppress fog rather than
 	// bleeding a background cloud over a thin foreground object.
 	fog = total > 1e-5 ? fog / total : (closest_error < 0.05 ? closest : vec4(0.0));
+	optical_depth = total > 1e-5 ? optical_depth / total :
+		(closest_error < 0.05 ? closest_optical_depth : 0.0);
 	vec4 scene = texture2D(texture1, varTexCoord);
-	gl_FragColor = vec4(fog.rgb + scene.rgb * (1.0 - fog.a), scene.a);
+	// Apply one attenuation to the combined underside contributions instead
+	// of darkening every thin puff independently.
+	// Preserve ambient illumination in the densest clouds instead of allowing
+	// accumulated extinction to make a nearly black, solid silhouette.
+	float light_transmittance =
+		min(1.0, 1.40 * mix(0.70, 1.0, exp(-min(optical_depth, 16.0) * 0.25)));
+	vec3 color = fog.rgb * light_transmittance + scene.rgb * (1.0 - fog.a);
+
+	// Aerial perspective complements the local puffs without hiding nearby
+	// geometry. Leave the sky untouched because it already contains its tint.
+	if (depth < 0.999999 && fogDistance > 0.0) {
+		float near_plane = max(fmFogDepthRange.x, 0.001);
+		float far_plane = max(fmFogDepthRange.y, near_plane + 1.0);
+		float view_distance = near_plane * far_plane /
+			max(far_plane - depth * (far_plane - near_plane), 0.001);
+		float fog_start = fogShadingParameter > 1.0 ?
+			1.0 - 1.0 / fogShadingParameter : 0.0;
+		float relative_distance = clamp(view_distance / fogDistance, 0.0, 1.0);
+		float fog_range = clamp((relative_distance - fog_start) /
+			max(1.0 - fog_start, 0.001), 0.0, 1.0);
+		float aerial = (1.0 - exp(-1.8 * fog_range * fog_range)) * 0.55;
+
+		float sun_glow = 0.0;
+		if (fmFogSun.z > 0.0 && fmFogLight.a > 0.0) {
+			vec2 sun_uv = fmFogSun.xy / fmFogSun.z * 0.5 + 0.5;
+			float aspect = texelSize0.y / max(texelSize0.x, 1e-7);
+			vec2 sun_delta = (varTexCoord - sun_uv) * vec2(aspect, 1.0);
+			sun_glow = exp(-dot(sun_delta, sun_delta) * 3.0) * fmFogLight.a;
+		}
+		vec3 aerial_color = mix(fogColor.rgb,
+			fogColor.rgb * fmFogLight.rgb * 1.20, sun_glow * 0.75);
+		color = mix(color, aerial_color, aerial);
+	}
+
+	gl_FragColor = vec4(color, scene.a);
 	gl_FragDepth = depth;
 }

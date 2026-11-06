@@ -11,6 +11,7 @@
 namespace
 {
 constexpr u8 FOG_COLOR = 30;
+constexpr u8 FOG_OPTICAL_DEPTH = 32;
 
 class DrawFarFog : public TrivialRenderStep
 {
@@ -54,12 +55,15 @@ RenderStep *fmAddFarFog(RenderPipeline *pipeline, Draw3D *scene, TextureBuffer *
 {
 	scene->deferFarFog(true);
 	buffer->setTexture(FOG_COLOR, scale * 0.5f, "fm_fog_color", video::ECF_A8R8G8B8);
-	auto *target = pipeline->createOwned<TextureBufferOutput>(buffer, FOG_COLOR);
+	buffer->setTexture(FOG_OPTICAL_DEPTH, scale * 0.5f, "fm_fog_optical_depth",
+			video::ECF_A16B16G16R16F);
+	auto *target = pipeline->createOwned<TextureBufferOutput>(
+			buffer, std::vector<u8>{FOG_COLOR, FOG_OPTICAL_DEPTH});
 	pipeline->addStep<DrawFarFog>(buffer, depth, target);
 
 	const auto shader = client->getShaderSource()->getShaderRaw("fm_far_fog_composite");
 	auto *composite = pipeline->addStep<PostProcessingStep>(
-			shader, std::vector<u8>{FOG_COLOR, color, depth});
+			shader, std::vector<u8>{FOG_COLOR, color, depth, FOG_OPTICAL_DEPTH});
 	composite->setRenderSource(buffer);
 	return composite;
 }

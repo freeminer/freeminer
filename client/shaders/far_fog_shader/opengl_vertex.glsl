@@ -2,13 +2,15 @@
 uniform lowp vec4 materialColor;
 uniform highp mat4 mWorld;
 uniform highp vec3 cameraOffset;
-uniform vec3 windDirection;
 uniform float animationTimer;
+uniform highp vec3 fmFogSunDirection;
 
 VARYING_ lowp vec4 varColor;
 VARYING_ mediump vec2 varTexCoord;
 VARYING_ highp vec3 eyeVec;
+VARYING_ highp vec3 eyeSunDirection;
 VARYING_ highp vec3 cloud_pos;
+VARYING_ highp float fogAltitude;
 #if FM_FOG_DEPTH_TEST
 VARYING_ highp vec4 fogClipPos;
 #endif
@@ -16,7 +18,8 @@ VARYING_ highp float fogPhase;
 
 void main(void)
 {
-	vec3 wind = windDirection;
+	// Wind is packed per puff; never use wind sampled at the player's position.
+	vec3 wind = vec3(inVertexNormal.x, 0.0, inVertexNormal.z);
 	float phase = inVertexNormal.y;
 	float speed = min(length(wind.xz), 80.0);
 	vec3 wind_dir = speed > 0.001 ? normalize(wind) : vec3(1.0, 0.0, 0.0);
@@ -35,13 +38,15 @@ void main(void)
 	varColor = inVertexColor * materialColor;
 	varTexCoord = inTexCoord0;
 	eyeVec = -(mWorldView * fogVertex).xyz;
+	eyeSunDirection = (vec4(fmFogSunDirection, 0.0) * mWorldView).xyz;
 	vec3 fogWorldPos = (mWorld * fogVertex).xyz + cameraOffset;
+	fogAltitude = fogWorldPos.y;
 #if FM_FOG_DEPTH_TEST
 	fogClipPos = gl_Position;
 #endif
 	fogPhase = phase;
-	float wind_speed = min(length(windDirection.xz), 80.0);
-	vec2 fog_wind_dir = wind_speed > 0.001 ? normalize(windDirection.xz) : vec2(1.0, 0.0);
+	float wind_speed = min(length(wind.xz), 80.0);
+	vec2 fog_wind_dir = wind_speed > 0.001 ? normalize(wind.xz) : vec2(1.0, 0.0);
 	vec2 fog_side_dir = vec2(-fog_wind_dir.y, fog_wind_dir.x);
 	vec3 fog_wind_vec = vec3(fog_wind_dir.x, 0.0, fog_wind_dir.y);
 	vec3 fog_side_vec = vec3(fog_side_dir.x, 0.0, fog_side_dir.y);
