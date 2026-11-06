@@ -101,10 +101,13 @@ void Client::sendInitFm()
 	MSGPACK_PACKET_INIT((int)TOSERVER_INIT_FM, 1);
 
 	PACK(TOSERVER_INIT_FM_VERSION, CLIENT_PROTOCOL_VERSION_FM);
-
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOSERVER_INIT_FM, buffer.size());
 	pkt.putLongString({buffer.data(), buffer.size()});
 	Send(&pkt);
+#else
+	Send(1, buffer, true);
+#endif
 }
 
 void Client::sendGetBlocks()
@@ -130,10 +133,13 @@ void Client::sendGetBlocks()
 	PACK(TOSERVER_GET_BLOCKS_BLOCKS,
 			static_cast<std::remove_reference_t<decltype(far_blocks)>::full_type>(
 					far_blocks));
-
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOSERVER_GET_BLOCKS, buffer.size());
 	pkt.putLongString({buffer.data(), buffer.size()});
 	Send(&pkt);
+#else
+	Send(0, buffer, true);
+#endif
 }
 
 void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
@@ -552,9 +558,13 @@ void Client::sendDrawControl()
 			std::max<block_step_t>(draw_control.farmesh_quality, draw_control.cell_size));
 	PACK(TOSERVER_DRAWCONTROL_FARMESH_ALL_CHANGED, draw_control.farmesh_all_changed);
 
+#if MINETEST_PROTO
 	NetworkPacket pkt(TOSERVER_DRAWCONTROL, buffer.size());
 	pkt.putLongString({buffer.data(), buffer.size()});
 	Send(&pkt);
+#else
+	Send(0, buffer, false);
+#endif
 }
 
 void ClientMap::cleanPerodic(uint32_t uptime)
