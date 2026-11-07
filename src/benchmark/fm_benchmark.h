@@ -37,4 +37,5 @@ struct ConnectionBenchmarkOptions
 };
 
 const ConnectionBenchmarkOptions &get_connection_benchmark_options();
+int parse_database_benchmark_args(int argc, char *argv[], std::vector<char *> *args);
 int parse_fm_benchmark_args(int argc, char *argv[], std::vector<char *> *catch_argv);

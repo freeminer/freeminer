@@ -8,6 +8,11 @@
 #include "database/database-files.h"
 #include "database/database-dummy.h"
 #include "database/database-sqlite3.h"
+// fm:
+#if USE_ROCKSDB
+#include "database/database-rocksdb.h"
+#endif
+// ===
 #include "util/string.h"
 #include "filesys.h"
 
@@ -93,6 +98,11 @@ public:
 	void runTests(IGameDef *gamedef);
 	void runTestsForCurrentDB();
 
+	// fm:
+#if USE_ROCKSDB
+	void testRocksDB64Bit();
+#endif
+	// ===
 	void testRecallFail();
 	void testCreate();
 	void testRecall();
@@ -161,6 +171,12 @@ void TestAuthDatabase::runTests(IGameDef *gamedef)
 
 	delete auth_provider;
 
+	// fm:
+#if USE_ROCKSDB
+	TEST(testRocksDB64Bit);
+#endif
+	// ===
+
 	// The memory backend is volatile, so we only exercise it with a
 	// "same object" provider: recreating the database between calls would
 	// simply discard all stored data.
@@ -188,6 +204,41 @@ void TestAuthDatabase::runTestsForCurrentDB()
 	TEST(testDelete);
 	TEST(testRecallFail);
 }
+
+// fm:
+#if USE_ROCKSDB
+void TestAuthDatabase::testRocksDB64Bit()
+{
+	const std::string dir = getTestTempDirectory();
+	AuthEntry entry{};
+	entry.name = "RocksDB64";
+	entry.password = "secret";
+	entry.privileges = {"interact", "fly"};
+	entry.last_login = (s64(1) << 40) + 123;
+	{
+		AuthDatabaseRocksDB db(dir);
+		UASSERT(db.createAuth(entry));
+	}
+	{
+		AuthDatabaseRocksDB db(dir);
+		AuthEntry loaded{};
+		UASSERT(db.getAuth(entry.name, loaded));
+		UASSERTEQ(s64, loaded.last_login, entry.last_login);
+		UASSERTEQ(std::string, loaded.password, entry.password);
+		UASSERTEQ(size_t, loaded.privileges.size(), 2);
+		loaded.last_login = -((s64(1) << 40) + 123);
+		UASSERT(db.saveAuth(loaded));
+	}
+	{
+		AuthDatabaseRocksDB db(dir);
+		AuthEntry loaded{};
+		UASSERT(db.getAuth(entry.name, loaded));
+		UASSERTEQ(s64, loaded.last_login, -((s64(1) << 40) + 123));
+		UASSERT(db.deleteAuth(entry.name));
+	}
+}
+#endif
+// ===
 
 void TestAuthDatabase::testRecallFail()
 {

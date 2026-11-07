@@ -11,6 +11,11 @@
 #include <optional>
 #include "database/database-dummy.h"
 #include "database/database-sqlite3.h"
+// fm:
+#if USE_ROCKSDB
+#include "database/database-rocksdb.h"
+#endif
+// ===
 #if USE_LEVELDB
 #include "database/database-leveldb.h"
 #endif
@@ -111,6 +116,16 @@ void TestMapDatabase::runTests(IGameDef *gamedef)
 	runTestsForCurrentDB();
 	delete provider;
 
+// fm:
+#if USE_ROCKSDB
+	rawstream << "-------- RocksDB" << std::endl;
+	provider = new MapDatabaseProvider([&] () {
+		return new Database_RocksDB(test_dir);
+	});
+	runTestsForCurrentDB();
+	delete provider;
+#endif
+// ===
 #if USE_LEVELDB
 	rawstream << "-------- LevelDB" << std::endl;
 
