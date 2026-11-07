@@ -192,7 +192,10 @@ if(ENABLE_POSTGRESQL)
 	endif()
 endif(ENABLE_POSTGRESQL)
 
-include(freeminer_leveldb)
+# fm:
+include(fm_leveldb)
+include(fm_rocksdb)
+# ===
 
 OPTION(ENABLE_REDIS "Enable Redis backend" TRUE)
 set(USE_REDIS FALSE)
@@ -822,6 +825,11 @@ if(BUILD_CLIENT)
 		target_link_libraries(${PROJECT_NAME} ${LIBBSD_STATIC})
 		# ===
 	endif()
+	# fm:
+	if (USE_ROCKSDB)
+		target_link_libraries(${PROJECT_NAME} ${ROCKSDB_LIBRARY})
+	endif()
+	# ===
 	if (USE_LEVELDB AND NOT FORCE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME} ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()
@@ -907,6 +915,11 @@ if(BUILD_SERVER)
 		target_link_libraries(${PROJECT_NAME}server ${LIBBSD_STATIC})
 		# ===
 	endif()
+	# fm:
+	if (USE_ROCKSDB)
+		target_link_libraries(${PROJECT_NAME}server ${ROCKSDB_LIBRARY})
+	endif()
+	# ===
 	if (USE_LEVELDB)
 		target_link_libraries(${PROJECT_NAME}server ${LEVELDB_LIBRARY} ${SNAPPY_LIBRARY})
 	endif()

@@ -2,10 +2,15 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 // Copyright (C) 2010-2017 celeron55, Perttu Ahola <celeron55@gmail.com>
 
+// fm:
+#include "config.h"
 #include "contrib/fallingsao.h"
 #include "contrib/itemsao.h"
 #include "environment.h"
-#include "log_types.h"
+#if USE_ROCKSDB
+#include "database/database-rocksdb.h"
+#endif
+// ===
 
 #include <algorithm>
 #include <iterator>
@@ -2266,6 +2271,11 @@ std::vector<std::string> ServerEnvironment::getPlayerDatabaseBackends()
 	std::vector<std::string> ret;
 	ret.emplace_back("sqlite3");
 	ret.emplace_back("dummy");
+// fm:
+#if USE_ROCKSDB
+	ret.emplace_back("rocksdb");
+#endif
+// ===
 #if USE_POSTGRESQL
 	ret.emplace_back("postgresql");
 #endif
@@ -2296,6 +2306,12 @@ PlayerDatabase *ServerEnvironment::openPlayerDatabase(const std::string &name,
 	}
 #endif
 
+// fm:
+#if USE_ROCKSDB
+	if (name == "rocksdb")
+		return new PlayerDatabaseRocksDB(savedir);
+#endif
+// ===
 #if USE_LEVELDB
 	if (name == "leveldb")
 		return new PlayerDatabaseLevelDB(savedir);
@@ -2324,7 +2340,9 @@ bool ServerEnvironment::migratePlayersDatabase(const GameParams &game_params,
 	if (!world_mt.exists("player_backend")) {
 		errorstream << "Please specify your current backend in world.mt:"
 			<< std::endl
-			<< "	player_backend = {files|sqlite3|leveldb|leveldbfm|postgresql}"
+			// fm:
+			<< "	player_backend = {files|sqlite3|leveldb|leveldbfm|rocksdb|postgresql}"
+			// ===
 			<< std::endl;
 		return false;
 	}
@@ -2402,6 +2420,11 @@ std::vector<std::string> ServerEnvironment::getAuthDatabaseBackends()
 	std::vector<std::string> ret;
 	ret.emplace_back("sqlite3");
 	ret.emplace_back("dummy");
+// fm:
+#if USE_ROCKSDB
+	ret.emplace_back("rocksdb");
+#endif
+// ===
 #if USE_POSTGRESQL
 	ret.emplace_back("postgresql");
 #endif
@@ -2434,6 +2457,12 @@ AuthDatabase *ServerEnvironment::openAuthDatabase(
 	if (name == "dummy")
 		return new AuthDatabaseDummy();
 
+// fm:
+#if USE_ROCKSDB
+	if (name == "rocksdb")
+		return new AuthDatabaseRocksDB(savedir);
+#endif
+// ===
 #if USE_LEVELDB
 	if (name == "leveldb")
 		return new AuthDatabaseLevelDB(savedir);

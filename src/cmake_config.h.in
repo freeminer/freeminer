@@ -23,6 +23,7 @@
 #cmakedefine01 USE_ONNXRUNTIME
 #cmakedefine01 USE_OSMIUM
 #cmakedefine01 USE_OSMIUM_TOOL
+#cmakedefine01 USE_ROCKSDB
 #cmakedefine01 USE_SCTP
 #cmakedefine01 USE_SQLITE3
 #cmakedefine01 USE_TIFF

@@ -9,8 +9,15 @@
 
 int run_catch2_benchmarks(int argc, char *argv[])
 {
+	// fm:
+	std::vector<char *> database_argv;
+	const int database_status = parse_database_benchmark_args(argc, argv, &database_argv);
+	if (database_status != 0)
+		return database_status;
+	// ===
 	std::vector<char *> catch_argv;
-	const int parse_status = parse_fm_benchmark_args(argc, argv, &catch_argv);
+	const int parse_status = parse_fm_benchmark_args(
+			static_cast<int>(database_argv.size()), database_argv.data(), &catch_argv);
 	if (parse_status != 0)
 		return parse_status;
 

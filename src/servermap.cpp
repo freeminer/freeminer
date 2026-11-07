@@ -31,6 +31,11 @@
 #include "database/database-dummy.h"
 #include "database/database-sqlite3.h"
 #include "script/scripting_server.h"
+// fm:
+#if USE_ROCKSDB
+#include "database/database-rocksdb.h"
+#endif
+// ===
 #if USE_LEVELDB
 #include "database/database-leveldb.h"
 #endif
@@ -732,6 +737,11 @@ std::vector<std::string> ServerMap::getDatabaseBackends()
 	std::vector<std::string> ret;
 	ret.emplace_back("sqlite3");
 	ret.emplace_back("dummy");
+// fm:
+#if USE_ROCKSDB
+	ret.emplace_back("rocksdb");
+#endif
+// ===
 #if USE_LEVELDB
 	ret.emplace_back("leveldb");
 #endif
@@ -767,6 +777,12 @@ MapDatabase *ServerMap::createDatabase(
 #endif
 	else if (name == "dummy")
 		db = new Database_Dummy();
+// fm:
+#if USE_ROCKSDB
+	else if (name == "rocksdb")
+		db = new Database_RocksDB(savedir);
+#endif
+// ===
 #if USE_LEVELDB
 	else if (name == "leveldb")
 		db = new Database_LevelDB(savedir);

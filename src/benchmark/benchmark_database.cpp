@@ -1,6 +1,8 @@
 #include "catch.h"
+#include "benchmark/benchmark.h"
 #include "database/database-dummy.h"
 #include "database/database-leveldb.h"
+#include "database/database-rocksdb.h"
 #include "database/database-sqlite3.h"
 #include "database/database-postgresql.h"
 #include "database/database-redis.h"
@@ -8,8 +10,9 @@
 #include "porting.h"
 #include "filesys.h"
 #include "settings.h"
-#include <array>
 #include <cctype>
+#include <charconv>
+#include <limits>
 #include <exception>
 #include <iomanip>
 #include <memory>
@@ -25,14 +28,8 @@ namespace
 static bool g_benchmark_initialized = false;
 static std::string g_test_directory;
 static size_t g_database_instance_counter = 0;
+static std::vector<int64_t> g_benchmark_block_sizes = {32, 256, 1024, 4096, 16384, 65536};
 
-static constexpr std::array<size_t, 5> g_benchmark_block_sizes = {
-		256,
-		1024,
-		4 * 1024,
-		16 * 1024,
-		64 * 1024,
-};
 static constexpr size_t g_load_benchmark_blocks = 4096;
 
 static std::string getBenchmarkDirectory()
@@ -87,6 +84,17 @@ static std::unique_ptr<MapDatabase> create_leveldb_database()
 	std::string db_path = makeBenchmarkDatabasePath("leveldb_test");
 	fs::CreateAllDirs(db_path);
 	return std::make_unique<Database_LevelDB>(db_path);
+#endif
+}
+
+static std::unique_ptr<MapDatabase> create_rocksdb_database()
+{
+#if !USE_ROCKSDB
+	return nullptr;
+#else
+	std::string db_path = makeBenchmarkDatabasePath("rocksdb_test");
+	fs::CreateAllDirs(db_path);
+	return std::make_unique<Database_RocksDB>(db_path);
 #endif
 }
 
@@ -165,9 +173,11 @@ static v3pos_t generateTestPosition(int index)
 {
 	// Generate deterministic positions for reproducible benchmarks
 	// Use a simple hash-like function to distribute positions
-	int x = (index * 1103515245 + 12345) & 0x7FFFFFFF;
-	int y = (index * 1103515247 + 54321) & 0x7FFFFFFF;
-	int z = (index * 1103515249 + 98765) & 0x7FFFFFFF;
+	// Use defined unsigned wraparound for the position hash.
+	const u32 hash_index = static_cast<u32>(index);
+	int x = (hash_index * 1103515245u + 12345u) & 0x7fffffffu;
+	int y = (hash_index * 1103515247u + 54321u) & 0x7fffffffu;
+	int z = (hash_index * 1103515249u + 98765u) & 0x7fffffffu;
 
 	// Scale down and center around origin
 	x = (x % 1000) - 500;
@@ -186,10 +196,11 @@ static std::string formatBlockSize(size_t bytes)
 }
 
 static std::string makeThroughputBenchmarkName(
-		std::string_view operation, const std::string &db_name, size_t block_size)
+		std::string_view operation, const std::string &db_name, int64_t block_size)
 {
-	return "DB" + std::string(operation) + "_" + db_name + "_" +
-		   std::to_string(block_size) + "B";
+	return "DB" + std::string(block_size < 0 ? "Random" : "") +
+		   std::string(operation) + "_" + db_name + "_" +
+		   std::to_string(block_size < 0 ? -block_size : block_size) + "B";
 }
 
 struct ThroughputBenchmarkMetadata
@@ -322,17 +333,25 @@ private:
 
 CATCH_REGISTER_LISTENER(DatabaseBenchmarkThroughputListener)
 
+static size_t chooseBlockSize(int64_t block_size, std::mt19937 &random)
+{
+	if (block_size > 0)
+		return static_cast<size_t>(block_size);
+	return std::uniform_int_distribution<size_t>(1, static_cast<size_t>(-block_size))(random);
+}
+
 // Benchmark functions for each operation
 template <typename DatabaseFactory>
 static void benchmarkSaveBlock(
-		DatabaseFactory factory, const std::string &db_name, size_t block_size)
+		DatabaseFactory factory, const std::string &db_name, int64_t block_size)
 {
 	initialize_benchmark_environment();
 	auto db = factory();
 	if (!db)
 		return;
 
-	std::string test_data = generateTestData(block_size);
+	std::string test_data = generateTestData(static_cast<size_t>(block_size < 0 ? -block_size : block_size));
+	std::mt19937 random(42);
 	size_t next_index = 0;
 	db->beginSave();
 
@@ -341,7 +360,7 @@ static void benchmarkSaveBlock(
 	{
 		meter.measure([&](int) {
 			const auto pos = generateTestPosition(next_index++);
-			return db->saveBlock(pos, test_data);
+			return db->saveBlock(pos, std::string_view(test_data).substr(0, chooseBlockSize(block_size, random)));
 		});
 	};
 
@@ -350,7 +369,7 @@ static void benchmarkSaveBlock(
 
 template <typename DatabaseFactory>
 static void benchmarkLoadBlock(
-		DatabaseFactory factory, const std::string &db_name, size_t block_size)
+		DatabaseFactory factory, const std::string &db_name, int64_t block_size)
 {
 	initialize_benchmark_environment();
 	auto db = factory();
@@ -358,11 +377,12 @@ static void benchmarkLoadBlock(
 		return;
 
 	// Pre-populate database
-	std::string test_data = generateTestData(block_size);
+	std::string test_data = generateTestData(static_cast<size_t>(block_size < 0 ? -block_size : block_size));
+	std::mt19937 random(42);
 	db->beginSave();
 	for (size_t i = 0; i < g_load_benchmark_blocks; ++i) {
 		const auto pos = generateTestPosition(i);
-		db->saveBlock(pos, test_data);
+		db->saveBlock(pos, std::string_view(test_data).substr(0, chooseBlockSize(block_size, random)));
 	}
 	db->endSave();
 
@@ -438,6 +458,83 @@ static void benchmarkListAllBlocks(
 
 } // namespace
 
+int parse_database_benchmark_args(int argc, char *argv[], std::vector<char *> *args)
+{
+	args->push_back(argv[0]);
+	constexpr std::string_view option = "--database-benchmark-sizes";
+	for (int i = 1; i < argc; ++i) {
+		std::string_view arg(argv[i]);
+		std::string_view value;
+		if (arg == option) {
+			if (++i >= argc) {
+				Catch::cerr() << option << " requires a value\n";
+				return 1;
+			}
+			value = argv[i];
+		} else if (arg.size() > option.size() &&
+				arg.substr(0, option.size()) == option && arg[option.size()] == '=') {
+			value = arg.substr(option.size() + 1);
+		} else {
+			args->push_back(argv[i]);
+			continue;
+		}
+
+		std::vector<int64_t> sizes;
+		size_t start = 0;
+		while (start <= value.size()) {
+			const size_t separator = value.find(',', start);
+			const size_t end = separator == std::string_view::npos ? value.size() : separator;
+			auto item = value.substr(start, end - start);
+			while (!item.empty() && std::isspace(static_cast<unsigned char>(item.front())))
+				item.remove_prefix(1);
+			while (!item.empty() && std::isspace(static_cast<unsigned char>(item.back())))
+				item.remove_suffix(1);
+			int64_t size = 0;
+			const auto parsed = std::from_chars(item.data(), item.data() + item.size(), size);
+			if (item.empty() || parsed.ec != std::errc() ||
+					parsed.ptr != item.data() + item.size() || size == 0 ||
+					size > std::numeric_limits<u32>::max() ||
+					size < -static_cast<int64_t>(std::numeric_limits<u32>::max())) {
+				Catch::cerr() << "Invalid " << option << ": " << value
+						<< " (expected nonzero byte counts or negative random-size limits up to 4294967295)\n";
+				return 1;
+			}
+			if (std::find(sizes.begin(), sizes.end(), size) == sizes.end())
+				sizes.push_back(size);
+			if (separator == std::string_view::npos)
+				break;
+			start = separator + 1;
+		}
+		g_benchmark_block_sizes = std::move(sizes);
+	}
+	return 0;
+}
+
+TEST_CASE("test_database_benchmark_random_sizes")
+{
+	std::mt19937 random(42);
+	Database_Dummy db;
+	const std::string data = generateTestData(16);
+	bool saw_small = false;
+	bool saw_large = false;
+	for (int i = 0; i < 128; ++i) {
+		const size_t size = chooseBlockSize(-16, random);
+		REQUIRE(size >= 1);
+		REQUIRE(size <= 16);
+		saw_small |= size == 1;
+		saw_large |= size == 16;
+		const auto pos = generateTestPosition(i);
+		REQUIRE(db.saveBlock(pos, std::string_view(data).substr(0, size)));
+		std::string loaded;
+		db.loadBlock(pos, &loaded);
+		REQUIRE(loaded.size() == size);
+	}
+	REQUIRE(saw_small);
+	REQUIRE(saw_large);
+	REQUIRE(chooseBlockSize(-1, random) == 1);
+	REQUIRE(chooseBlockSize(16, random) == 16);
+}
+
 TEST_CASE("benchmark_database_operations")
 {
 	const auto iterations2 = 1000;
@@ -446,9 +543,10 @@ TEST_CASE("benchmark_database_operations")
 	const auto have_redis = !!create_redis_database();
 	SECTION("SaveBlock Operations")
 	{
-		for (const size_t block_size : g_benchmark_block_sizes) {
+		for (const int64_t block_size : g_benchmark_block_sizes) {
 			benchmarkSaveBlock(create_dummy_database, "Dummy", block_size);
 			benchmarkSaveBlock(create_leveldb_database, "LevelDB", block_size);
+			benchmarkSaveBlock(create_rocksdb_database, "RocksDB", block_size);
 			benchmarkSaveBlock(create_sqlite3_database, "SQLite3", block_size);
 			if (have_postgresql)
 				benchmarkSaveBlock(create_postgresql_database, "Postgresql", block_size);
@@ -459,9 +557,10 @@ TEST_CASE("benchmark_database_operations")
 
 	SECTION("LoadBlock Operations")
 	{
-		for (const size_t block_size : g_benchmark_block_sizes) {
+		for (const int64_t block_size : g_benchmark_block_sizes) {
 			benchmarkLoadBlock(create_dummy_database, "Dummy", block_size);
 			benchmarkLoadBlock(create_leveldb_database, "LevelDB", block_size);
+			benchmarkLoadBlock(create_rocksdb_database, "RocksDB", block_size);
 			benchmarkLoadBlock(create_sqlite3_database, "SQLite3", block_size);
 			if (have_postgresql)
 				benchmarkLoadBlock(create_postgresql_database, "Postgresql", block_size);
@@ -474,6 +573,7 @@ TEST_CASE("benchmark_database_operations")
 	{
 		benchmarkDeleteBlock(create_dummy_database, "Dummy");
 		benchmarkDeleteBlock(create_leveldb_database, "LevelDB");
+		benchmarkDeleteBlock(create_rocksdb_database, "RocksDB");
 		benchmarkDeleteBlock(create_sqlite3_database, "SQLite3");
 		if (have_postgresql)
 			benchmarkDeleteBlock(create_postgresql_database, "Postgresql");
@@ -485,6 +585,7 @@ TEST_CASE("benchmark_database_operations")
 	{
 		benchmarkListAllBlocks(create_dummy_database, "Dummy", iterations2);
 		benchmarkListAllBlocks(create_leveldb_database, "LevelDB", iterations2);
+		benchmarkListAllBlocks(create_rocksdb_database, "RocksDB", iterations2);
 		benchmarkListAllBlocks(create_sqlite3_database, "SQLite3", iterations2);
 		if (have_postgresql)
 			benchmarkListAllBlocks(create_postgresql_database, "Postgresql", iterations2);
