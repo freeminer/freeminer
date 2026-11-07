@@ -56,3 +56,5 @@ public:
 		UASSERT(member->ys.back() >= 6);
 	}
 };
+
+static TestFmArnisBridgeClipping g_test_fm_arnis_bridge_clipping;

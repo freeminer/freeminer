@@ -46,6 +46,9 @@
 #endif
 
 #include "arnis-cpp/src/data_processing.h"
+// fm: Share complete bridge geometry between streamed chunks.
+#include "arnis-cpp/src/element_processing/fm_bridge_context.h"
+// ===
 // fm: Keep C++ preprocessing aligned with the Rust highway pavement filter.
 #include "arnis-cpp/src/element_processing/highways.h"
 // ===
@@ -1186,6 +1189,10 @@ struct CachedArnisExtract
 	// Adjacent chunks must share topology, route tie-breaks, and rail grades.
 	mutable std::once_flag native_rails_once;
 	mutable std::shared_ptr<const arnis::railways::advtrains::RailNetwork> native_rails;
+	// fm: Immutable profiles for complete OSM ways, unlike per-chunk clipping.
+	mutable std::once_flag bridges_once;
+	mutable std::shared_ptr<const arnis::bridges::BridgeContext> shared_bridges;
+	// ===
 	std::mutex chunks_mutex;
 	std::unordered_map<EarthHorizontalKey, std::shared_ptr<CachedArnisChunk>,
 			EarthHorizontalKeyHash>
@@ -1269,6 +1276,34 @@ void generate_cached_arnis(
 			[mg](MapgenEarth::TileOverlayId id) { return mg->mergeTileOverlay(id); },
 			true);
 	editor.ground = &ground;
+	// fm: Every clipped renderer must consume the same bridge geometry. Tower
+	// parts and bridge approaches may be thousands of blocks outside this
+	// chunk, so building independent short-bridge profiles here causes sunken
+	// decks, generic pylons, and discontinuities at chunk boundaries.
+	std::call_once(tile.bridges_once, [&]() {
+		if (args.skip_osm() || tile.elements.empty())
+			return;
+		constexpr pos_t context_halo = 2304;
+		const XZBBox source_bounds(mg->node_min.X - context_halo,
+				mg->node_min.Z - context_halo, mg->node_max.X + context_halo,
+				mg->node_max.Z + context_halo);
+		std::vector<arnis::ProcessedElement> context_elements;
+		for (std::size_t i = 0; i < tile.elements.size(); ++i)
+			if (earth_osmium_detail::earth_bounds_intersect(
+						tile.element_bounds[i], source_bounds))
+				context_elements.push_back(tile.elements[i]);
+		auto context = std::make_shared<arnis::bridges::BridgeContext>();
+		context->outlines =
+				arnis::bridge_styles::BridgeOutlineIndex::build(context_elements);
+		const auto connectivity =
+				arnis::highways::build_highway_connectivity_map(context_elements);
+		context->structures = arnis::bridges::BridgeStructureMap::build(
+				context_elements, editor, connectivity, context->outlines, args.scale);
+		context->surface = arnis::bridges::BridgeSurfaceMap::build(
+				context_elements, context->structures, args.scale);
+		tile.shared_bridges = std::move(context);
+	});
+	// ===
 	// Build once from uncut source ways and sample terrain in world coordinates.
 	// Routing independently clipped ways changes endpoints and obstacles at seams.
 	if (arnis::railways::advtrains::available()) {
@@ -1308,9 +1343,11 @@ void generate_cached_arnis(
 		max_lon = std::max(max_lon, corner.lon);
 	}
 	editor.set_geographic_bounds(min_lat, max_lat, min_lon, max_lon);
+	// fm: Consume the shared profiles by unmodified OSM way ID.
 	if (!arnis::generate_world(editor, chunk.elements, args, *chunk.flood_fill_cache,
 				*chunk.building_footprints, true, tile.prepared_buildings.get(),
-				tile.facade_job.get()))
+				tile.facade_job.get(), std::nullopt, tile.shared_bridges.get()))
+		// ===
 		errorstream << "Earth: Arnis world generation failed; check generation options "
 					   "and provider configuration\n";
 	if (editor.native_rail_network) {
