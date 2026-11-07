@@ -8,7 +8,7 @@ if(ENABLE_ROCKSDB)
         include_directories(SYSTEM ${ROCKSDB_INCLUDE_DIR})
         message(STATUS "Using system RocksDB: ${ROCKSDB_LIBRARY}")
     elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/rocksdb/CMakeLists.txt" AND
-            EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/rocksdb/include/rocksdb/db.h")
+        EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/rocksdb/include/rocksdb/db.h")
         set(WITH_TESTS OFF)
         set(WITH_BENCHMARK_TOOLS OFF)
         set(WITH_CORE_TOOLS OFF)
