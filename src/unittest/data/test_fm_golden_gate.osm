@@ -1,0 +1,2876 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<osm version="0.6" generator="Freeminer regression; OpenStreetMap contributors, ODbL 1.0; OSM API /api/0.6/map, 2026-11-07">
+ <node id="281564628" visible="true" version="11" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8069974" lon="-122.4758267" />
+ <node id="667115758" visible="true" version="14" changeset="126300964" timestamp="2022-09-17T14:16:30Z" user="EvesAngle" uid="6411779" lat="37.8323405" lon="-122.4806070">
+  <tag k="access" v="yes" />
+  <tag k="barrier" v="gate" />
+  <tag k="bicycle" v="designated" />
+  <tag k="foot" v="designated" />
+  <tag k="horse" v="no" />
+  <tag k="motor_vehicle" v="no" />
+  <tag k="note" v="Closes to pedestrians in the evening (exact time depends by season) but you can call on the interphone and they'll send a police car for to take you to the other side. Bikes allowed at night but must call on the interphone. Hours and instructions here: ht" />
+ </node>
+ <node id="667197531" visible="true" version="10" changeset="126300964" timestamp="2022-09-17T14:16:30Z" user="EvesAngle" uid="6411779" lat="37.8322548" lon="-122.4809520">
+  <tag k="barrier" v="gate" />
+  <tag k="bicycle" v="designated" />
+  <tag k="foot" v="designated" />
+  <tag k="horse" v="no" />
+  <tag k="motor_vehicle" v="no" />
+  <tag k="note" v="Bicyclists use west sidewalk during weekday afternoons and on weekend days. At other times, bicyclists share east sidewalk with pedestrians. Detailed hours here: https://www.goldengate.org/bridge/visiting-the-bridge/bikes-pedestrians/&#10;West sidewalk used" />
+ </node>
+ <node id="1274882554" visible="true" version="7" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075592" lon="-122.4752824" />
+ <node id="1274882559" visible="true" version="6" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8074725" lon="-122.4751901" />
+ <node id="1274882576" visible="true" version="7" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075849" lon="-122.4752182" />
+ <node id="1274882598" visible="true" version="7" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075026" lon="-122.4751489" />
+ <node id="1709838944" visible="true" version="7" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075169" lon="-122.4751467" />
+ <node id="1709838946" visible="true" version="6" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075811" lon="-122.4752109" />
+ <node id="1709838963" visible="true" version="6" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075828" lon="-122.4752468" />
+ <node id="1709838967" visible="true" version="6" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8074961" lon="-122.4751546" />
+ <node id="1761883516" visible="true" version="5" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8076548" lon="-122.4749383" />
+ <node id="1761883517" visible="true" version="5" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8078145" lon="-122.4747000" />
+ <node id="1761883518" visible="true" version="5" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8077393" lon="-122.4750290" />
+ <node id="1761883519" visible="true" version="5" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8078990" lon="-122.4747907" />
+ <node id="2918738658" visible="true" version="4" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8070091" lon="-122.4758094" />
+ <node id="2918738659" visible="true" version="5" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8070132" lon="-122.4758138" />
+ <node id="2918738662" visible="true" version="5" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8070628" lon="-122.4758970" />
+ <node id="2918738663" visible="true" version="4" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8070705" lon="-122.4758752" />
+ <node id="2918738664" visible="true" version="5" changeset="166361943" timestamp="2025-05-16T17:30:39Z" user="KindredCoda" uid="14293" lat="37.8070745" lon="-122.4758796" />
+ <node id="3718987338" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8310163" lon="-122.4797821" />
+ <node id="3718987343" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8315421" lon="-122.4799931" />
+ <node id="3718987349" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8095522" lon="-122.4772280" />
+ <node id="3718987359" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8091472" lon="-122.4771137" />
+ <node id="3718987363" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8306041" lon="-122.4796975" />
+ <node id="3718987364" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8083785" lon="-122.4766187" />
+ <node id="3718987366" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8088067" lon="-122.4769421" />
+ <node id="3718987371" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8319331" lon="-122.4802389" />
+ <node id="3718987378" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8307423" lon="-122.4797180" />
+ <node id="3718987380" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8089168" lon="-122.4770040" />
+ <node id="3718987384" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8311485" lon="-122.4798267" />
+ <node id="3718987389" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8082776" lon="-122.4765213" />
+ <node id="3718987390" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8302950" lon="-122.4796589" />
+ <node id="3718987391" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8094479" lon="-122.4772067" />
+ <node id="3718987399" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:15Z" user="KindredCoda" uid="14293" lat="37.8314102" lon="-122.4799302" />
+ <node id="3718987409" visible="true" version="5" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8081666" lon="-122.4764084">
+  <tag k="barrier" v="gate" />
+  <tag k="bicycle" v="designated" />
+  <tag k="foot" v="designated" />
+  <tag k="horse" v="no" />
+  <tag k="motor_vehicle" v="no" />
+  <tag k="note" v="Closes to pedestrians in the evening (exact time depends by season) but you can call on the interphone and they'll send a police car for to take you to the other side. Bikes allowed at night but must call on the interphone. Hours and instructions here: ht" />
+ </node>
+ <node id="3718987413" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8304441" lon="-122.4796772" />
+ <node id="3718987414" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8320510" lon="-122.4803305" />
+ <node id="3718987415" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8312808" lon="-122.4798779" />
+ <node id="3718987416" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8084911" lon="-122.4767165" />
+ <node id="3718987417" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8092463" lon="-122.4771496" />
+ <node id="3718987421" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8316681" lon="-122.4800623" />
+ <node id="3718987424" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8090378" lon="-122.4770650" />
+ <node id="3718987525" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8093432" lon="-122.4771806" />
+ <node id="3718987530" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8086970" lon="-122.4768721" />
+ <node id="3718987538" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8321620" lon="-122.4804323" />
+ <node id="3718987539" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8308747" lon="-122.4797459" />
+ <node id="3718987540" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8322755" lon="-122.4805398" />
+ <node id="3718987549" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8085942" lon="-122.4767977" />
+ <node id="3718987551" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8096545" lon="-122.4772436" />
+ <node id="3718987556" visible="true" version="5" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8323293" lon="-122.4807224" />
+ <node id="3718987559" visible="true" version="1" changeset="33650659" timestamp="2015-08-28T19:18:16Z" user="KindredCoda" uid="14293" lat="37.8318100" lon="-122.4801508" />
+ <node id="3719112675" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8321348" lon="-122.4808187" />
+ <node id="3719112676" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8085953" lon="-122.4771113" />
+ <node id="3719112677" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8314445" lon="-122.4802649" />
+ <node id="3719112678" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8320127" lon="-122.4806957" />
+ <node id="3719112679" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8302749" lon="-122.4799292" />
+ <node id="3719112680" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8096318" lon="-122.4775136" />
+ <node id="3719112681" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8092962" lon="-122.4774456" />
+ <node id="3719112682" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8083737" lon="-122.4769438" />
+ <node id="3719112683" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8307055" lon="-122.4799878" />
+ <node id="3719112684" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8310862" lon="-122.4800924" />
+ <node id="3719112685" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8084843" lon="-122.4770309" />
+ <node id="3719112686" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8304231" lon="-122.4799473" />
+ <node id="3719112687" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8087149" lon="-122.4771875" />
+ <node id="3719112688" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8308315" lon="-122.4800167" />
+ <node id="3719112689" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:47Z" user="KindredCoda" uid="14293" lat="37.8319102" lon="-122.4806006" />
+ <node id="3719112690" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8089625" lon="-122.4773193" />
+ <node id="3719112691" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8309652" lon="-122.4800514" />
+ <node id="3719112692" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8317958" lon="-122.4805045" />
+ <node id="3719112693" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8313287" lon="-122.4802018" />
+ <node id="3719112694" visible="true" version="4" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8080000" lon="-122.4766506" />
+ <node id="3719112695" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8091905" lon="-122.4774118" />
+ <node id="3719112696" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8316907" lon="-122.4804238" />
+ <node id="3719112697" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8095223" lon="-122.4774969" />
+ <node id="3719112698" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8315589" lon="-122.4803339" />
+ <node id="3719112699" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8312101" lon="-122.4801458" />
+ <node id="3719112700" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8090821" lon="-122.4773725" />
+ <node id="3719112701" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8088335" lon="-122.4772543" />
+ <node id="3719112702" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8094100" lon="-122.4774740" />
+ <node id="3719112703" visible="true" version="1" changeset="33652660" timestamp="2015-08-28T20:45:48Z" user="KindredCoda" uid="14293" lat="37.8305809" lon="-122.4799675" />
+ <node id="3741990459" visible="true" version="3" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8077730" lon="-122.4749787" />
+ <node id="3742026256" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109256" lon="-122.4773122" />
+ <node id="3742026257" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8110157" lon="-122.4773226" />
+ <node id="3742026258" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109868" lon="-122.4777221" />
+ <node id="3742026259" visible="true" version="4" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099127" lon="-122.4772026" />
+ <node id="3742026260" visible="true" version="4" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099993" lon="-122.4772142" />
+ <node id="3742026261" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8108972" lon="-122.4777123" />
+ <node id="3742026262" visible="true" version="4" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8098798" lon="-122.4775971" />
+ <node id="3742026263" visible="true" version="4" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099664" lon="-122.4776086" />
+ <node id="3742028862" visible="true" version="2" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105522" lon="-122.4772753" />
+ <node id="3742028872" visible="true" version="2" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105427" lon="-122.4772718" />
+ <node id="3742028874" visible="true" version="2" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105325" lon="-122.4772758" />
+ <node id="3742028878" visible="true" version="4" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075097" lon="-122.4751465" />
+ <node id="3742028899" visible="true" version="2" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105246" lon="-122.4772939" />
+ <node id="3742028901" visible="true" version="2" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105270" lon="-122.4772832" />
+ <node id="3742028904" visible="true" version="4" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075872" lon="-122.4752274">
+  <tag k="access" v="private" />
+  <tag k="door" v="hinged" />
+  <tag k="entrance" v="exit" />
+ </node>
+ <node id="3742029243" visible="true" version="2" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105586" lon="-122.4772840" />
+ <node id="3742029244" visible="true" version="2" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105264" lon="-122.4773048" />
+ <node id="3743685560" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8288150" lon="-122.4798484" />
+ <node id="3743685561" visible="true" version="4" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8288195" lon="-122.4797718" />
+ <node id="3743685562" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8288276" lon="-122.4794863" />
+ <node id="3743685563" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8288323" lon="-122.4794136" />
+ <node id="3743685564" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8294622" lon="-122.4794428" />
+ <node id="3743685565" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8294632" lon="-122.4794275" />
+ <node id="3743685566" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295133" lon="-122.4799779" />
+ <node id="3743685567" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295052" lon="-122.4798604" />
+ <node id="3743685568" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295263" lon="-122.4795512" />
+ <node id="3743685569" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295473" lon="-122.4794365" />
+ <node id="4202269930" visible="true" version="1" changeset="39510689" timestamp="2016-05-23T14:10:21Z" user="Anton Lavrov" uid="623324" lat="37.8072708" lon="-122.4766475" />
+ <node id="4202269934" visible="true" version="1" changeset="39510689" timestamp="2016-05-23T14:10:21Z" user="Anton Lavrov" uid="623324" lat="37.8072914" lon="-122.4767880" />
+ <node id="4202269949" visible="true" version="1" changeset="39510689" timestamp="2016-05-23T14:10:22Z" user="Anton Lavrov" uid="623324" lat="37.8074461" lon="-122.4766064" />
+ <node id="4202269952" visible="true" version="1" changeset="39510689" timestamp="2016-05-23T14:10:22Z" user="Anton Lavrov" uid="623324" lat="37.8074667" lon="-122.4767469" />
+ <node id="4220109190" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8288906" lon="-122.4798543">
+  <tag k="access" v="no" />
+  <tag k="barrier" v="gate" />
+  <tag k="locked" v="yes" />
+ </node>
+ <node id="5207344493" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:57Z" user="Ironman324" uid="7496060" lat="37.8320766" lon="-122.4806112" />
+ <node id="5207344495" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:57Z" user="Ironman324" uid="7496060" lat="37.8092064" lon="-122.4773309" />
+ <node id="5207344496" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:57Z" user="Ironman324" uid="7496060" lat="37.8095254" lon="-122.4774127" />
+ <node id="5207344497" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8321866" lon="-122.4807210" />
+ <node id="5207344498" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8088631" lon="-122.4771793" />
+ <node id="5207344499" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8313618" lon="-122.4801126" />
+ <node id="5207344500" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8316098" lon="-122.4802487" />
+ <node id="5207344501" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8304218" lon="-122.4798626" />
+ <node id="5207344502" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8305807" lon="-122.4798827" />
+ <node id="5207344503" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8085270" lon="-122.4769644" />
+ <node id="5207344504" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8308434" lon="-122.4799297" />
+ <node id="5207344505" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8096313" lon="-122.4774289" />
+ <node id="5207344506" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8311070" lon="-122.4800075" />
+ <node id="5207344507" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8318619" lon="-122.4804276" />
+ <node id="5207344508" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8093078" lon="-122.4773633" />
+ <node id="5207344509" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8307154" lon="-122.4799027" />
+ <node id="5207344511" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8312368" lon="-122.4800577" />
+ <node id="5207344512" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8317434" lon="-122.4803387" />
+ <node id="5207344513" visible="true" version="4" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8080536" lon="-122.4765727" />
+ <node id="5207344514" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8087486" lon="-122.4771150" />
+ <node id="5207344515" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8091026" lon="-122.4772933" />
+ <node id="5207344517" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8302731" lon="-122.4798443" />
+ <node id="5207344518" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8309799" lon="-122.4799646" />
+ <node id="5207344519" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8319687" lon="-122.4805139" />
+ <node id="5207344520" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8086340" lon="-122.4770418" />
+ <node id="5207344721" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8089881" lon="-122.4772423" />
+ <node id="5207344722" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8094171" lon="-122.4773906" />
+ <node id="5207344723" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8082886" lon="-122.4767805" />
+ <node id="5207344724" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8084159" lon="-122.4768793" />
+ <node id="5207344725" visible="true" version="2" changeset="59645407" timestamp="2018-06-07T18:16:58Z" user="Ironman324" uid="7496060" lat="37.8314908" lon="-122.4801782" />
+ <node id="5207631454" visible="true" version="4" changeset="112550629" timestamp="2021-10-15T16:43:49Z" user="KindredCoda" uid="14293" lat="37.8323081" lon="-122.4808518" />
+ <node id="5673261809" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8081243" lon="-122.4764699" />
+ <node id="5673261810" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8322348" lon="-122.4806263" />
+ <node id="5673261811" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8321248" lon="-122.4805165" />
+ <node id="5673261812" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8320169" lon="-122.4804192" />
+ <node id="5673261813" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8319101" lon="-122.4803329" />
+ <node id="5673261814" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8317916" lon="-122.4802440" />
+ <node id="5673261815" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8316580" lon="-122.4801540" />
+ <node id="5673261816" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8315390" lon="-122.4800835" />
+ <node id="5673261817" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8314100" lon="-122.4800179" />
+ <node id="5673261818" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8312850" lon="-122.4799630" />
+ <node id="5673261819" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8311552" lon="-122.4799128" />
+ <node id="5673261820" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8310281" lon="-122.4798699" />
+ <node id="5673262421" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8308916" lon="-122.4798350" />
+ <node id="5673262422" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8307636" lon="-122.4798080" />
+ <node id="5673262423" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8306289" lon="-122.4797880" />
+ <node id="5673262424" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8304700" lon="-122.4797679" />
+ <node id="5673262425" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8303213" lon="-122.4797496" />
+ <node id="5673262426" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8096796" lon="-122.4773342" />
+ <node id="5673262427" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8095737" lon="-122.4773180" />
+ <node id="5673262428" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8094654" lon="-122.4772959" />
+ <node id="5673262429" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8093561" lon="-122.4772686" />
+ <node id="5673262430" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8092547" lon="-122.4772362" />
+ <node id="5673262431" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8091509" lon="-122.4771986" />
+ <node id="5673262432" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8090364" lon="-122.4771476" />
+ <node id="5673262433" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8089114" lon="-122.4770846" />
+ <node id="5673262434" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:56Z" user="Ironman324" uid="7496060" lat="37.8087969" lon="-122.4770203" />
+ <node id="5673262435" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:57Z" user="Ironman324" uid="7496060" lat="37.8086823" lon="-122.4769471" />
+ <node id="5673262436" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:57Z" user="Ironman324" uid="7496060" lat="37.8085753" lon="-122.4768697" />
+ <node id="5673262437" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:57Z" user="Ironman324" uid="7496060" lat="37.8084684" lon="-122.4767855" />
+ <node id="5673262438" visible="true" version="1" changeset="59645407" timestamp="2018-06-07T18:16:57Z" user="Ironman324" uid="7496060" lat="37.8083516" lon="-122.4766840" />
+ <node id="5673262439" visible="true" version="2" changeset="101472533" timestamp="2021-03-22T05:45:15Z" user="KindredCoda" uid="14293" lat="37.8082433" lon="-122.4765844" />
+ <node id="6467218015" visible="true" version="4" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8076765" lon="-122.4749616">
+  <tag k="access" v="permissive" />
+  <tag k="button_operated" v="yes" />
+  <tag k="door" v="hinged" />
+  <tag k="entrance" v="yes" />
+  <tag k="wheelchair" v="yes" />
+ </node>
+ <node id="6696347207" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8141037" lon="-122.4777637" />
+ <node id="6696347208" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8141023" lon="-122.4777127" />
+ <node id="6696347209" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8140634" lon="-122.4776783" />
+ <node id="6696347210" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8140434" lon="-122.4776712" />
+ <node id="6696347211" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8140073" lon="-122.4776703" />
+ <node id="6696347212" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8139799" lon="-122.4776748" />
+ <node id="6696347213" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8139539" lon="-122.4776936" />
+ <node id="6696347214" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8139515" lon="-122.4777418" />
+ <node id="6696347224" visible="true" version="2" changeset="78456112" timestamp="2019-12-16T06:38:03Z" user="oba510" uid="933797" lat="37.8139220" lon="-122.4780179" />
+ <node id="6696347225" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8139184" lon="-122.4780576" />
+ <node id="6696347226" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8139487" lon="-122.4780900" />
+ <node id="6696347227" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8139838" lon="-122.4781079" />
+ <node id="6696347228" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8140100" lon="-122.4781134" />
+ <node id="6696347229" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8140405" lon="-122.4781086" />
+ <node id="6696347230" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8140665" lon="-122.4780851" />
+ <node id="6696347231" visible="true" version="2" changeset="78456112" timestamp="2019-12-16T06:38:03Z" user="oba510" uid="933797" lat="37.8140794" lon="-122.4780340" />
+ <node id="6696347232" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8140760" lon="-122.4780603" />
+ <node id="6696347233" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254289" lon="-122.4790893" />
+ <node id="6696347234" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254310" lon="-122.4790358" />
+ <node id="6696347235" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254704" lon="-122.4790112" />
+ <node id="6696347236" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255000" lon="-122.4790034" />
+ <node id="6696347237" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255267" lon="-122.4790058" />
+ <node id="6696347238" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255771" lon="-122.4790401" />
+ <node id="6696347239" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255904" lon="-122.4790601" />
+ <node id="6696347240" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255878" lon="-122.4790969" />
+ <node id="6696347241" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254055" lon="-122.4793535" />
+ <node id="6696347242" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254049" lon="-122.4794013" />
+ <node id="6696347243" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254338" lon="-122.4794334" />
+ <node id="6696347244" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254630" lon="-122.4794470" />
+ <node id="6696347245" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8254890" lon="-122.4794520" />
+ <node id="6696347246" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255157" lon="-122.4794480" />
+ <node id="6696347247" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255575" lon="-122.4794300" />
+ <node id="6696347248" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255723" lon="-122.4794125" />
+ <node id="6696347249" visible="true" version="1" changeset="73177401" timestamp="2019-08-09T04:28:23Z" user="sean2019alt" uid="10200354" lat="37.8255771" lon="-122.4793753" />
+ <node id="7190094860" visible="true" version="2" changeset="188793058" timestamp="2026-09-09T20:51:45Z" user="Flap Slimy Outward" uid="22417964" lat="37.8254838" lon="-122.4792839" />
+ <node id="7192379617" visible="true" version="2" changeset="188793058" timestamp="2026-09-09T20:51:45Z" user="Flap Slimy Outward" uid="22417964" lat="37.8255059" lon="-122.4791861" />
+ <node id="8978535801" visible="true" version="1" changeset="109116740" timestamp="2021-08-03T23:21:54Z" user="fintler" uid="123447" lat="37.8174339" lon="-122.4781529" />
+ <node id="9703154295" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8291561" lon="-122.4798835" />
+ <node id="9703154296" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8291532" lon="-122.4799262" />
+ <node id="10031652620" visible="true" version="1" changeset="126300248" timestamp="2022-09-17T13:56:45Z" user="EvesAngle" uid="6411779" lat="37.8317361" lon="-122.4802066" />
+ <node id="10815359925" visible="true" version="3" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8077159" lon="-122.4750039">
+  <tag k="access" v="permissive" />
+  <tag k="door" v="hinged" />
+  <tag k="entrance" v="yes" />
+  <tag k="wheelchair" v="yes" />
+ </node>
+ <node id="10815359926" visible="true" version="3" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8078895" lon="-122.4748050">
+  <tag k="access" v="emergency" />
+  <tag k="door" v="hinged" />
+  <tag k="entrance" v="exit" />
+ </node>
+ <node id="10815359928" visible="true" version="3" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8074854" lon="-122.4751707">
+  <tag k="access" v="private" />
+  <tag k="door" v="hinged" />
+  <tag k="entrance" v="yes" />
+ </node>
+ <node id="11771808553" visible="true" version="2" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8099070" lon="-122.4772706" />
+ <node id="11842345744" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8140161" lon="-122.4781365" />
+ <node id="11842345751" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8140557" lon="-122.4781269" />
+ <node id="11842345753" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8139734" lon="-122.4776552" />
+ <node id="11842345759" visible="true" version="3" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8141179" lon="-122.4777036" />
+ <node id="11842345760" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8139755" lon="-122.4781316" />
+ <node id="11842345761" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8139395" lon="-122.4781131" />
+ <node id="11842345764" visible="true" version="3" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8139107" lon="-122.4780783" />
+ <node id="11842345766" visible="true" version="3" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8139400" lon="-122.4776825" />
+ <node id="11842380471" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8140118" lon="-122.4776476" />
+ <node id="11842380473" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8140895" lon="-122.4776689" />
+ <node id="11842380474" visible="true" version="4" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8140524" lon="-122.4776524" />
+ <node id="12231501498" visible="true" version="1" changeset="157576660" timestamp="2024-10-07T11:06:21Z" user="subham_lyft" uid="18783059" lat="37.8321173" lon="-122.4806519" />
+ <node id="12300623378" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140057" lon="-122.4777761" />
+ <node id="12300623379" visible="true" version="10" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8140397" lon="-122.4777682" />
+ <node id="12300623380" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140570" lon="-122.4777704" />
+ <node id="12300623383" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139901" lon="-122.4777622" />
+ <node id="12300623385" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140864" lon="-122.4777614" />
+ <node id="12300623386" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140892" lon="-122.4777249" />
+ <node id="12300623388" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140617" lon="-122.4777094" />
+ <node id="12300623393" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139949" lon="-122.4777015" />
+ <node id="12300623395" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139652" lon="-122.4777103" />
+ <node id="12300623396" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139625" lon="-122.4777464" />
+ <node id="12300941958" visible="true" version="9" changeset="158686760" timestamp="2024-11-03T07:03:31Z" user="KindredCoda" uid="14293" lat="37.8139995" lon="-122.4777509" />
+ <node id="12300941959" visible="true" version="5" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139986" lon="-122.4777633" />
+ <node id="12300941960" visible="true" version="6" changeset="158640473" timestamp="2024-11-01T23:10:58Z" user="KindredCoda" uid="14293" lat="37.8140482" lon="-122.4777693" />
+ <node id="12300941961" visible="true" version="9" changeset="158686760" timestamp="2024-11-03T07:03:31Z" user="KindredCoda" uid="14293" lat="37.8140492" lon="-122.4777569" />
+ <node id="12300941962" visible="true" version="8" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140683" lon="-122.4777593" />
+ <node id="12300941963" visible="true" version="8" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140712" lon="-122.4777228" />
+ <node id="12300941964" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140523" lon="-122.4777205" />
+ <node id="12300941965" visible="true" version="5" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140532" lon="-122.4777083" />
+ <node id="12300941966" visible="true" version="5" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140033" lon="-122.4777026" />
+ <node id="12300941967" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140023" lon="-122.4777147" />
+ <node id="12300941968" visible="true" version="8" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139835" lon="-122.4777124" />
+ <node id="12300941969" visible="true" version="8" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139807" lon="-122.4777486" />
+ <node id="12300941970" visible="true" version="8" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139910" lon="-122.4777499" />
+ <node id="12300941972" visible="true" version="8" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8140067" lon="-122.4777643" />
+ <node id="12300941973" visible="true" version="9" changeset="158765791" timestamp="2024-11-05T06:26:41Z" user="KindredCoda" uid="14293" lat="37.8140057" lon="-122.4777761" />
+ <node id="12300941974" visible="true" version="10" changeset="158765791" timestamp="2024-11-05T06:26:41Z" user="KindredCoda" uid="14293" lat="37.8140388" lon="-122.4777802" />
+ <node id="12300941976" visible="true" version="5" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140569" lon="-122.4777704" />
+ <node id="12300941977" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140578" lon="-122.4777580" />
+ <node id="12300941978" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140768" lon="-122.4777603" />
+ <node id="12300941979" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140796" lon="-122.4777237" />
+ <node id="12300941980" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140608" lon="-122.4777216" />
+ <node id="12300941982" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140448" lon="-122.4777074" />
+ <node id="12300941983" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140458" lon="-122.4776952" />
+ <node id="12300941984" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140125" lon="-122.4776912" />
+ <node id="12300941985" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140115" lon="-122.4777035" />
+ <node id="12300941986" visible="true" version="5" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139949" lon="-122.4777015" />
+ <node id="12300941987" visible="true" version="7" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139940" lon="-122.4777137" />
+ <node id="12300941988" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139749" lon="-122.4777114" />
+ <node id="12300941989" visible="true" version="6" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139721" lon="-122.4777476" />
+ <node id="12300956506" visible="true" version="5" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140105" lon="-122.4777156" />
+ <node id="12300956507" visible="true" version="6" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8140077" lon="-122.4777519" />
+ <node id="12300956508" visible="true" version="6" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8140408" lon="-122.4777559" />
+ <node id="12300956509" visible="true" version="5" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140438" lon="-122.4777195" />
+ <node id="12301011195" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140727" lon="-122.4776984" />
+ <node id="12301011196" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140542" lon="-122.4776963" />
+ <node id="12301011197" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140550" lon="-122.4776841" />
+ <node id="12301011198" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140050" lon="-122.4776783" />
+ <node id="12301011199" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140041" lon="-122.4776901" />
+ <node id="12301011200" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139853" lon="-122.4776880" />
+ <node id="12301037901" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139845" lon="-122.4777005" />
+ <node id="12301037902" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139577" lon="-122.4776973" />
+ <node id="12301037903" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139533" lon="-122.4777576" />
+ <node id="12301037904" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139804" lon="-122.4777607" />
+ <node id="12301037905" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139796" lon="-122.4777725" />
+ <node id="12301037906" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139976" lon="-122.4777746" />
+ <node id="12301037907" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139968" lon="-122.4777870" />
+ <node id="12301037908" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140466" lon="-122.4777929" />
+ <node id="12301037909" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140474" lon="-122.4777815" />
+ <node id="12301037910" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140665" lon="-122.4777837" />
+ <node id="12301037911" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140673" lon="-122.4777718" />
+ <node id="12301037912" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140935" lon="-122.4777749" />
+ <node id="12301037913" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140980" lon="-122.4777140" />
+ <node id="12301037914" visible="true" version="4" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140718" lon="-122.4777110" />
+ <node id="12303103566" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139395" lon="-122.4780571" />
+ <node id="12303103567" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139422" lon="-122.4780210" />
+ <node id="12303103568" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139519" lon="-122.4780221" />
+ <node id="12303103569" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139605" lon="-122.4780231" />
+ <node id="12303103570" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139710" lon="-122.4780244" />
+ <node id="12303103571" visible="true" version="3" changeset="158630341" timestamp="2024-11-01T17:50:10Z" user="KindredCoda" uid="14293" lat="37.8139719" lon="-122.4780122" />
+ <node id="12303103572" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139803" lon="-122.4780133" />
+ <node id="12303103573" visible="true" version="3" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8139885" lon="-122.4780142" />
+ <node id="12303103574" visible="true" version="6" changeset="158765791" timestamp="2024-11-05T06:26:41Z" user="KindredCoda" uid="14293" lat="37.8139895" lon="-122.4780019" />
+ <node id="12303103575" visible="true" version="6" changeset="158765791" timestamp="2024-11-05T06:26:41Z" user="KindredCoda" uid="14293" lat="37.8140228" lon="-122.4780059" />
+ <node id="12303103576" visible="true" version="3" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8140218" lon="-122.4780181" />
+ <node id="12303103577" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140302" lon="-122.4780190" />
+ <node id="12303103578" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140387" lon="-122.4780201" />
+ <node id="12303103579" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140378" lon="-122.4780323" />
+ <node id="12303103580" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140482" lon="-122.4780335" />
+ <node id="12303103581" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140566" lon="-122.4780344" />
+ <node id="12303103582" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140662" lon="-122.4780356" />
+ <node id="12303103583" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140634" lon="-122.4780721" />
+ <node id="12303103584" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140538" lon="-122.4780710" />
+ <node id="12303103585" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140453" lon="-122.4780700" />
+ <node id="12303103586" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140348" lon="-122.4780687" />
+ <node id="12303103587" visible="true" version="3" changeset="158630341" timestamp="2024-11-01T17:50:10Z" user="KindredCoda" uid="14293" lat="37.8140340" lon="-122.4780811" />
+ <node id="12303103588" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140252" lon="-122.4780800" />
+ <node id="12303103589" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140167" lon="-122.4780789" />
+ <node id="12303103590" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140158" lon="-122.4780909" />
+ <node id="12303103591" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139827" lon="-122.4780868" />
+ <node id="12303103592" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139837" lon="-122.4780750" />
+ <node id="12303103593" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139756" lon="-122.4780740" />
+ <node id="12303103594" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139671" lon="-122.4780729" />
+ <node id="12303103595" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139680" lon="-122.4780606" />
+ <node id="12303103596" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139577" lon="-122.4780593" />
+ <node id="12303103597" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139491" lon="-122.4780583" />
+ <node id="12303103598" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140488" lon="-122.4780217" />
+ <node id="12303103599" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140750" lon="-122.4780247" />
+ <node id="12303103600" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140705" lon="-122.4780856" />
+ <node id="12303104001" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140443" lon="-122.4780825" />
+ <node id="12303104002" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140435" lon="-122.4780944" />
+ <node id="12303104003" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140244" lon="-122.4780922" />
+ <node id="12303104004" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140236" lon="-122.4781036" />
+ <node id="12303104005" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139738" lon="-122.4780977" />
+ <node id="12303104006" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139746" lon="-122.4780853" />
+ <node id="12303104007" visible="true" version="3" changeset="158640310" timestamp="2024-11-01T23:04:06Z" user="KindredCoda" uid="14293" lat="37.8139566" lon="-122.4780832" />
+ <node id="12303104008" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139574" lon="-122.4780714" />
+ <node id="12303104009" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139303" lon="-122.4780683" />
+ <node id="12303104010" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139347" lon="-122.4780080" />
+ <node id="12303104011" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139615" lon="-122.4780112" />
+ <node id="12303104012" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139623" lon="-122.4779987" />
+ <node id="12303104013" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139811" lon="-122.4780008" />
+ <node id="12303104014" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139820" lon="-122.4779890" />
+ <node id="12303104015" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140320" lon="-122.4779948" />
+ <node id="12303104016" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140312" lon="-122.4780070" />
+ <node id="12303104017" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140497" lon="-122.4780091" />
+ <node id="12303104020" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140158" lon="-122.4780909" />
+ <node id="12303104021" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139827" lon="-122.4780868" />
+ <node id="12303104022" visible="true" version="4" changeset="158686760" timestamp="2024-11-03T07:03:31Z" user="KindredCoda" uid="14293" lat="37.8139793" lon="-122.4780254" />
+ <node id="12303104023" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139765" lon="-122.4780616" />
+ <node id="12303104024" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8139847" lon="-122.4780626" />
+ <node id="12303104025" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140178" lon="-122.4780666" />
+ <node id="12303104026" visible="true" version="2" changeset="158629338" timestamp="2024-11-01T17:22:19Z" user="KindredCoda" uid="14293" lat="37.8140262" lon="-122.4780676" />
+ <node id="12303104027" visible="true" version="4" changeset="158686760" timestamp="2024-11-03T07:03:31Z" user="KindredCoda" uid="14293" lat="37.8140293" lon="-122.4780312" />
+ <node id="12303104028" visible="true" version="3" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8140208" lon="-122.4780302" />
+ <node id="12303104029" visible="true" version="3" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293" lat="37.8139875" lon="-122.4780263" />
+ <node id="12304984956" visible="true" version="4" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8139390" lon="-122.4776709" />
+ <node id="12304984957" visible="true" version="3" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8139947" lon="-122.4776492" />
+ <node id="12304984958" visible="true" version="4" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8140689" lon="-122.4776582" />
+ <node id="12304984959" visible="true" version="4" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8141203" lon="-122.4776917" />
+ <node id="12305030927" visible="true" version="4" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8140342" lon="-122.4781327" />
+ <node id="12305030928" visible="true" version="5" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8139600" lon="-122.4781251" />
+ <node id="12305030929" visible="true" version="5" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8139085" lon="-122.4780903" />
+ <node id="12305030930" visible="true" version="5" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8140898" lon="-122.4781114" />
+ <node id="12305042217" visible="true" version="1" changeset="158633327" timestamp="2024-11-01T19:19:55Z" user="KindredCoda" uid="14293" lat="37.8140892" lon="-122.4780017" />
+ <node id="12305042218" visible="true" version="2" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8140977" lon="-122.4780027" />
+ <node id="12305042219" visible="true" version="2" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8139312" lon="-122.4777794" />
+ <node id="12305042220" visible="true" version="2" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8141125" lon="-122.4778007" />
+ <node id="12305042221" visible="true" version="1" changeset="158633327" timestamp="2024-11-01T19:19:55Z" user="KindredCoda" uid="14293" lat="37.8141046" lon="-122.4777997" />
+ <node id="12305042222" visible="true" version="1" changeset="158633327" timestamp="2024-11-01T19:19:55Z" user="KindredCoda" uid="14293" lat="37.8139399" lon="-122.4777804" />
+ <node id="12305042223" visible="true" version="1" changeset="158633327" timestamp="2024-11-01T19:19:55Z" user="KindredCoda" uid="14293" lat="37.8139251" lon="-122.4779820" />
+ <node id="12305042224" visible="true" version="2" changeset="158728851" timestamp="2024-11-04T07:53:26Z" user="KindredCoda" uid="14293" lat="37.8139164" lon="-122.4779810" />
+ <node id="12305747944" visible="true" version="2" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8140885" lon="-122.4780994" />
+ <node id="12313697884" visible="true" version="1" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8139131" lon="-122.4780454" />
+ <node id="12313697885" visible="true" version="1" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8139376" lon="-122.4777163" />
+ <node id="12313697886" visible="true" version="1" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8140910" lon="-122.4780664" />
+ <node id="12313697887" visible="true" version="1" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293" lat="37.8141155" lon="-122.4777372" />
+ <node id="12313703311" visible="true" version="2" changeset="158765238" timestamp="2024-11-05T06:00:30Z" user="KindredCoda" uid="14293" lat="37.8141114" lon="-122.4777924" />
+ <node id="12313703312" visible="true" version="1" changeset="158765198" timestamp="2024-11-05T05:58:17Z" user="KindredCoda" uid="14293" lat="37.8139336" lon="-122.4777711" />
+ <node id="12313703313" visible="true" version="2" changeset="158765331" timestamp="2024-11-05T06:05:02Z" user="KindredCoda" uid="14293" lat="37.8140951" lon="-122.4780112" />
+ <node id="12313703314" visible="true" version="1" changeset="158765198" timestamp="2024-11-05T05:58:17Z" user="KindredCoda" uid="14293" lat="37.8139173" lon="-122.4779899" />
+ <node id="12313747258" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254727" lon="-122.4790428" />
+ <node id="12313747259" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254448" lon="-122.4794255" />
+ <node id="12313747260" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255414" lon="-122.4790506" />
+ <node id="12313747261" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255290" lon="-122.4790982" />
+ <node id="12313747262" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254601" lon="-122.4793545" />
+ <node id="12313747263" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254456" lon="-122.4794137" />
+ <node id="12313747264" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255330" lon="-122.4790497" />
+ <node id="12313747265" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255134" lon="-122.4794223" />
+ <node id="12313747266" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255780" lon="-122.4794537" />
+ <node id="12313747267" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254757" lon="-122.4793686" />
+ <node id="12313747268" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254822" lon="-122.4790560" />
+ <node id="12313747269" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254281" lon="-122.4791227" />
+ <node id="12313747270" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254638" lon="-122.4794163" />
+ <node id="12313747271" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254282" lon="-122.4790248" />
+ <node id="12313747272" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254868" lon="-122.4791056" />
+ <node id="12313747273" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255317" lon="-122.4794367" />
+ <node id="12313747274" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255364" lon="-122.4791116" />
+ <node id="12313747275" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254959" lon="-122.4790942" />
+ <node id="12313747276" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255544" lon="-122.4793779" />
+ <node id="12313747277" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254647" lon="-122.4794039" />
+ <node id="12313747278" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254735" lon="-122.4790303" />
+ <node id="12313747279" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255222" lon="-122.4794234" />
+ <node id="12313747280" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8253967" lon="-122.4794326" />
+ <node id="12313747281" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254729" lon="-122.4794049" />
+ <node id="12313747282" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255043" lon="-122.4794788" />
+ <node id="12313747283" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255928" lon="-122.4791420" />
+ <node id="12313747284" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254783" lon="-122.4791045" />
+ <node id="12313747285" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255000" lon="-122.4789899" />
+ <node id="12313747286" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255555" lon="-122.4791141" />
+ <node id="12313747287" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254055" lon="-122.4793322" />
+ <node id="12313747288" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255325" lon="-122.4794248" />
+ <node id="12313747289" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255448" lon="-122.4793767" />
+ <node id="12313747290" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255817" lon="-122.4791172" />
+ <node id="12313747291" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255451" lon="-122.4791127" />
+ <node id="12313747292" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255370" lon="-122.4793640" />
+ <node id="12313747293" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8256061" lon="-122.4790459" />
+ <node id="12313747294" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254939" lon="-122.4791184" />
+ <node id="12313747295" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255424" lon="-122.4790386" />
+ <node id="12313747296" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254637" lon="-122.4794739" />
+ <node id="12313747297" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255110" lon="-122.4793482" />
+ <node id="12313747298" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254858" lon="-122.4791169" />
+ <node id="12313747299" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255833" lon="-122.4793535" />
+ <node id="12313747300" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254505" lon="-122.4793410" />
+ <node id="12313750201" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254792" lon="-122.4790922" />
+ <node id="12313750202" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255100" lon="-122.4793604" />
+ <node id="12313750203" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254013" lon="-122.4793877" />
+ <node id="12313750204" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255379" lon="-122.4793514" />
+ <node id="12313750205" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254373" lon="-122.4794006" />
+ <node id="12313750206" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255609" lon="-122.4790407" />
+ <node id="12313750207" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254272" lon="-122.4790132" />
+ <node id="12313750208" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254628" lon="-122.4794276" />
+ <node id="12313750209" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255405" lon="-122.4790628" />
+ <node id="12313750210" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254592" lon="-122.4793667" />
+ <node id="12313750211" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254678" lon="-122.4791148" />
+ <node id="12313750212" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254497" lon="-122.4793535" />
+ <node id="12313750213" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254689" lon="-122.4790909" />
+ <node id="12313750214" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254709" lon="-122.4794291" />
+ <node id="12313750215" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255090" lon="-122.4793725" />
+ <node id="12313750216" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254831" lon="-122.4790438" />
+ <node id="12313750217" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254719" lon="-122.4794173" />
+ <node id="12313750218" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254616" lon="-122.4789975" />
+ <node id="12313750219" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255499" lon="-122.4790517" />
+ <node id="12313750220" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254877" lon="-122.4790932" />
+ <node id="12313750221" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254831" lon="-122.4790438" />
+ <node id="12313750222" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254620" lon="-122.4794400" />
+ <node id="12313750223" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255594" lon="-122.4790651" />
+ <node id="12313750224" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254987" lon="-122.4790579" />
+ <node id="12313750225" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254487" lon="-122.4793654" />
+ <node id="12313750226" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255224" lon="-122.4794750" />
+ <node id="12313750227" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254675" lon="-122.4793677" />
+ <node id="12313750228" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255490" lon="-122.4790639" />
+ <node id="12313750229" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255230" lon="-122.4794110" />
+ <node id="12313750230" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254482" lon="-122.4794674" />
+ <node id="12313750231" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255175" lon="-122.4793735" />
+ <node id="12313750232" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254997" lon="-122.4790458" />
+ <node id="12313750233" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8256007" lon="-122.4791430" />
+ <node id="12313750234" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8253989" lon="-122.4794206" />
+ <node id="12313750235" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255547" lon="-122.4791260" />
+ <node id="12313750236" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255270" lon="-122.4791225" />
+ <node id="12313750237" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255364" lon="-122.4793758" />
+ <node id="12313750238" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254709" lon="-122.4794291" />
+ <node id="12313750239" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255678" lon="-122.4790660" />
+ <node id="12313750240" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255335" lon="-122.4794123" />
+ <node id="12313750241" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254194" lon="-122.4791217" />
+ <node id="12313750242" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254923" lon="-122.4790324" />
+ <node id="12313750243" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255996" lon="-122.4791347" />
+ <node id="12313750244" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254777" lon="-122.4793442" />
+ <node id="12313750245" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255356" lon="-122.4791238" />
+ <node id="12313750246" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254218" lon="-122.4791134" />
+ <node id="12313750247" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255202" lon="-122.4793371" />
+ <node id="12313750248" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254939" lon="-122.4791184" />
+ <node id="12313750249" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255260" lon="-122.4793746" />
+ <node id="12313750250" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8256037" lon="-122.4790795" />
+ <node id="12313750251" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255194" lon="-122.4793493" />
+ <node id="12313750252" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254459" lon="-122.4794016" />
+ <node id="12313750253" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8256085" lon="-122.4790340" />
+ <node id="12313750254" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254415" lon="-122.4790999" />
+ <node id="12313750255" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254905" lon="-122.4790570" />
+ <node id="12313750256" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254767" lon="-122.4793565" />
+ <node id="12313750257" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254686" lon="-122.4791030" />
+ <node id="12313750258" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254229" lon="-122.4793503" />
+ <node id="12313750259" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254717" lon="-122.4790547" />
+ <node id="12313750260" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255040" lon="-122.4794332" />
+ <node id="12313750261" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254603" lon="-122.4790899" />
+ <node id="12313750262" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255439" lon="-122.4794692" />
+ <node id="12313750263" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254562" lon="-122.4794029" />
+ <node id="12313750264" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254304" lon="-122.4793633" />
+ <node id="12313750265" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255118" lon="-122.4794459" />
+ <node id="12313750266" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255565" lon="-122.4791016" />
+ <node id="12313750267" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255320" lon="-122.4790618" />
+ <node id="12313750268" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254401" lon="-122.4793644" />
+ <node id="12313750269" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254185" lon="-122.4794106" />
+ <node id="12313750270" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255340" lon="-122.4790375" />
+ <node id="12313750271" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255049" lon="-122.4794212" />
+ <node id="12313750272" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255144" lon="-122.4794099" />
+ <node id="12313750273" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255007" lon="-122.4790335" />
+ <node id="12313750274" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254133" lon="-122.4793243" />
+ <node id="12313750275" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254046" lon="-122.4793233" />
+ <node id="12313750276" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255774" lon="-122.4790672" />
+ <node id="12313750277" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255406" lon="-122.4789947" />
+ <node id="12313750278" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255126" lon="-122.4794345" />
+ <node id="12313750279" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255374" lon="-122.4790992" />
+ <node id="12313750280" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255516" lon="-122.4794144" />
+ <node id="12313750281" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255600" lon="-122.4790533" />
+ <node id="12313750282" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255040" lon="-122.4794332" />
+ <node id="12313750283" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255650" lon="-122.4791026" />
+ <node id="12313750284" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255420" lon="-122.4794133" />
+ <node id="12313750285" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255060" lon="-122.4794089" />
+ <node id="12313750286" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255859" lon="-122.4793450" />
+ <node id="12313750287" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255452" lon="-122.4791127" />
+ <node id="12313750288" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254932" lon="-122.4790206" />
+ <node id="12313750289" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255746" lon="-122.4791037" />
+ <node id="12313750290" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255777" lon="-122.4790112" />
+ <node id="12313750291" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255348" lon="-122.4791352" />
+ <node id="12313750292" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254702" lon="-122.4793313" />
+ <node id="12313750293" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255767" lon="-122.4794417" />
+ <node id="12313750294" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254949" lon="-122.4791066" />
+ <node id="12313750295" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255269" lon="-122.4793624" />
+ <node id="12313750296" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255792" lon="-122.4794087" />
+ <node id="12313750297" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255862" lon="-122.4790563" />
+ <node id="12313750298" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255460" lon="-122.4791003" />
+ <node id="12313750299" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255632" lon="-122.4793670" />
+ <node id="12313750300" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255774" lon="-122.4793440" />
+ <node id="12313750301" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255279" lon="-122.4791105" />
+ <node id="12313750302" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255587" lon="-122.4794279" />
+ <node id="12313750303" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255432" lon="-122.4790264" />
+ <node id="12313750304" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255571" lon="-122.4790005" />
+ <node id="12313750305" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254277" lon="-122.4794554" />
+ <node id="12313750306" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254507" lon="-122.4790887" />
+ <node id="12313750307" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254459" lon="-122.4790396" />
+ <node id="12313750308" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254915" lon="-122.4790449" />
+ <node id="12313750309" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254685" lon="-122.4793556" />
+ <node id="12313750310" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254850" lon="-122.4791293" />
+ <node id="12313750311" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254693" lon="-122.4793431" />
+ <node id="12313750312" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8255184" lon="-122.4793613" />
+ <node id="12313750313" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254258" lon="-122.4790586" />
+ <node id="12313750314" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254631" lon="-122.4790537" />
+ <node id="12313750315" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254553" lon="-122.4794152" />
+ <node id="12313750316" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254829" lon="-122.4789915" />
+ <node id="12313750317" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254277" lon="-122.4793994" />
+ <node id="12313750318" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293" lat="37.8254534" lon="-122.4790526" />
+ <node id="12319179181" visible="true" version="2" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8078167" lon="-122.4747925" />
+ <node id="12319179183" visible="true" version="2" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8076750" lon="-122.4749082" />
+ <node id="12319179184" visible="true" version="2" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8077802" lon="-122.4747511" />
+ <node id="12319179187" visible="true" version="2" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8077130" lon="-122.4749491" />
+ <node id="12319196192" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075452" lon="-122.4752591" />
+ <node id="12319196193" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075274" lon="-122.4751957" />
+ <node id="12319196194" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075121" lon="-122.4752229" />
+ <node id="12319196195" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075488" lon="-122.4752604" />
+ <node id="12319196196" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075297" lon="-122.4751957" />
+ <node id="12319196197" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075655" lon="-122.4752351" />
+ <node id="12319196198" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075233" lon="-122.4751985" />
+ <node id="12319196199" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075649" lon="-122.4752330" />
+ <node id="12319196200" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075251" lon="-122.4751968" />
+ <node id="12319210201" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075653" lon="-122.4752375" />
+ <node id="12319210202" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075646" lon="-122.4752398" />
+ <node id="12319210203" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075507" lon="-122.4752597" />
+ <node id="12319210204" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075127" lon="-122.4752145" />
+ <node id="12319210205" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075118" lon="-122.4752172" />
+ <node id="12319210206" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075524" lon="-122.4752583" />
+ <node id="12319210207" visible="true" version="3" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075865" lon="-122.4752368" />
+ <node id="12319210208" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075133" lon="-122.4752252" />
+ <node id="12319210209" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075317" lon="-122.4751970" />
+ <node id="12319210210" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075115" lon="-122.4752201" />
+ <node id="12319210211" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075469" lon="-122.4752601" />
+ <node id="12319210212" visible="true" version="1" changeset="158828829" timestamp="2024-11-06T18:18:35Z" user="KindredCoda" uid="14293" lat="37.8075641" lon="-122.4752314" />
+ <node id="12321508364" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075061" lon="-122.4751474" />
+ <node id="12321508365" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075862" lon="-122.4752226" />
+ <node id="12321508366" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8074992" lon="-122.4751515" />
+ <node id="12321508367" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075871" lon="-122.4752320" />
+ <node id="12321508368" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075250" lon="-122.4751515" />
+ <node id="12321508369" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075832" lon="-122.4752143" />
+ <node id="12321508370" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075214" lon="-122.4751487" />
+ <node id="12321508371" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075851" lon="-122.4752418" />
+ <node id="12321508372" visible="true" version="2" changeset="183834191" timestamp="2026-06-08T15:18:13Z" user="LonelyHunter" uid="22234365" lat="37.8075133" lon="-122.4751463" />
+ <node id="12570450825" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105605" lon="-122.4772909" />
+ <node id="12570450826" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105605" lon="-122.4772981" />
+ <node id="12570450827" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105588" lon="-122.4773049" />
+ <node id="12570450828" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105554" lon="-122.4773108" />
+ <node id="12570450829" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105508" lon="-122.4773150" />
+ <node id="12570450830" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105454" lon="-122.4773173" />
+ <node id="12570450831" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105397" lon="-122.4773172" />
+ <node id="12570450832" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105343" lon="-122.4773150" />
+ <node id="12570450833" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105297" lon="-122.4773107" />
+ <node id="12570450834" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105250" lon="-122.4772995" />
+ <node id="12570450835" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105253" lon="-122.4772884" />
+ <node id="12570450836" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105294" lon="-122.4772791" />
+ <node id="12570450837" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105373" lon="-122.4772728" />
+ <node id="12570450838" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105477" lon="-122.4772727" />
+ <node id="12570450839" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909" lat="37.8105559" lon="-122.4772791" />
+ <node id="12838081710" visible="true" version="1" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8072655" lon="-122.4755861" />
+ <node id="12838081711" visible="true" version="1" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8072566" lon="-122.4755993" />
+ <node id="12838081712" visible="true" version="1" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8071995" lon="-122.4755375" />
+ <node id="12838081713" visible="true" version="1" changeset="166277205" timestamp="2025-05-14T21:05:10Z" user="KindredCoda" uid="14293" lat="37.8072085" lon="-122.4755242" />
+ <node id="13129029677" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8070105" lon="-122.4758387" />
+ <node id="13699675949" visible="true" version="1" changeset="180739446" timestamp="2026-04-01T20:19:00Z" user="gerrg" uid="23718469" lat="37.8255601" lon="-122.4794090" />
+ <node id="13699675950" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8286217" lon="-122.4797965" />
+ <node id="13699675951" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285386" lon="-122.4797871" />
+ <node id="13699675952" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285630" lon="-122.4794026" />
+ <node id="13699675953" visible="true" version="3" changeset="189182227" timestamp="2026-09-17T21:26:39Z" user="nickvet419" uid="18480" lat="37.8286443" lon="-122.4794121" />
+ <node id="14190386660" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285540" lon="-122.4795400" />
+ <node id="14190386661" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285472" lon="-122.4796490" />
+ <node id="14190386662" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285611" lon="-122.4794276" />
+ <node id="14190386663" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285406" lon="-122.4797543" />
+ <node id="14190386664" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295304" lon="-122.4794867" />
+ <node id="14190386665" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295438" lon="-122.4794881" />
+ <node id="14190386666" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295011" lon="-122.4799195" />
+ <node id="14190386667" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295169" lon="-122.4799211" />
+ <node id="14190386668" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8294302" lon="-122.4799694" />
+ <node id="14190386669" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8294310" lon="-122.4799572" />
+ <node id="14190386670" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8286248" lon="-122.4797456" />
+ <node id="14190386671" visible="true" version="2" changeset="189182227" timestamp="2026-09-17T21:26:39Z" user="nickvet419" uid="18480" lat="37.8286403" lon="-122.4794638" />
+ <node id="14190386672" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285415" lon="-122.4797394" />
+ <node id="14190386673" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285419" lon="-122.4797339" />
+ <node id="14190386674" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285590" lon="-122.4794543" />
+ <node id="14190386675" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285588" lon="-122.4794644" />
+ <node id="14190386676" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8291354" lon="-122.4794466" />
+ <node id="14190386677" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8291381" lon="-122.4794074" />
+ <node id="14190386678" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295192" lon="-122.4796557" />
+ <node id="14190386679" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295120" lon="-122.4797602" />
+ <node id="14190386680" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295247" lon="-122.4795741" />
+ <node id="14190386681" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8295066" lon="-122.4798394" />
+ <node id="14190386682" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8285425" lon="-122.4797244" />
+ <node id="14190386685" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8288820" lon="-122.4798536" />
+ <node id="14190386686" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8289011" lon="-122.4798551" />
+ <node id="14190386688" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8294338" lon="-122.4799126" />
+ <node id="14190386689" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8294598" lon="-122.4794791" />
+ <node id="14190386690" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109901" lon="-122.4776749" />
+ <node id="14190386691" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8110119" lon="-122.4773742" />
+ <node id="14190386692" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8108983" lon="-122.4776968" />
+ <node id="14190386693" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109234" lon="-122.4773418" />
+ <node id="14190386694" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109219" lon="-122.4773638" />
+ <node id="14190386695" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109004" lon="-122.4776651" />
+ <node id="14190386696" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109908" lon="-122.4776630" />
+ <node id="14190386697" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099088" lon="-122.4772495" />
+ <node id="14190386698" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8098836" lon="-122.4775516" />
+ <node id="14190386699" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099954" lon="-122.4772609" />
+ <node id="14190386700" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099703" lon="-122.4775620" />
+ <node id="14190386701" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099680" lon="-122.4775896" />
+ <node id="14190386702" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099976" lon="-122.4772341" />
+ <node id="14190386703" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8089786" lon="-122.4775476" />
+ <node id="14190386704" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8093383" lon="-122.4775925" />
+ <node id="14190386705" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8093431" lon="-122.4775124" />
+ <node id="14190386706" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8098821" lon="-122.4775698" />
+ <node id="14190386707" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8099099" lon="-122.4772362" />
+ <node id="14190386708" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8090051" lon="-122.4770985" />
+ <node id="14190386709" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8098912" lon="-122.4774601" />
+ <node id="14190386710" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8098999" lon="-122.4773565" />
+ <node id="14190386711" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8110106" lon="-122.4773919" />
+ <node id="14190386712" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8109961" lon="-122.4775912" />
+ <node id="14190386713" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480" lat="37.8110040" lon="-122.4774833" />
+ <node id="14190436040" visible="true" version="1" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8078530" lon="-122.4747414" />
+ <node id="14190436076" visible="true" version="1" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480" lat="37.8098845" lon="-122.4775411" />
+ <way id="368033990" visible="true" version="21" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="8978535801" />
+  <nd ref="6696347233" />
+  <nd ref="6696347234" />
+  <nd ref="6696347235" />
+  <nd ref="6696347236" />
+  <nd ref="6696347237" />
+  <nd ref="6696347238" />
+  <nd ref="6696347239" />
+  <nd ref="6696347240" />
+  <nd ref="14190386675" />
+  <tag k="bicycle" v="designated" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="cycleway:surface" v="concrete" />
+  <tag k="elevation" v="220" />
+  <tag k="foot" v="designated" />
+  <tag k="footway:surface" v="concrete" />
+  <tag k="highway" v="cycleway" />
+  <tag k="horse" v="no" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="name" v="Golden Gate Bridge East Sidewalk" />
+  <tag k="note" v="Closes to pedestrians in the evening (exact time depends by season) but you can call on the interphone and they'll send a police car for to take you to the other side. Bikes allowed at night but must call on the interphone. Hours and instructions here: ht" />
+  <tag k="oneway" v="no" />
+  <tag k="segregated" v="yes" />
+  <tag k="source" v="Bing" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="concrete" />
+ </way>
+ <way id="368049578" visible="true" version="20" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480">
+  <nd ref="14190386682" />
+  <nd ref="6696347249" />
+  <nd ref="6696347248" />
+  <nd ref="6696347247" />
+  <nd ref="6696347246" />
+  <nd ref="6696347245" />
+  <nd ref="6696347244" />
+  <nd ref="6696347243" />
+  <nd ref="6696347242" />
+  <nd ref="6696347241" />
+  <nd ref="6696347231" />
+  <nd ref="6696347232" />
+  <nd ref="6696347230" />
+  <nd ref="6696347229" />
+  <nd ref="6696347228" />
+  <nd ref="6696347227" />
+  <nd ref="6696347226" />
+  <nd ref="6696347225" />
+  <nd ref="6696347224" />
+  <nd ref="14190386696" />
+  <nd ref="14190436076" />
+  <nd ref="3719112680" />
+  <nd ref="3719112697" />
+  <nd ref="3719112702" />
+  <nd ref="3719112681" />
+  <nd ref="3719112695" />
+  <nd ref="3719112700" />
+  <nd ref="3719112690" />
+  <nd ref="3719112701" />
+  <nd ref="3719112687" />
+  <nd ref="3719112676" />
+  <nd ref="3719112685" />
+  <nd ref="3719112682" />
+  <nd ref="3719112694" />
+  <tag k="bicycle" v="designated" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="foot" v="no" />
+  <tag k="highway" v="cycleway" />
+  <tag k="horse" v="no" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="15 mph" />
+  <tag k="motor_vehicle" v="no" />
+  <tag k="name" v="Golden Gate Bridge West Sidewalk" />
+  <tag k="note" v="Bicyclists use west sidewalk during weekday afternoons and on weekend days. At other times, bicyclists share east sidewalk with pedestrians. Detailed hours here: https://www.goldengate.org/bridge/visiting-the-bridge/bikes-pedestrians/" />
+  <tag k="oneway" v="no" />
+  <tag k="segregated" v="no" />
+  <tag k="source" v="Bing" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="concrete" />
+ </way>
+ <way id="370509458" visible="true" version="3" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="3742026257" />
+  <nd ref="3742026256" />
+  <nd ref="14190386693" />
+  <nd ref="14190386694" />
+  <nd ref="14190386695" />
+  <nd ref="14190386692" />
+  <nd ref="3742026261" />
+  <nd ref="3742026258" />
+  <nd ref="14190386690" />
+  <nd ref="14190386696" />
+  <nd ref="14190386712" />
+  <nd ref="14190386713" />
+  <nd ref="14190386711" />
+  <nd ref="14190386691" />
+  <nd ref="3742026257" />
+  <tag k="bridge:support" v="pier" />
+ </way>
+ <way id="370509459" visible="true" version="4" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480">
+  <nd ref="3742026260" />
+  <nd ref="3742026259" />
+  <nd ref="14190386707" />
+  <nd ref="14190386697" />
+  <nd ref="11771808553" />
+  <nd ref="14190386710" />
+  <nd ref="14190386709" />
+  <nd ref="14190436076" />
+  <nd ref="14190386698" />
+  <nd ref="14190386706" />
+  <nd ref="3742026262" />
+  <nd ref="3742026263" />
+  <nd ref="14190386701" />
+  <nd ref="14190386700" />
+  <nd ref="14190386699" />
+  <nd ref="14190386702" />
+  <nd ref="3742026260" />
+  <tag k="bridge:support" v="pier" />
+ </way>
+ <way id="420287709" visible="true" version="2" changeset="134594822" timestamp="2023-04-06T22:30:28Z" user="VLD171" uid="11452275">
+  <nd ref="4202269952" />
+  <nd ref="4202269949" />
+  <nd ref="4202269930" />
+  <nd ref="4202269934" />
+  <nd ref="4202269952" />
+  <tag k="building:part" v="yes" />
+ </way>
+ <way id="537838948" visible="true" version="15" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="7190094860" />
+  <nd ref="14190386712" />
+  <nd ref="14190386709" />
+  <nd ref="5207344505" />
+  <nd ref="5207344496" />
+  <nd ref="5207344722" />
+  <nd ref="5207344508" />
+  <nd ref="5207344495" />
+  <nd ref="5207344515" />
+  <nd ref="5207344721" />
+  <nd ref="5207344498" />
+  <nd ref="5207344514" />
+  <nd ref="5207344520" />
+  <nd ref="5207344503" />
+  <nd ref="5207344724" />
+  <nd ref="5207344723" />
+  <nd ref="5207344513" />
+  <tag k="bicycle" v="no" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate Bridge" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="colour" v="orange" />
+  <tag k="cycleway" v="no" />
+  <tag k="foot" v="no" />
+  <tag k="hgv" v="designated" />
+  <tag k="highway" v="motorway" />
+  <tag k="historic" v="yes" />
+  <tag k="lanes" v="3" />
+  <tag k="lanes:conditional" v="2 @ (Tu-Fr 15:30-17:00)" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="45 mph" />
+  <tag k="name" v="Golden Gate Bridge" />
+  <tag k="NHS" v="STRAHNET" />
+  <tag k="oneway" v="yes" />
+  <tag k="ref" v="US 101;CA 1" />
+  <tag k="sidewalk" v="separate" />
+  <tag k="source" v="Bing" />
+  <tag k="source:hgv" v="https://sfplanninggis.org/TIM/?search=3591024#searchbox" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="asphalt" />
+  <tag k="tiger:cfcc" v="A25;A11;A29" />
+  <tag k="tiger:name_base" v="United States Highway 101;Redwood;Golden Gate" />
+  <tag k="tiger:name_base_1" v="Golden Gate" />
+  <tag k="tiger:name_type" v="Hwy;Brg" />
+  <tag k="tiger:name_type_1" v="Brg" />
+  <tag k="toll" v="yes" />
+  <tag k="wikidata" v="Q44440" />
+  <tag k="wikipedia" v="en:Golden Gate Bridge" />
+ </way>
+ <way id="595194543" visible="true" version="12" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="5673261809" />
+  <nd ref="5673262439" />
+  <nd ref="5673262438" />
+  <nd ref="5673262437" />
+  <nd ref="5673262436" />
+  <nd ref="5673262435" />
+  <nd ref="5673262434" />
+  <nd ref="5673262433" />
+  <nd ref="5673262432" />
+  <nd ref="5673262431" />
+  <nd ref="5673262430" />
+  <nd ref="5673262429" />
+  <nd ref="5673262428" />
+  <nd ref="5673262427" />
+  <nd ref="5673262426" />
+  <nd ref="14190386710" />
+  <nd ref="14190386713" />
+  <nd ref="7192379617" />
+  <tag k="bicycle" v="no" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate Bridge" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="colour" v="orange" />
+  <tag k="cycleway" v="no" />
+  <tag k="foot" v="no" />
+  <tag k="hgv" v="designated" />
+  <tag k="highway" v="motorway" />
+  <tag k="historic" v="yes" />
+  <tag k="lanes" v="3" />
+  <tag k="lanes:conditional" v="4 @ (Tu-Fr 15:30-17:00)" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="45 mph" />
+  <tag k="name" v="Golden Gate Bridge" />
+  <tag k="NHS" v="STRAHNET" />
+  <tag k="oneway" v="yes" />
+  <tag k="ref" v="US 101;CA 1" />
+  <tag k="sidewalk" v="separate" />
+  <tag k="source" v="Bing" />
+  <tag k="source:hgv" v="https://sfplanninggis.org/TIM/?search=3591024#searchbox" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="asphalt" />
+  <tag k="tiger:cfcc" v="A25;A11;A29" />
+  <tag k="tiger:name_base" v="United States Highway 101;Redwood;Golden Gate" />
+  <tag k="tiger:name_base_1" v="Golden Gate" />
+  <tag k="tiger:name_type" v="Hwy;Brg" />
+  <tag k="tiger:name_type_1" v="Brg" />
+  <tag k="toll" v="no" />
+  <tag k="wikidata" v="Q44440" />
+  <tag k="wikipedia" v="en:Golden Gate Bridge" />
+ </way>
+ <way id="970229713" visible="true" version="5" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480">
+  <nd ref="11771808553" />
+  <nd ref="14190386711" />
+  <nd ref="6696347214" />
+  <nd ref="6696347213" />
+  <nd ref="6696347212" />
+  <nd ref="6696347211" />
+  <nd ref="6696347210" />
+  <nd ref="6696347209" />
+  <nd ref="6696347208" />
+  <nd ref="6696347207" />
+  <nd ref="8978535801" />
+  <tag k="bicycle" v="designated" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="elevation" v="220" />
+  <tag k="foot" v="designated" />
+  <tag k="highway" v="cycleway" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="name" v="Golden Gate Bridge East Sidewalk" />
+  <tag k="note" v="Closes to pedestrians in the evening (exact time depends by season) but you can call on the interphone and they'll send a police car for to take you to the other side. Bikes allowed at night but must call on the interphone. Hours and instructions here: ht" />
+  <tag k="oneway" v="no" />
+  <tag k="source" v="Bing" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="concrete" />
+ </way>
+ <way id="1267474226" visible="true" version="2" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480">
+  <nd ref="3718987409" />
+  <nd ref="3718987389" />
+  <nd ref="3718987364" />
+  <nd ref="3718987416" />
+  <nd ref="3718987549" />
+  <nd ref="3718987530" />
+  <nd ref="3718987366" />
+  <nd ref="3718987380" />
+  <nd ref="3718987424" />
+  <nd ref="3718987359" />
+  <nd ref="3718987417" />
+  <nd ref="3718987525" />
+  <nd ref="3718987391" />
+  <nd ref="3718987349" />
+  <nd ref="3718987551" />
+  <nd ref="11771808553" />
+  <tag k="bicycle" v="designated" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="elevation" v="220" />
+  <tag k="foot" v="designated" />
+  <tag k="highway" v="cycleway" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="name" v="Golden Gate Bridge East Sidewalk" />
+  <tag k="note" v="Closes to pedestrians in the evening (exact time depends by season) but you can call on the interphone and they'll send a police car for to take you to the other side. Bikes allowed at night but must call on the interphone. Hours and instructions here: ht" />
+  <tag k="oneway" v="no" />
+  <tag k="source" v="Bing" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="concrete" />
+ </way>
+ <way id="1275410144" visible="true" version="12" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293">
+  <nd ref="12313703312" />
+  <nd ref="12313697885" />
+  <nd ref="11842345766" />
+  <nd ref="11842345753" />
+  <nd ref="11842380471" />
+  <nd ref="11842380474" />
+  <nd ref="11842380473" />
+  <nd ref="11842345759" />
+  <nd ref="12313697887" />
+  <nd ref="12313703311" />
+  <nd ref="12313703312" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="75" />
+  <tag k="min_height" v="73" />
+  <tag k="roof:colour" v="#cccccc" />
+  <tag k="roof:material" v="concrete" />
+ </way>
+ <way id="1321812310" visible="true" version="6" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="5207631454" />
+  <nd ref="5207344497" />
+  <nd ref="12231501498" />
+  <tag k="bicycle" v="no" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate Bridge" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="colour" v="orange" />
+  <tag k="cycleway" v="no" />
+  <tag k="foot" v="no" />
+  <tag k="hgv" v="designated" />
+  <tag k="highway" v="motorway" />
+  <tag k="historic" v="yes" />
+  <tag k="lanes" v="4" />
+  <tag k="lanes:conditional" v="2 @ (Tu-Fr 15:30-17:00)" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="45 mph" />
+  <tag k="name" v="Golden Gate Bridge" />
+  <tag k="NHS" v="STRAHNET" />
+  <tag k="oneway" v="yes" />
+  <tag k="ref" v="US 101;CA 1" />
+  <tag k="sidewalk" v="separate" />
+  <tag k="source" v="Bing" />
+  <tag k="source:hgv" v="https://sfplanninggis.org/TIM/?search=3591024#searchbox" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="asphalt" />
+  <tag k="tiger:cfcc" v="A25;A11;A29" />
+  <tag k="tiger:name_base" v="Golden Gate" />
+  <tag k="tiger:name_type" v="Brg" />
+  <tag k="toll" v="yes" />
+  <tag k="turn:lanes" v="none|none|none|merge_to_left" />
+  <tag k="wikidata" v="Q44440" />
+  <tag k="wikipedia" v="en:Golden Gate Bridge" />
+ </way>
+ <way id="1329545860" visible="true" version="19" changeset="158765628" timestamp="2024-11-05T06:20:25Z" user="KindredCoda" uid="14293">
+  <nd ref="12300623396" />
+  <nd ref="12300623395" />
+  <nd ref="12300941988" />
+  <nd ref="12300941968" />
+  <nd ref="12300941987" />
+  <nd ref="12300623393" />
+  <nd ref="12300941966" />
+  <nd ref="12300941985" />
+  <nd ref="12300941984" />
+  <nd ref="12300941983" />
+  <nd ref="12300941982" />
+  <nd ref="12300941965" />
+  <nd ref="12300623388" />
+  <nd ref="12300941980" />
+  <nd ref="12300941963" />
+  <nd ref="12300941979" />
+  <nd ref="12300623386" />
+  <nd ref="12300623385" />
+  <nd ref="12300941978" />
+  <nd ref="12300941962" />
+  <nd ref="12300941977" />
+  <nd ref="12300623380" />
+  <nd ref="12300941960" />
+  <nd ref="12300623379" />
+  <nd ref="12300941974" />
+  <nd ref="12300623378" />
+  <nd ref="12300941972" />
+  <nd ref="12300941959" />
+  <nd ref="12300623383" />
+  <nd ref="12300941970" />
+  <nd ref="12300941969" />
+  <nd ref="12300941989" />
+  <nd ref="12300623396" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="74" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="21" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329549315" visible="true" version="13" changeset="158728683" timestamp="2024-11-04T07:47:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941959" />
+  <nd ref="12300941958" />
+  <nd ref="12300941970" />
+  <nd ref="12300941969" />
+  <nd ref="12300941968" />
+  <nd ref="12300941987" />
+  <nd ref="12300941967" />
+  <nd ref="12300941966" />
+  <nd ref="12300941985" />
+  <nd ref="12300941984" />
+  <nd ref="12300941983" />
+  <nd ref="12300941982" />
+  <nd ref="12300941965" />
+  <nd ref="12300941964" />
+  <nd ref="12300941980" />
+  <nd ref="12300941963" />
+  <nd ref="12300941962" />
+  <nd ref="12300941977" />
+  <nd ref="12300941961" />
+  <nd ref="12300941960" />
+  <nd ref="12300623379" />
+  <nd ref="12300941974" />
+  <nd ref="12300941973" />
+  <nd ref="12300941972" />
+  <nd ref="12300941959" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="162" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="123" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329549317" visible="true" version="14" changeset="158728683" timestamp="2024-11-04T07:47:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941989" />
+  <nd ref="12300941988" />
+  <nd ref="12300941968" />
+  <nd ref="12300941987" />
+  <nd ref="12300941986" />
+  <nd ref="12300941966" />
+  <nd ref="12300941985" />
+  <nd ref="12300941984" />
+  <nd ref="12300941983" />
+  <nd ref="12300941982" />
+  <nd ref="12300941965" />
+  <nd ref="12300623388" />
+  <nd ref="12300941980" />
+  <nd ref="12300941963" />
+  <nd ref="12300941979" />
+  <nd ref="12300941978" />
+  <nd ref="12300941962" />
+  <nd ref="12300941977" />
+  <nd ref="12300941976" />
+  <nd ref="12300941960" />
+  <nd ref="12300623379" />
+  <nd ref="12300941974" />
+  <nd ref="12300941973" />
+  <nd ref="12300941972" />
+  <nd ref="12300941959" />
+  <nd ref="12300623383" />
+  <nd ref="12300941970" />
+  <nd ref="12300941969" />
+  <nd ref="12300941989" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="123" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="74" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329550017" visible="true" version="9" changeset="158670540" timestamp="2024-11-02T18:02:36Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941967" />
+  <nd ref="12300941987" />
+  <nd ref="12300941968" />
+  <nd ref="12300941969" />
+  <nd ref="12300941970" />
+  <nd ref="12300941958" />
+  <nd ref="12300956507" />
+  <nd ref="12300941972" />
+  <nd ref="12300623379" />
+  <nd ref="12300956508" />
+  <nd ref="12300941961" />
+  <nd ref="12300941977" />
+  <nd ref="12300941962" />
+  <nd ref="12300941963" />
+  <nd ref="12300941980" />
+  <nd ref="12300941964" />
+  <nd ref="12300956509" />
+  <nd ref="12300941982" />
+  <nd ref="12300941985" />
+  <nd ref="12300956506" />
+  <nd ref="12300941967" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="195" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="162" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329550151" visible="true" version="9" changeset="158670540" timestamp="2024-11-02T18:02:36Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941977" />
+  <nd ref="12300941961" />
+  <nd ref="12300956508" />
+  <nd ref="12300956507" />
+  <nd ref="12300941958" />
+  <nd ref="12300941970" />
+  <nd ref="12300941987" />
+  <nd ref="12300941967" />
+  <nd ref="12300956506" />
+  <nd ref="12300956509" />
+  <nd ref="12300941964" />
+  <nd ref="12300941980" />
+  <nd ref="12300941977" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="225" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="195" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329558939" visible="true" version="2" changeset="158586209" timestamp="2024-10-31T15:21:19Z" user="KindredCoda" uid="14293">
+  <nd ref="12301037914" />
+  <nd ref="12301037913" />
+  <nd ref="12301037912" />
+  <nd ref="12301037911" />
+  <nd ref="12301037910" />
+  <nd ref="12301037909" />
+  <nd ref="12301037908" />
+  <nd ref="12301037907" />
+  <nd ref="12301037906" />
+  <nd ref="12301037905" />
+  <nd ref="12301037904" />
+  <nd ref="12301037903" />
+  <nd ref="12301037902" />
+  <nd ref="12301037901" />
+  <nd ref="12301011200" />
+  <nd ref="12301011199" />
+  <nd ref="12301011198" />
+  <nd ref="12301011197" />
+  <nd ref="12301011196" />
+  <nd ref="12301011195" />
+  <nd ref="12301037914" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="21" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="13" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329761876" visible="true" version="4" changeset="158728683" timestamp="2024-11-04T07:47:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12303103566" />
+  <nd ref="12303103567" />
+  <nd ref="12303103568" />
+  <nd ref="12303103569" />
+  <nd ref="12303103570" />
+  <nd ref="12303103571" />
+  <nd ref="12303103572" />
+  <nd ref="12303103573" />
+  <nd ref="12303103574" />
+  <nd ref="12303103575" />
+  <nd ref="12303103576" />
+  <nd ref="12303103577" />
+  <nd ref="12303103578" />
+  <nd ref="12303103579" />
+  <nd ref="12303103580" />
+  <nd ref="12303103581" />
+  <nd ref="12303103582" />
+  <nd ref="12303103583" />
+  <nd ref="12303103584" />
+  <nd ref="12303103585" />
+  <nd ref="12303103586" />
+  <nd ref="12303103587" />
+  <nd ref="12303103588" />
+  <nd ref="12303103589" />
+  <nd ref="12303103590" />
+  <nd ref="12303103591" />
+  <nd ref="12303103592" />
+  <nd ref="12303103593" />
+  <nd ref="12303103594" />
+  <nd ref="12303103595" />
+  <nd ref="12303103596" />
+  <nd ref="12303103597" />
+  <nd ref="12303103566" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="74" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="21" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329761877" visible="true" version="1" changeset="158601276" timestamp="2024-10-31T23:19:56Z" user="KindredCoda" uid="14293">
+  <nd ref="12303103598" />
+  <nd ref="12303103599" />
+  <nd ref="12303103600" />
+  <nd ref="12303104001" />
+  <nd ref="12303104002" />
+  <nd ref="12303104003" />
+  <nd ref="12303104004" />
+  <nd ref="12303104005" />
+  <nd ref="12303104006" />
+  <nd ref="12303104007" />
+  <nd ref="12303104008" />
+  <nd ref="12303104009" />
+  <nd ref="12303104010" />
+  <nd ref="12303104011" />
+  <nd ref="12303104012" />
+  <nd ref="12303104013" />
+  <nd ref="12303104014" />
+  <nd ref="12303104015" />
+  <nd ref="12303104016" />
+  <nd ref="12303104017" />
+  <nd ref="12303103598" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="21" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="13" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329761878" visible="true" version="5" changeset="158728683" timestamp="2024-11-04T07:47:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12303103597" />
+  <nd ref="12303103568" />
+  <nd ref="12303103569" />
+  <nd ref="12303103570" />
+  <nd ref="12303103571" />
+  <nd ref="12303103572" />
+  <nd ref="12303103573" />
+  <nd ref="12303103574" />
+  <nd ref="12303103575" />
+  <nd ref="12303103576" />
+  <nd ref="12303103577" />
+  <nd ref="12303103578" />
+  <nd ref="12303103579" />
+  <nd ref="12303103580" />
+  <nd ref="12303103581" />
+  <nd ref="12303103584" />
+  <nd ref="12303103585" />
+  <nd ref="12303103586" />
+  <nd ref="12303103587" />
+  <nd ref="12303103588" />
+  <nd ref="12303103589" />
+  <nd ref="12303104020" />
+  <nd ref="12303104021" />
+  <nd ref="12303103592" />
+  <nd ref="12303103593" />
+  <nd ref="12303103594" />
+  <nd ref="12303103595" />
+  <nd ref="12303103596" />
+  <nd ref="12303103597" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="123" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="74" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329761879" visible="true" version="2" changeset="158670540" timestamp="2024-11-02T18:02:36Z" user="KindredCoda" uid="14293">
+  <nd ref="12303104022" />
+  <nd ref="12303103570" />
+  <nd ref="12303103569" />
+  <nd ref="12303103596" />
+  <nd ref="12303103595" />
+  <nd ref="12303104023" />
+  <nd ref="12303104024" />
+  <nd ref="12303103592" />
+  <nd ref="12303103589" />
+  <nd ref="12303104025" />
+  <nd ref="12303104026" />
+  <nd ref="12303103586" />
+  <nd ref="12303103585" />
+  <nd ref="12303103580" />
+  <nd ref="12303103579" />
+  <nd ref="12303104027" />
+  <nd ref="12303104028" />
+  <nd ref="12303103576" />
+  <nd ref="12303103573" />
+  <nd ref="12303104029" />
+  <nd ref="12303104022" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="195" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="162" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329761880" visible="true" version="2" changeset="158670540" timestamp="2024-11-02T18:02:36Z" user="KindredCoda" uid="14293">
+  <nd ref="12303103586" />
+  <nd ref="12303104026" />
+  <nd ref="12303104025" />
+  <nd ref="12303104024" />
+  <nd ref="12303104023" />
+  <nd ref="12303103595" />
+  <nd ref="12303103570" />
+  <nd ref="12303104022" />
+  <nd ref="12303104029" />
+  <nd ref="12303104028" />
+  <nd ref="12303104027" />
+  <nd ref="12303103579" />
+  <nd ref="12303103586" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="225" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="195" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329761881" visible="true" version="4" changeset="158728683" timestamp="2024-11-04T07:47:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12303103593" />
+  <nd ref="12303104023" />
+  <nd ref="12303103595" />
+  <nd ref="12303103596" />
+  <nd ref="12303103569" />
+  <nd ref="12303103570" />
+  <nd ref="12303104022" />
+  <nd ref="12303103572" />
+  <nd ref="12303103573" />
+  <nd ref="12303103574" />
+  <nd ref="12303103575" />
+  <nd ref="12303103576" />
+  <nd ref="12303103577" />
+  <nd ref="12303104027" />
+  <nd ref="12303103579" />
+  <nd ref="12303103580" />
+  <nd ref="12303103585" />
+  <nd ref="12303103586" />
+  <nd ref="12303104026" />
+  <nd ref="12303103588" />
+  <nd ref="12303103589" />
+  <nd ref="12303104020" />
+  <nd ref="12303104021" />
+  <nd ref="12303103592" />
+  <nd ref="12303103593" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="162" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="123" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1329971884" visible="true" version="4" changeset="158669545" timestamp="2024-11-02T17:37:18Z" user="KindredCoda" uid="14293">
+  <nd ref="12304984959" />
+  <nd ref="12305042220" />
+  <nd ref="12305042221" />
+  <nd ref="12305042217" />
+  <nd ref="12305042218" />
+  <nd ref="12305030930" />
+  <nd ref="12305030927" />
+  <nd ref="12305030928" />
+  <nd ref="12305030929" />
+  <nd ref="12305042224" />
+  <nd ref="12305042223" />
+  <nd ref="12305042222" />
+  <nd ref="12305042219" />
+  <nd ref="12304984956" />
+  <nd ref="12304984957" />
+  <nd ref="12304984958" />
+  <nd ref="12304984959" />
+  <tag k="bridge:support" v="pylon" />
+  <tag k="building:material" v="concrete" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="13" />
+  <tag k="natural" v="coastline" />
+  <tag k="roof:material" v="concrete" />
+ </way>
+ <way id="1330049620" visible="true" version="3" changeset="158686848" timestamp="2024-11-03T07:08:53Z" user="KindredCoda" uid="14293">
+  <nd ref="12300956508" />
+  <nd ref="12303104028" />
+  <nd ref="12303104029" />
+  <nd ref="12300956507" />
+  <nd ref="12300956508" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="223" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="215" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330350431" visible="true" version="4" changeset="158765530" timestamp="2024-11-05T06:16:19Z" user="KindredCoda" uid="14293">
+  <nd ref="12300623379" />
+  <nd ref="12303103576" />
+  <nd ref="12303103573" />
+  <nd ref="12300941972" />
+  <nd ref="12300623379" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="193" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="185" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330827276" visible="true" version="3" changeset="158765238" timestamp="2024-11-05T06:00:30Z" user="KindredCoda" uid="14293">
+  <nd ref="12313703313" />
+  <nd ref="12313703314" />
+  <nd ref="12313703312" />
+  <nd ref="12313703311" />
+  <nd ref="12313703313" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="74.65" />
+  <tag k="min_height" v="73" />
+  <tag k="roof:colour" v="#777777" />
+  <tag k="roof:material" v="asphalt" />
+ </way>
+ <way id="1330827277" visible="true" version="3" changeset="158765286" timestamp="2024-11-05T06:03:22Z" user="KindredCoda" uid="14293">
+  <nd ref="12313703313" />
+  <nd ref="12313697886" />
+  <nd ref="12305747944" />
+  <nd ref="11842345751" />
+  <nd ref="11842345744" />
+  <nd ref="11842345760" />
+  <nd ref="11842345761" />
+  <nd ref="11842345764" />
+  <nd ref="12313697884" />
+  <nd ref="12313703314" />
+  <nd ref="12313703313" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="75" />
+  <tag k="min_height" v="73" />
+  <tag k="roof:colour" v="#cccccc" />
+  <tag k="roof:material" v="concrete" />
+ </way>
+ <way id="1330827678" visible="true" version="4" changeset="158765403" timestamp="2024-11-05T06:08:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12313703312" />
+  <nd ref="12313703311" />
+  <tag k="barrier" v="fence" />
+  <tag k="building:part" v="yes" />
+  <tag k="fence_type" v="railing" />
+  <tag k="height" v="76.25" />
+  <tag k="min_height" v="75" />
+ </way>
+ <way id="1330828067" visible="true" version="3" changeset="158765403" timestamp="2024-11-05T06:08:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12313697884" />
+  <nd ref="11842345764" />
+  <nd ref="11842345761" />
+  <nd ref="11842345760" />
+  <nd ref="11842345744" />
+  <nd ref="11842345751" />
+  <nd ref="12305747944" />
+  <nd ref="12313697886" />
+  <tag k="barrier" v="fence" />
+  <tag k="building:part" v="yes" />
+  <tag k="fence_type" v="railing" />
+  <tag k="height" v="76.25" />
+  <tag k="min_height" v="75" />
+ </way>
+ <way id="1330828068" visible="true" version="3" changeset="158765403" timestamp="2024-11-05T06:08:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12313697885" />
+  <nd ref="11842345766" />
+  <nd ref="11842345753" />
+  <nd ref="11842380471" />
+  <nd ref="11842380474" />
+  <nd ref="11842380473" />
+  <nd ref="11842345759" />
+  <nd ref="12313697887" />
+  <tag k="barrier" v="fence" />
+  <tag k="building:part" v="yes" />
+  <tag k="fence_type" v="railing" />
+  <tag k="height" v="76.25" />
+  <tag k="min_height" v="75" />
+ </way>
+ <way id="1330828260" visible="true" version="3" changeset="158765403" timestamp="2024-11-05T06:08:39Z" user="KindredCoda" uid="14293">
+  <nd ref="12313703314" />
+  <nd ref="12313703313" />
+  <tag k="barrier" v="fence" />
+  <tag k="building:part" v="yes" />
+  <tag k="fence_type" v="railing" />
+  <tag k="height" v="76.25" />
+  <tag k="min_height" v="75" />
+ </way>
+ <way id="1330829528" visible="true" version="2" changeset="158765628" timestamp="2024-11-05T06:20:25Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941974" />
+  <nd ref="12303103575" />
+  <nd ref="12303103574" />
+  <nd ref="12300941973" />
+  <nd ref="12300941974" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="26" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="24" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330830769" visible="true" version="1" changeset="158765679" timestamp="2024-11-05T06:21:58Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941974" />
+  <nd ref="12303103575" />
+  <nd ref="12303103574" />
+  <nd ref="12300941973" />
+  <nd ref="12300941974" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="52" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="50" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330830988" visible="true" version="1" changeset="158765731" timestamp="2024-11-05T06:24:08Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941974" />
+  <nd ref="12303103575" />
+  <nd ref="12303103574" />
+  <nd ref="12300941973" />
+  <nd ref="12300941974" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="161" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="151" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330831175" visible="true" version="1" changeset="158765791" timestamp="2024-11-05T06:26:41Z" user="KindredCoda" uid="14293">
+  <nd ref="12300941974" />
+  <nd ref="12303103575" />
+  <nd ref="12303103574" />
+  <nd ref="12300941973" />
+  <nd ref="12300941974" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="121" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="111" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832664" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750205" />
+  <nd ref="12313750268" />
+  <nd ref="12313750225" />
+  <nd ref="12313750210" />
+  <nd ref="12313747262" />
+  <nd ref="12313750309" />
+  <nd ref="12313750256" />
+  <nd ref="12313750244" />
+  <nd ref="12313747297" />
+  <nd ref="12313750202" />
+  <nd ref="12313750312" />
+  <nd ref="12313750295" />
+  <nd ref="12313750249" />
+  <nd ref="12313750237" />
+  <nd ref="12313747289" />
+  <nd ref="12313750284" />
+  <nd ref="12313750240" />
+  <nd ref="12313750229" />
+  <nd ref="12313747279" />
+  <nd ref="12313747265" />
+  <nd ref="12313750271" />
+  <nd ref="12313750282" />
+  <nd ref="12313750238" />
+  <nd ref="12313750217" />
+  <nd ref="12313747270" />
+  <nd ref="12313750315" />
+  <nd ref="12313750263" />
+  <nd ref="12313750252" />
+  <nd ref="12313750205" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="123" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="74" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832665" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313747272" />
+  <nd ref="12313750220" />
+  <nd ref="12313750201" />
+  <nd ref="12313750213" />
+  <nd ref="12313750259" />
+  <nd ref="12313747268" />
+  <nd ref="12313750255" />
+  <nd ref="12313750308" />
+  <nd ref="12313750232" />
+  <nd ref="12313750273" />
+  <nd ref="12313750270" />
+  <nd ref="12313747264" />
+  <nd ref="12313747260" />
+  <nd ref="12313750209" />
+  <nd ref="12313750228" />
+  <nd ref="12313750223" />
+  <nd ref="12313750266" />
+  <nd ref="12313750298" />
+  <nd ref="12313750279" />
+  <nd ref="12313747274" />
+  <nd ref="12313750301" />
+  <nd ref="12313750236" />
+  <nd ref="12313750248" />
+  <nd ref="12313750294" />
+  <nd ref="12313747272" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="162" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="123" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832667" visible="true" version="3" changeset="166046539" timestamp="2025-05-09T21:03:18Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750236" />
+  <nd ref="12313747297" />
+  <nd ref="12313750244" />
+  <nd ref="12313750248" />
+  <nd ref="12313750236" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="121" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="111" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832668" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750246" />
+  <nd ref="12313750313" />
+  <nd ref="12313747271" />
+  <nd ref="12313750218" />
+  <nd ref="12313747285" />
+  <nd ref="12313750277" />
+  <nd ref="12313750290" />
+  <nd ref="12313747293" />
+  <nd ref="12313750250" />
+  <nd ref="12313750243" />
+  <nd ref="12313750246" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="75" />
+  <tag k="min_height" v="73" />
+  <tag k="roof:colour" v="#cccccc" />
+  <tag k="roof:material" v="concrete" />
+ </way>
+ <way id="1330832669" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750255" />
+  <nd ref="12313747268" />
+  <nd ref="12313750259" />
+  <nd ref="12313750213" />
+  <nd ref="12313750201" />
+  <nd ref="12313750220" />
+  <nd ref="12313747275" />
+  <nd ref="12313750294" />
+  <nd ref="12313750301" />
+  <nd ref="12313747261" />
+  <nd ref="12313750279" />
+  <nd ref="12313750298" />
+  <nd ref="12313750266" />
+  <nd ref="12313750223" />
+  <nd ref="12313750228" />
+  <nd ref="12313750209" />
+  <nd ref="12313750267" />
+  <nd ref="12313747264" />
+  <nd ref="12313750232" />
+  <nd ref="12313750224" />
+  <nd ref="12313750255" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="195" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="162" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832670" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313747270" />
+  <nd ref="12313747277" />
+  <nd ref="12313750263" />
+  <nd ref="12313750252" />
+  <nd ref="12313750225" />
+  <nd ref="12313750210" />
+  <nd ref="12313750227" />
+  <nd ref="12313750309" />
+  <nd ref="12313750256" />
+  <nd ref="12313750244" />
+  <nd ref="12313747297" />
+  <nd ref="12313750202" />
+  <nd ref="12313750312" />
+  <nd ref="12313750231" />
+  <nd ref="12313750249" />
+  <nd ref="12313750237" />
+  <nd ref="12313750240" />
+  <nd ref="12313750229" />
+  <nd ref="12313750272" />
+  <nd ref="12313747265" />
+  <nd ref="12313750271" />
+  <nd ref="12313750282" />
+  <nd ref="12313750238" />
+  <nd ref="12313750217" />
+  <nd ref="12313747270" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="162" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="123" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832671" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750281" />
+  <nd ref="12313750297" />
+  <nd ref="12313747290" />
+  <nd ref="12313747286" />
+  <nd ref="12313750235" />
+  <nd ref="12313750245" />
+  <nd ref="12313750291" />
+  <nd ref="12313750310" />
+  <nd ref="12313747298" />
+  <nd ref="12313750211" />
+  <nd ref="12313750257" />
+  <nd ref="12313750254" />
+  <nd ref="12313750307" />
+  <nd ref="12313747258" />
+  <nd ref="12313747278" />
+  <nd ref="12313750242" />
+  <nd ref="12313750288" />
+  <nd ref="12313750303" />
+  <nd ref="12313747295" />
+  <nd ref="12313750206" />
+  <nd ref="12313750281" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="21" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="13" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832673" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750227" />
+  <nd ref="12313750210" />
+  <nd ref="12313750225" />
+  <nd ref="12313750252" />
+  <nd ref="12313750263" />
+  <nd ref="12313747277" />
+  <nd ref="12313747281" />
+  <nd ref="12313750217" />
+  <nd ref="12313750271" />
+  <nd ref="12313750285" />
+  <nd ref="12313750272" />
+  <nd ref="12313750229" />
+  <nd ref="12313750240" />
+  <nd ref="12313750237" />
+  <nd ref="12313750249" />
+  <nd ref="12313750231" />
+  <nd ref="12313750215" />
+  <nd ref="12313750202" />
+  <nd ref="12313750256" />
+  <nd ref="12313747267" />
+  <nd ref="12313750227" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="195" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="162" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832674" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750236" />
+  <nd ref="12313747297" />
+  <nd ref="12313750244" />
+  <nd ref="12313750248" />
+  <nd ref="12313750236" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="26" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="24" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832677" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750306" />
+  <nd ref="12313750318" />
+  <nd ref="12313750314" />
+  <nd ref="12313750259" />
+  <nd ref="12313747268" />
+  <nd ref="12313750221" />
+  <nd ref="12313750308" />
+  <nd ref="12313750232" />
+  <nd ref="12313750273" />
+  <nd ref="12313750270" />
+  <nd ref="12313747264" />
+  <nd ref="12313747260" />
+  <nd ref="12313750219" />
+  <nd ref="12313750228" />
+  <nd ref="12313750223" />
+  <nd ref="12313750239" />
+  <nd ref="12313750276" />
+  <nd ref="12313750289" />
+  <nd ref="12313750283" />
+  <nd ref="12313750266" />
+  <nd ref="12313750298" />
+  <nd ref="12313750287" />
+  <nd ref="12313747274" />
+  <nd ref="12313750301" />
+  <nd ref="12313750236" />
+  <nd ref="12313747294" />
+  <nd ref="12313750294" />
+  <nd ref="12313747272" />
+  <nd ref="12313747284" />
+  <nd ref="12313750201" />
+  <nd ref="12313750213" />
+  <nd ref="12313750261" />
+  <nd ref="12313750306" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="74" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="21" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832678" visible="true" version="3" changeset="166046539" timestamp="2025-05-09T21:03:18Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750301" />
+  <nd ref="12313750202" />
+  <nd ref="12313750256" />
+  <nd ref="12313750294" />
+  <nd ref="12313750301" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="193" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="185" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832679" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750298" />
+  <nd ref="12313750279" />
+  <nd ref="12313747261" />
+  <nd ref="12313747275" />
+  <nd ref="12313750220" />
+  <nd ref="12313750201" />
+  <nd ref="12313747268" />
+  <nd ref="12313750255" />
+  <nd ref="12313750224" />
+  <nd ref="12313750267" />
+  <nd ref="12313750209" />
+  <nd ref="12313750228" />
+  <nd ref="12313750298" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="225" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="195" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832680" visible="true" version="3" changeset="166046539" timestamp="2025-05-09T21:03:18Z" user="KindredCoda" uid="14293">
+  <nd ref="12313747261" />
+  <nd ref="12313750215" />
+  <nd ref="12313747267" />
+  <nd ref="12313747275" />
+  <nd ref="12313747261" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="223" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="215" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832681" visible="true" version="2" changeset="158768122" timestamp="2024-11-05T07:52:13Z" user="Aleksandar1994" uid="3733993">
+  <nd ref="12313750253" />
+  <nd ref="12313750233" />
+  <nd ref="12313747283" />
+  <nd ref="12313750300" />
+  <nd ref="12313750286" />
+  <nd ref="12313747266" />
+  <nd ref="12313750226" />
+  <nd ref="12313750230" />
+  <nd ref="12313747280" />
+  <nd ref="12313750275" />
+  <nd ref="12313750274" />
+  <nd ref="12313747269" />
+  <nd ref="12313750241" />
+  <nd ref="12313750207" />
+  <nd ref="12313750316" />
+  <nd ref="12313750304" />
+  <nd ref="12313750253" />
+  <tag k="bridge:support" v="pylon" />
+  <tag k="building:material" v="concrete" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="13" />
+  <tag k="roof:material" v="concrete" />
+ </way>
+ <way id="1330832682" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750317" />
+  <nd ref="12313750264" />
+  <nd ref="12313750268" />
+  <nd ref="12313750225" />
+  <nd ref="12313750210" />
+  <nd ref="12313747262" />
+  <nd ref="12313750309" />
+  <nd ref="12313750256" />
+  <nd ref="12313750244" />
+  <nd ref="12313747297" />
+  <nd ref="12313750202" />
+  <nd ref="12313750312" />
+  <nd ref="12313750295" />
+  <nd ref="12313750249" />
+  <nd ref="12313750237" />
+  <nd ref="12313747289" />
+  <nd ref="12313747276" />
+  <nd ref="12313750280" />
+  <nd ref="12313750284" />
+  <nd ref="12313750240" />
+  <nd ref="12313750229" />
+  <nd ref="12313747279" />
+  <nd ref="12313747265" />
+  <nd ref="12313750271" />
+  <nd ref="12313750260" />
+  <nd ref="12313750214" />
+  <nd ref="12313750217" />
+  <nd ref="12313747270" />
+  <nd ref="12313750315" />
+  <nd ref="12313750263" />
+  <nd ref="12313750252" />
+  <nd ref="12313750205" />
+  <nd ref="12313750317" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="74" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="21" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832683" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313747299" />
+  <nd ref="12313747287" />
+  <nd ref="12313750246" />
+  <nd ref="12313750243" />
+  <nd ref="12313747299" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="74.65" />
+  <tag k="min_height" v="73" />
+  <tag k="roof:colour" v="#777777" />
+  <tag k="roof:material" v="asphalt" />
+ </way>
+ <way id="1330832684" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750236" />
+  <nd ref="12313747297" />
+  <nd ref="12313750244" />
+  <nd ref="12313750248" />
+  <nd ref="12313750236" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="161" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="151" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832685" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750236" />
+  <nd ref="12313747297" />
+  <nd ref="12313750244" />
+  <nd ref="12313750248" />
+  <nd ref="12313750236" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="52" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="50" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832687" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750261" />
+  <nd ref="12313750314" />
+  <nd ref="12313750259" />
+  <nd ref="12313747268" />
+  <nd ref="12313750216" />
+  <nd ref="12313750308" />
+  <nd ref="12313750232" />
+  <nd ref="12313750273" />
+  <nd ref="12313750270" />
+  <nd ref="12313747264" />
+  <nd ref="12313747260" />
+  <nd ref="12313750219" />
+  <nd ref="12313750228" />
+  <nd ref="12313750223" />
+  <nd ref="12313750239" />
+  <nd ref="12313750283" />
+  <nd ref="12313750266" />
+  <nd ref="12313750298" />
+  <nd ref="12313747291" />
+  <nd ref="12313747274" />
+  <nd ref="12313750301" />
+  <nd ref="12313750236" />
+  <nd ref="12313750248" />
+  <nd ref="12313750294" />
+  <nd ref="12313747272" />
+  <nd ref="12313747284" />
+  <nd ref="12313750201" />
+  <nd ref="12313750213" />
+  <nd ref="12313750261" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="123" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="74" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832688" visible="true" version="2" changeset="180739446" timestamp="2026-04-01T20:19:00Z" user="gerrg" uid="23718469">
+  <nd ref="12313747292" />
+  <nd ref="12313750299" />
+  <nd ref="13699675949" />
+  <nd ref="12313750302" />
+  <nd ref="12313747288" />
+  <nd ref="12313747273" />
+  <nd ref="12313750278" />
+  <nd ref="12313750265" />
+  <nd ref="12313750222" />
+  <nd ref="12313750208" />
+  <nd ref="12313747259" />
+  <nd ref="12313747263" />
+  <nd ref="12313750269" />
+  <nd ref="12313750258" />
+  <nd ref="12313750212" />
+  <nd ref="12313747300" />
+  <nd ref="12313750311" />
+  <nd ref="12313750292" />
+  <nd ref="12313750247" />
+  <nd ref="12313750251" />
+  <nd ref="12313750204" />
+  <nd ref="12313747292" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="21" />
+  <tag k="man_made" v="tower" />
+  <tag k="min_height" v="13" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832689" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313750229" />
+  <nd ref="12313750272" />
+  <nd ref="12313750285" />
+  <nd ref="12313747281" />
+  <nd ref="12313747277" />
+  <nd ref="12313750263" />
+  <nd ref="12313750210" />
+  <nd ref="12313750227" />
+  <nd ref="12313747267" />
+  <nd ref="12313750215" />
+  <nd ref="12313750231" />
+  <nd ref="12313750249" />
+  <nd ref="12313750229" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="225" />
+  <tag k="man_made" v="tower" />
+  <tag k="material" v="steel" />
+  <tag k="min_height" v="195" />
+  <tag k="roof:colour" v="#bf4e3b" />
+  <tag k="roof:material" v="steel" />
+  <tag k="tower:type" v="bridge" />
+ </way>
+ <way id="1330832690" visible="true" version="1" changeset="158766000" timestamp="2024-11-05T06:36:16Z" user="KindredCoda" uid="14293">
+  <nd ref="12313747299" />
+  <nd ref="12313750296" />
+  <nd ref="12313750293" />
+  <nd ref="12313750262" />
+  <nd ref="12313747282" />
+  <nd ref="12313747296" />
+  <nd ref="12313750305" />
+  <nd ref="12313750234" />
+  <nd ref="12313750203" />
+  <nd ref="12313747287" />
+  <nd ref="12313747299" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:material" v="steel" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="75" />
+  <tag k="min_height" v="73" />
+  <tag k="roof:colour" v="#cccccc" />
+  <tag k="roof:material" v="concrete" />
+ </way>
+ <way id="1331438172" visible="true" version="1" changeset="158828438" timestamp="2024-11-06T18:05:48Z" user="KindredCoda" uid="14293">
+  <nd ref="12319179187" />
+  <nd ref="12319179183" />
+  <nd ref="12319179184" />
+  <nd ref="12319179181" />
+  <nd ref="12319179187" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="6" />
+ </way>
+ <way id="1331438174" visible="true" version="3" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480">
+  <nd ref="1761883517" />
+  <nd ref="14190436040" />
+  <nd ref="1761883519" />
+  <nd ref="10815359926" />
+  <nd ref="3741990459" />
+  <nd ref="1761883518" />
+  <nd ref="10815359925" />
+  <nd ref="6467218015" />
+  <nd ref="1761883516" />
+  <nd ref="12319179183" />
+  <nd ref="12319179184" />
+  <nd ref="1761883517" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="4" />
+  <tag k="name" v="Golden Gate Bridge Welcome Center" />
+  <tag k="opening_hours" v="09:00-18:00" />
+  <tag k="website" v="https://www.parksconservancy.org/park-improvements/past-accomplishments/golden-gate-bridge-pavilion.html" />
+  <tag k="wikimedia_commons" v="File:The Golden Gate National Recreation Area, San Francisco, California LCCN2013630482.tif" />
+ </way>
+ <way id="1331440922" visible="true" version="2" changeset="158874440" timestamp="2024-11-07T22:37:27Z" user="KindredCoda" uid="14293">
+  <nd ref="1274882554" />
+  <nd ref="1709838963" />
+  <nd ref="12321508371" />
+  <nd ref="12319210207" />
+  <nd ref="12321508367" />
+  <nd ref="3742028904" />
+  <nd ref="12321508365" />
+  <nd ref="1274882576" />
+  <nd ref="12321508369" />
+  <nd ref="1709838946" />
+  <nd ref="12321508368" />
+  <nd ref="12321508370" />
+  <nd ref="1709838944" />
+  <nd ref="12321508372" />
+  <nd ref="3742028878" />
+  <nd ref="12321508364" />
+  <nd ref="1274882598" />
+  <nd ref="12321508366" />
+  <nd ref="1709838967" />
+  <nd ref="10815359928" />
+  <nd ref="1274882559" />
+  <nd ref="1274882554" />
+  <tag k="building:colour" v="#ffccaa" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="3" />
+ </way>
+ <way id="1331440923" visible="true" version="2" changeset="158874440" timestamp="2024-11-07T22:37:27Z" user="KindredCoda" uid="14293">
+  <nd ref="12319196195" />
+  <nd ref="12319210211" />
+  <nd ref="12319196192" />
+  <nd ref="12319210208" />
+  <nd ref="12319196194" />
+  <nd ref="12319210210" />
+  <nd ref="12319210205" />
+  <nd ref="12319210204" />
+  <nd ref="12319196198" />
+  <nd ref="12319196200" />
+  <nd ref="12319196193" />
+  <nd ref="12319196196" />
+  <nd ref="12319210209" />
+  <nd ref="12319210212" />
+  <nd ref="12319196199" />
+  <nd ref="12319196197" />
+  <nd ref="12319210201" />
+  <nd ref="12319210202" />
+  <nd ref="12319210206" />
+  <nd ref="12319210203" />
+  <nd ref="12319196195" />
+  <tag k="building:colour" v="#ffccaa" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="4.5" />
+ </way>
+ <way id="1358282761" visible="true" version="1" changeset="162302387" timestamp="2025-02-09T05:55:42Z" user="JessAk71" uid="381909">
+  <nd ref="12570450839" />
+  <nd ref="3742029243" />
+  <nd ref="12570450825" />
+  <nd ref="12570450826" />
+  <nd ref="12570450827" />
+  <nd ref="12570450828" />
+  <nd ref="12570450829" />
+  <nd ref="12570450830" />
+  <nd ref="12570450831" />
+  <nd ref="12570450832" />
+  <nd ref="12570450833" />
+  <nd ref="3742029244" />
+  <nd ref="12570450834" />
+  <nd ref="3742028899" />
+  <nd ref="12570450835" />
+  <nd ref="3742028901" />
+  <nd ref="12570450836" />
+  <nd ref="3742028874" />
+  <nd ref="12570450837" />
+  <nd ref="3742028872" />
+  <nd ref="12570450838" />
+  <nd ref="3742028862" />
+  <nd ref="12570450839" />
+  <tag k="building:part" v="yes" />
+  <tag k="disused:man_made" v="lighthouse" />
+  <tag k="historic" v="yes" />
+  <tag k="name" v="Fort Point Light" />
+  <tag k="wikipedia" v="en:Fort Point Light (San Francisco)" />
+ </way>
+ <way id="1386780447" visible="true" version="3" changeset="171655942" timestamp="2025-09-08T20:47:59Z" user="VLD277" uid="19857719">
+  <nd ref="2918738663" />
+  <nd ref="2918738664" />
+  <nd ref="2918738662" />
+  <nd ref="13129029677" />
+  <nd ref="281564628" />
+  <nd ref="2918738658" />
+  <nd ref="2918738659" />
+  <nd ref="2918738663" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="5" />
+ </way>
+ <way id="1386780448" visible="true" version="4" changeset="166360564" timestamp="2025-05-16T16:55:20Z" user="KindredCoda" uid="14293">
+  <nd ref="12838081712" />
+  <nd ref="12838081713" />
+  <nd ref="12838081710" />
+  <nd ref="12838081711" />
+  <nd ref="2918738663" />
+  <nd ref="2918738659" />
+  <nd ref="12838081712" />
+  <tag k="building:colour" v="#bf4e3b" />
+  <tag k="building:part" v="yes" />
+  <tag k="height" v="5" />
+  <tag k="min_height" v="4.75" />
+ </way>
+ <way id="1495249486" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="13699675950" />
+  <nd ref="13699675951" />
+  <nd ref="14190386663" />
+  <nd ref="14190386672" />
+  <nd ref="14190386673" />
+  <nd ref="14190386670" />
+  <nd ref="13699675950" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon N1" />
+ </way>
+ <way id="1557712986" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="14190386678" />
+  <nd ref="5673262425" />
+  <nd ref="5673262424" />
+  <nd ref="5673262423" />
+  <nd ref="5673262422" />
+  <nd ref="5673262421" />
+  <nd ref="5673261820" />
+  <nd ref="5673261819" />
+  <nd ref="5673261818" />
+  <nd ref="5673261817" />
+  <nd ref="5673261816" />
+  <nd ref="5673261815" />
+  <nd ref="10031652620" />
+  <nd ref="5673261814" />
+  <nd ref="5673261813" />
+  <nd ref="5673261812" />
+  <nd ref="5673261811" />
+  <nd ref="5673261810" />
+  <nd ref="3718987556" />
+  <tag k="bicycle" v="no" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate Bridge" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="colour" v="orange" />
+  <tag k="cycleway" v="no" />
+  <tag k="foot" v="no" />
+  <tag k="hgv" v="designated" />
+  <tag k="highway" v="motorway" />
+  <tag k="historic" v="yes" />
+  <tag k="lanes" v="3" />
+  <tag k="lanes:conditional" v="4 @ (Tu-Fr 15:30-17:00)" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="45 mph" />
+  <tag k="name" v="Golden Gate Bridge" />
+  <tag k="NHS" v="STRAHNET" />
+  <tag k="oneway" v="yes" />
+  <tag k="ref" v="US 101;CA 1" />
+  <tag k="sidewalk" v="separate" />
+  <tag k="source" v="Bing" />
+  <tag k="source:hgv" v="https://sfplanninggis.org/TIM/?search=3591024#searchbox" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="asphalt" />
+  <tag k="tiger:cfcc" v="A25;A11;A29" />
+  <tag k="tiger:name_base" v="United States Highway 101;Redwood;Golden Gate" />
+  <tag k="tiger:name_base_1" v="Golden Gate" />
+  <tag k="tiger:name_type" v="Hwy;Brg" />
+  <tag k="tiger:name_type_1" v="Brg" />
+  <tag k="toll" v="no" />
+  <tag k="wikidata" v="Q44440" />
+  <tag k="wikipedia" v="en:Golden Gate Bridge" />
+ </way>
+ <way id="1557712987" visible="true" version="2" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="12231501498" />
+  <nd ref="5207344493" />
+  <nd ref="5207344519" />
+  <nd ref="5207344507" />
+  <nd ref="5207344512" />
+  <nd ref="5207344500" />
+  <nd ref="5207344725" />
+  <nd ref="5207344499" />
+  <nd ref="5207344511" />
+  <nd ref="5207344506" />
+  <nd ref="5207344518" />
+  <nd ref="5207344504" />
+  <nd ref="5207344509" />
+  <nd ref="5207344502" />
+  <nd ref="5207344501" />
+  <nd ref="5207344517" />
+  <nd ref="14190386679" />
+  <tag k="bicycle" v="no" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate Bridge" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="colour" v="orange" />
+  <tag k="cycleway" v="no" />
+  <tag k="foot" v="no" />
+  <tag k="hgv" v="designated" />
+  <tag k="highway" v="motorway" />
+  <tag k="historic" v="yes" />
+  <tag k="lanes" v="3" />
+  <tag k="lanes:conditional" v="2 @ (Tu-Fr 15:30-17:00)" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="45 mph" />
+  <tag k="name" v="Golden Gate Bridge" />
+  <tag k="NHS" v="STRAHNET" />
+  <tag k="oneway" v="yes" />
+  <tag k="ref" v="US 101;CA 1" />
+  <tag k="sidewalk" v="separate" />
+  <tag k="source" v="Bing" />
+  <tag k="source:hgv" v="https://sfplanninggis.org/TIM/?search=3591024#searchbox" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="asphalt" />
+  <tag k="tiger:cfcc" v="A25;A11;A29" />
+  <tag k="tiger:name_base" v="United States Highway 101;Redwood;Golden Gate" />
+  <tag k="tiger:name_base_1" v="Golden Gate" />
+  <tag k="tiger:name_type" v="Hwy;Brg" />
+  <tag k="tiger:name_type_1" v="Brg" />
+  <tag k="toll" v="yes" />
+  <tag k="wikidata" v="Q44440" />
+  <tag k="wikipedia" v="en:Golden Gate Bridge" />
+ </way>
+ <way id="1560010146" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="7192379617" />
+  <nd ref="14190386660" />
+  <tag k="bicycle" v="no" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate Bridge" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="colour" v="orange" />
+  <tag k="cycleway" v="no" />
+  <tag k="foot" v="no" />
+  <tag k="hgv" v="designated" />
+  <tag k="highway" v="motorway" />
+  <tag k="historic" v="yes" />
+  <tag k="lanes" v="3" />
+  <tag k="lanes:conditional" v="4 @ (Tu-Fr 15:30-17:00)" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="45 mph" />
+  <tag k="name" v="Golden Gate Bridge" />
+  <tag k="NHS" v="STRAHNET" />
+  <tag k="oneway" v="yes" />
+  <tag k="ref" v="US 101;CA 1" />
+  <tag k="sidewalk" v="separate" />
+  <tag k="source" v="Bing" />
+  <tag k="source:hgv" v="https://sfplanninggis.org/TIM/?search=3591024#searchbox" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="asphalt" />
+  <tag k="tiger:cfcc" v="A25;A11;A29" />
+  <tag k="tiger:name_base" v="United States Highway 101;Redwood;Golden Gate" />
+  <tag k="tiger:name_base_1" v="Golden Gate" />
+  <tag k="tiger:name_type" v="Hwy;Brg" />
+  <tag k="tiger:name_type_1" v="Brg" />
+  <tag k="toll" v="no" />
+  <tag k="wikidata" v="Q44440" />
+  <tag k="wikipedia" v="en:Golden Gate Bridge" />
+ </way>
+ <way id="1560010147" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="14190386661" />
+  <nd ref="7190094860" />
+  <tag k="bicycle" v="no" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate Bridge" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="colour" v="orange" />
+  <tag k="cycleway" v="no" />
+  <tag k="foot" v="no" />
+  <tag k="hgv" v="designated" />
+  <tag k="highway" v="motorway" />
+  <tag k="historic" v="yes" />
+  <tag k="lanes" v="3" />
+  <tag k="lanes:conditional" v="2 @ (Tu-Fr 15:30-17:00)" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="45 mph" />
+  <tag k="name" v="Golden Gate Bridge" />
+  <tag k="NHS" v="STRAHNET" />
+  <tag k="oneway" v="yes" />
+  <tag k="ref" v="US 101;CA 1" />
+  <tag k="sidewalk" v="separate" />
+  <tag k="source" v="Bing" />
+  <tag k="source:hgv" v="https://sfplanninggis.org/TIM/?search=3591024#searchbox" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="asphalt" />
+  <tag k="tiger:cfcc" v="A25;A11;A29" />
+  <tag k="tiger:name_base" v="United States Highway 101;Redwood;Golden Gate" />
+  <tag k="tiger:name_base_1" v="Golden Gate" />
+  <tag k="tiger:name_type" v="Hwy;Brg" />
+  <tag k="tiger:name_type_1" v="Brg" />
+  <tag k="toll" v="yes" />
+  <tag k="wikidata" v="Q44440" />
+  <tag k="wikipedia" v="en:Golden Gate Bridge" />
+ </way>
+ <way id="1560010149" visible="true" version="2" changeset="189182164" timestamp="2026-09-17T21:25:30Z" user="nickvet419" uid="18480">
+  <nd ref="3743685567" />
+  <nd ref="14190386666" />
+  <nd ref="14190386667" />
+  <nd ref="3743685566" />
+  <nd ref="14190386668" />
+  <nd ref="14190386669" />
+  <nd ref="9703154296" />
+  <nd ref="9703154295" />
+  <nd ref="14190386686" />
+  <nd ref="4220109190" />
+  <nd ref="14190386685" />
+  <nd ref="3743685560" />
+  <nd ref="3743685561" />
+  <nd ref="14190386670" />
+  <nd ref="13699675950" />
+  <nd ref="13699675951" />
+  <nd ref="14190386663" />
+  <nd ref="14190386672" />
+  <nd ref="14190386673" />
+  <nd ref="14190386682" />
+  <nd ref="14190386675" />
+  <nd ref="14190386674" />
+  <nd ref="14190386662" />
+  <nd ref="13699675952" />
+  <nd ref="13699675953" />
+  <nd ref="14190386671" />
+  <nd ref="3743685562" />
+  <nd ref="3743685563" />
+  <nd ref="14190386676" />
+  <nd ref="14190386677" />
+  <nd ref="3743685564" />
+  <nd ref="3743685565" />
+  <nd ref="3743685569" />
+  <nd ref="14190386665" />
+  <nd ref="14190386664" />
+  <nd ref="3743685568" />
+  <nd ref="14190386680" />
+  <nd ref="14190386678" />
+  <nd ref="14190386679" />
+  <nd ref="14190386681" />
+  <nd ref="3743685567" />
+  <tag k="barrier" v="retaining_wall" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="North Anchor" />
+ </way>
+ <way id="1560010150" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="14190386671" />
+  <nd ref="14190386674" />
+  <nd ref="14190386662" />
+  <nd ref="13699675952" />
+  <nd ref="13699675953" />
+  <nd ref="14190386671" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon N1" />
+ </way>
+ <way id="1560010153" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="14190386680" />
+  <nd ref="3718987390" />
+  <nd ref="3718987413" />
+  <nd ref="3718987363" />
+  <nd ref="3718987378" />
+  <nd ref="3718987539" />
+  <nd ref="3718987338" />
+  <nd ref="3718987384" />
+  <nd ref="3718987415" />
+  <nd ref="3718987399" />
+  <nd ref="3718987343" />
+  <nd ref="3718987421" />
+  <nd ref="3718987559" />
+  <nd ref="3718987371" />
+  <nd ref="3718987414" />
+  <nd ref="3718987538" />
+  <nd ref="3718987540" />
+  <nd ref="667115758" />
+  <tag k="bicycle" v="designated" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="cycleway:surface" v="concrete" />
+  <tag k="elevation" v="220" />
+  <tag k="foot" v="designated" />
+  <tag k="footway:surface" v="concrete" />
+  <tag k="highway" v="cycleway" />
+  <tag k="horse" v="no" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="name" v="Golden Gate Bridge East Sidewalk" />
+  <tag k="note" v="Closes to pedestrians in the evening (exact time depends by season) but you can call on the interphone and they'll send a police car for to take you to the other side. Bikes allowed at night but must call on the interphone. Hours and instructions here: ht" />
+  <tag k="oneway" v="no" />
+  <tag k="segregated" v="yes" />
+  <tag k="source" v="Bing" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="concrete" />
+ </way>
+ <way id="1560010154" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="667197531" />
+  <nd ref="3719112675" />
+  <nd ref="3719112678" />
+  <nd ref="3719112689" />
+  <nd ref="3719112692" />
+  <nd ref="3719112696" />
+  <nd ref="3719112698" />
+  <nd ref="3719112677" />
+  <nd ref="3719112693" />
+  <nd ref="3719112699" />
+  <nd ref="3719112684" />
+  <nd ref="3719112691" />
+  <nd ref="3719112688" />
+  <nd ref="3719112683" />
+  <nd ref="3719112703" />
+  <nd ref="3719112686" />
+  <nd ref="3719112679" />
+  <nd ref="14190386681" />
+  <tag k="bicycle" v="designated" />
+  <tag k="bridge" v="yes" />
+  <tag k="bridge:name" v="Golden Gate" />
+  <tag k="bridge:structure" v="suspension" />
+  <tag k="foot" v="no" />
+  <tag k="highway" v="cycleway" />
+  <tag k="horse" v="no" />
+  <tag k="layer" v="1" />
+  <tag k="lit" v="yes" />
+  <tag k="maxspeed" v="15 mph" />
+  <tag k="motor_vehicle" v="no" />
+  <tag k="name" v="Golden Gate Bridge West Sidewalk" />
+  <tag k="note" v="Bicyclists use west sidewalk during weekday afternoons and on weekend days. At other times, bicyclists share east sidewalk with pedestrians. Detailed hours here: https://www.goldengate.org/bridge/visiting-the-bridge/bikes-pedestrians/" />
+  <tag k="oneway" v="no" />
+  <tag k="segregated" v="no" />
+  <tag k="source" v="Bing" />
+  <tag k="start_date" v="1937-05-27" />
+  <tag k="surface" v="concrete" />
+ </way>
+ <way id="1560010159" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="3743685566" />
+  <nd ref="14190386668" />
+  <nd ref="14190386669" />
+  <nd ref="14190386688" />
+  <nd ref="14190386666" />
+  <nd ref="14190386667" />
+  <nd ref="3743685566" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon N2" />
+ </way>
+ <way id="1560010160" visible="true" version="1" changeset="189181200" timestamp="2026-09-17T20:48:35Z" user="nickvet419" uid="18480">
+  <nd ref="14190386665" />
+  <nd ref="14190386664" />
+  <nd ref="14190386689" />
+  <nd ref="3743685564" />
+  <nd ref="3743685565" />
+  <nd ref="3743685569" />
+  <nd ref="14190386665" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon N2" />
+ </way>
+ <way id="1560010162" visible="true" version="2" changeset="189740246" timestamp="2026-09-29T17:32:32Z" user="Mateusz Konieczny - bot account" uid="3199858">
+  <nd ref="14190386691" />
+  <nd ref="14190386694" />
+  <nd ref="14190386693" />
+  <nd ref="3742026256" />
+  <nd ref="3742026257" />
+  <nd ref="14190386691" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon S1" />
+ </way>
+ <way id="1560010163" visible="true" version="2" changeset="189740246" timestamp="2026-09-29T17:32:33Z" user="Mateusz Konieczny - bot account" uid="3199858">
+  <nd ref="14190386690" />
+  <nd ref="14190386695" />
+  <nd ref="14190386692" />
+  <nd ref="3742026261" />
+  <nd ref="3742026258" />
+  <nd ref="14190386690" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon S1" />
+ </way>
+ <way id="1560010164" visible="true" version="2" changeset="189740246" timestamp="2026-09-29T17:32:34Z" user="Mateusz Konieczny - bot account" uid="3199858">
+  <nd ref="14190386697" />
+  <nd ref="14190386707" />
+  <nd ref="3742026259" />
+  <nd ref="3742026260" />
+  <nd ref="14190386702" />
+  <nd ref="14190386699" />
+  <nd ref="14190386697" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon S2" />
+ </way>
+ <way id="1560010165" visible="true" version="2" changeset="189740246" timestamp="2026-09-29T17:32:34Z" user="Mateusz Konieczny - bot account" uid="3199858">
+  <nd ref="14190386700" />
+  <nd ref="14190386698" />
+  <nd ref="14190386706" />
+  <nd ref="3742026262" />
+  <nd ref="3742026263" />
+  <nd ref="14190386701" />
+  <nd ref="14190386700" />
+  <tag k="bridge:support" v="pier" />
+  <tag k="building" v="yes" />
+  <tag k="name" v="Pylon S2" />
+ </way>
+ <way id="1560010167" visible="true" version="2" changeset="189182021" timestamp="2026-09-17T21:21:13Z" user="nickvet419" uid="18480">
+  <nd ref="14190386703" />
+  <nd ref="14190386704" />
+  <nd ref="14190386705" />
+  <nd ref="14190386706" />
+  <nd ref="14190386698" />
+  <nd ref="14190436076" />
+  <nd ref="14190386709" />
+  <nd ref="14190386710" />
+  <nd ref="11771808553" />
+  <nd ref="14190386697" />
+  <nd ref="14190386707" />
+  <nd ref="14190386708" />
+  <nd ref="14190386703" />
+  <tag k="bridge:support" v="abutment" />
+  <tag k="building" v="yes" />
+  <tag k="layer" v="0" />
+  <tag k="name" v="South Anchorage" />
+ </way>
+</osm>
