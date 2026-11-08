@@ -16,8 +16,7 @@
 */
 
 #include "lua_api/l_internal.h"
-#include "lua_api/l_key_value_storage.h"
-#include "environment.h"
+#include "lua_api/fm_l_key_value_storage.h"
 #include "key_value_storage.h"
 
 void ModApiKeyValueStorage::Initialize(lua_State *L, int top)
@@ -53,7 +52,7 @@ int ModApiKeyValueStorage::l_kv_get_string(lua_State *L)
 	if (lua_isstring(L, 2))
 		db = luaL_checkstring(L, 2);
 	std::string data;
-	if(env->getKeyValueStorage(db).get(key, data)) {
+	if (env->getKeyValueStorage(db).get(key, data)) {
 		lua_pushstring(L, data.c_str());
 		return 1;
 	} else {
@@ -73,7 +72,6 @@ int ModApiKeyValueStorage::l_kv_delete(lua_State *L)
 
 	return 0;
 }
-
 
 // bad place, todo: move to l_stat.h
 #include "server.h"
@@ -95,14 +93,13 @@ int ModApiKeyValueStorage::l_stat_add(lua_State *L)
 	std::string key = luaL_checkstring(L, 1);
 
 	std::string name;
-	if(lua_isstring(L, 2))
+	if (lua_isstring(L, 2))
 		name = lua_tostring(L, 1);
 
 	float value = 1;
-	if(lua_isnumber(L, 3))
+	if (lua_isnumber(L, 3))
 		value = lua_tonumber(L, 3);
 
 	getServer(L)->stat.add(key, name, value);
 	return 0;
 }
-

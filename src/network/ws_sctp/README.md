@@ -20,14 +20,18 @@ For an Emscripten client, configure with `-DUSE_MULTI=OFF
 `AF_CONN` is the carrier. Existing project pthread support is still required.
 Browser listeners are unsupported.
 
-For a native server, enable `ENABLE_WEBSOCKET_SCTP` and select the advertised
-`ws_sctp` port. Plain WebSockets remain the default. Set
-`ENABLE_WEBSOCKET_SCTP_TLS=ON` to use TLS with the existing `https_chain` and
-`https_key` certificate settings, or put the plain listener behind a TLS reverse
-proxy. The ordinary `ws` listener retains its existing TLS policy.
+For a native multi-transport server with both WebSocket transports enabled,
+`ws_sctp` shares the `port_wss` listener by default. WebSocket upgrades at
+`/sctp` carry SCTP; `/` continues to serve the ordinary WebSocket protocol and
+also recognizes an SCTP INIT from clients that use the root path. HTTP requests
+retain their normal handling. The shared listener uses the
+ordinary WebSocket server's TLS settings, including `https_chain` and `https_key`.
+Set `port_wss_sctp` to a different port to retain a separate SCTP listener;
+its TLS policy is controlled by `ENABLE_WEBSOCKET_SCTP_TLS`.
 
 The browser selects `wss://` on HTTPS pages and `ws://` on HTTP pages. An optional
 `ws_sctp_url`, for example `wss://game.example.org/sctp`, overrides the URL when a
 DNS certificate name or reverse-proxy path is needed. The selected game address
 and port still determine the SCTP association port; the proxy must route to that
-server's `ws_sctp` listener. Ordinary `ws` clients cannot connect to this listener.
+server's `ws_sctp` listener. The client uses `/sctp` when the URL has no path;
+an explicitly configured non-root reverse-proxy path is retained.

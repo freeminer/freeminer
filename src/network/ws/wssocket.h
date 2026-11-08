@@ -23,6 +23,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "proxy.h"
 #include "datagram.h"
+#include "config.h"
 
 #include <list>
 #include <atomic>
@@ -46,6 +47,13 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 //extern bool socket_enable_debug_output;
 
+namespace ws_transport
+{
+class Transport;
+template <class Server>
+class SharedSctpEndpoint;
+}
+
 class WSSocket
 {
 public:
@@ -54,6 +62,9 @@ public:
 	WSSocket(bool ipv6);
 	~WSSocket();
 	void Bind(Address addr);
+#if USE_WEBSOCKET_SCTP
+	void shareSctp(const std::shared_ptr<ws_transport::Transport> &transport);
+#endif
 	bool Connect(const Address &addr);
 
 	bool init(bool ipv6, bool noExceptions = false);
@@ -105,6 +116,10 @@ public:
 #endif
 
 private:
+#if USE_WEBSOCKET_SCTP
+	std::shared_ptr<ws_transport::SharedSctpEndpoint<ws_server_t>> m_shared_sctp;
+	bool openSctp(const websocketpp::connection_hdl &hdl);
+#endif
 	// service sessions are separate from game peers
 	// distinguish this server from outbound proxy destinations
 	std::shared_ptr<ws_transport::GameRouter> m_game_router;

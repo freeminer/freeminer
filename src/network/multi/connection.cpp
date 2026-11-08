@@ -172,23 +172,31 @@ void ConnectionMulti::Serve(Address bind_address)
 		addr.setPort(port);
 		connection->Serve(addr);
 	}
-	if (auto connection = ensureConnection(proto_name::websocket)) {
-		auto addr = bind_address;
-		u16 port = 0;
-		if (!g_settings->getU16NoEx("port_wss", port)) {
-			port = addr.getPort() + con::wss_port_diff;
-		}
-		addr.setPort(port); // same tcp
-		connection->Serve(addr);
+	auto *websocket = ensureConnection(proto_name::websocket);
+	auto *websocket_sctp = ensureConnection(proto_name::websocket_stcp);
+	u16 websocket_port = 0;
+	if (!g_settings->getU16NoEx("port_wss", websocket_port))
+		websocket_port = bind_address.getPort() + con::wss_port_diff;
+	u16 sctp_port = 0;
+	if (!g_settings->getU16NoEx("port_wss_sctp", sctp_port))
+		sctp_port = websocket ? websocket_port
+							  : bind_address.getPort() + con::wss_sctp_port_diff;
+#if USE_WEBSOCKET && USE_WEBSOCKET_SCTP
+	if (websocket && websocket_sctp && websocket_port == sctp_port) {
+		static_cast<con_ws::Connection *>(websocket)->shareSctp(
+				static_cast<con_ws_sctp::Connection *>(websocket_sctp)->getTransport());
 	}
-	if (auto connection = ensureConnection(proto_name::websocket_stcp)) {
+#endif
+	// Queue SCTP setup before opening the shared listener to incoming clients.
+	if (websocket_sctp) {
 		auto addr = bind_address;
-		u16 port = 0;
-		if (!g_settings->getU16NoEx("port_wss_sctp", port)) {
-			port = addr.getPort() + con::wss_sctp_port_diff;
-		}
-		addr.setPort(port); // same tcp
-		connection->Serve(addr);
+		addr.setPort(sctp_port);
+		websocket_sctp->Serve(addr);
+	}
+	if (websocket) {
+		auto addr = bind_address;
+		addr.setPort(websocket_port);
+		websocket->Serve(addr);
 	}
 	if (auto connection = ensureConnection(proto_name::minetest))
 		connection->Serve(bind_address);

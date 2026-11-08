@@ -1,4 +1,5 @@
 // Freeminer scaled LOD and far-mesh implementation.
+// cSpell:ignore farmesh
 // Included at the end of content_mapblock.cpp so it can reuse its private
 // mesh-generator helpers without changing the upstream implementation.
 

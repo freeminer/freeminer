@@ -21,6 +21,7 @@ public:
 			con::PeerHandler *peerhandler = nullptr, bool local = false);
 	~Connection() override;
 	bool hasPeer(session_t id) { return m_peers.count(id) != 0; }
+	std::shared_ptr<ws_transport::Transport> getTransport() { return m_transport; }
 
 private:
 	// Keep WebSocket-SCTP sessions distinct from native SCTP in multi mode.
