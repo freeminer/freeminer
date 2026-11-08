@@ -1,9 +1,12 @@
 #include "test.h"
 
+#include "mapgen/earth/arnis-cpp/src/building_suppression.h"
+#include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/elevation/peaks.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
 
 #include <cmath>
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <initializer_list>
@@ -30,9 +33,10 @@ void add_ring(arnis::osm_parser::RawOsmDocument &document, std::uint64_t way_id,
 	way.id = way_id;
 	way.tags = std::move(tags);
 	for (std::size_t i = 0; i < 5; ++i) {
-		const auto node_id = first_node_id + i;
+		const auto node_id = i == 4 ? first_node_id : first_node_id + i;
 		way.node_refs.push_back(node_id);
-		document.nodes.push_back({node_id, coordinates[i][0], coordinates[i][1], {}});
+		if (i < 4)
+			document.nodes.push_back({node_id, coordinates[i][0], coordinates[i][1], {}});
 	}
 	document.ways.push_back(std::move(way));
 }
@@ -49,6 +53,72 @@ public:
 		TEST(testTallManMadeTowerIsIncluded);
 		TEST(testTallManMadeTowerRelationIsIncluded);
 		TEST(testOutlineReplacedByItsPartsDoesNotRaiseHeightEstimate);
+		TEST(testRoundedSummitIsSteepenedWithoutASeam);
+		TEST(testPeakLiftRespectsOneWorldSeams);
+		TEST(testOutlineSuppressionIsUsedForTerrainHeightHints);
+	}
+
+	static arnis::geographic::LLBBox peak_bbox()
+	{
+		return {-22.9545, -43.2140, -22.9495, -43.2070};
+	}
+
+	static std::pair<std::vector<std::vector<double>>, arnis::elevation::PeakHint> dome(
+			double top, double slope)
+	{
+		std::vector<std::vector<double>> grid(241, std::vector<double>(241));
+		for (std::size_t y = 0; y < grid.size(); ++y) {
+			for (std::size_t x = 0; x < grid[y].size(); ++x) {
+				const double d = std::hypot(static_cast<double>(x) - 120.0,
+										 static_cast<double>(y) - 120.0) *
+								 5.0;
+				grid[y][x] = top - slope * d * d / (d + 100.0);
+			}
+		}
+		const auto bbox = peak_bbox();
+		return {std::move(grid),
+				{(bbox.min().lat() + bbox.max().lat()) * 0.5,
+						(bbox.min().lng() + bbox.max().lng()) * 0.5, 0.0}};
+	}
+
+	void testRoundedSummitIsSteepenedWithoutASeam()
+	{
+		auto [grid, peak] = dome(8564.0, 0.8);
+		peak.ele_m = 8611.0;
+		const auto before = grid;
+		arnis::elevation::raise_peaks(grid, peak_bbox(), {peak}, 5.0, std::nullopt);
+
+		UASSERT(std::abs(grid[120][120] - 8611.0) < 0.5);
+		UASSERT(grid[120][120] - grid[120][122] < 5.0);
+		const double centre_lift = grid[120][120] - before[120][120];
+		const double lift_at_50m = grid[120][130] - before[120][130];
+		UASSERT(lift_at_50m > centre_lift * 0.5);
+		for (std::size_t x = 120; x < 200; ++x) {
+			const double raised_drop = grid[120][x] - grid[120][x + 1];
+			const double original_drop = before[120][x] - before[120][x + 1];
+			UASSERT(raised_drop <= 1.5 * original_drop + 0.5);
+		}
+	}
+
+	void testPeakLiftRespectsOneWorldSeams()
+	{
+		const auto bbox = peak_bbox();
+		std::vector<std::vector<double>> cone(201, std::vector<double>(201));
+		for (std::size_t y = 0; y < cone.size(); ++y)
+			for (std::size_t x = 0; x < cone[y].size(); ++x)
+				cone[y][x] = 530.0 - std::hypot(static_cast<double>(x) - 100.0,
+											 static_cast<double>(y) - 100.0) *
+											 4.0;
+		const arnis::elevation::PeakHint peak{(bbox.min().lat() + bbox.max().lat()) * 0.5,
+				(bbox.min().lng() + bbox.max().lng()) * 0.5, 710.0};
+		const auto summit = [&](std::optional<std::size_t> seam_pad) {
+			auto grid = cone;
+			arnis::elevation::raise_peaks(grid, bbox, {peak}, 5.0, seam_pad);
+			return grid[100][100];
+		};
+		UASSERT(summit(std::nullopt) > 700.0);
+		UASSERT(summit(64) > 700.0);
+		UASSERT(summit(65) == 530.0);
 	}
 
 	void testTallBuildingPartInsideRideIsSuppressed()
@@ -104,11 +174,43 @@ public:
 		UASSERT(!tall.empty());
 		bool part_height_counted = false;
 		for (const auto &model : tall) {
-			UASSERT(model.height_m <= 100.0);
+			UTEST(model.height_m <= 100.0, "unexpected mapped height %.3f",
+					model.height_m);
 			part_height_counted =
 					part_height_counted || std::abs(model.height_m - 93.5) < 0.01;
 		}
 		UASSERT(part_height_counted);
+	}
+
+	void testOutlineSuppressionIsUsedForTerrainHeightHints()
+	{
+		arnis::osm_parser::RawOsmDocument document;
+		add_ring(document, 10, 1, 40.0, -74.0, 40.001, -73.999,
+				make_tags({{"building", "office"}, {"building:levels", "25"}}));
+		add_ring(document, 11, 10, 40.0, -74.0, 40.001, -73.999,
+				make_tags({{"building:part", "yes"}, {"height", "93.5"}}));
+		std::vector<arnis::ProcessedElement> elements;
+		for (const auto &way : document.ways) {
+			arnis::ProcessedWay processed;
+			processed.id = way.id;
+			processed.tags = way.tags;
+			processed.source_node_refs = way.node_refs;
+			for (const auto &node : document.nodes) {
+				if (std::find(way.node_refs.begin(), way.node_refs.end(), node.id) ==
+						way.node_refs.end())
+					continue;
+				arnis::ProcessedNode p{};
+				p.id = node.id;
+				p.latitude = *node.lat;
+				p.longitude = *node.lon;
+				processed.nodes.push_back(p);
+			}
+			elements.emplace_back(std::move(processed));
+		}
+		const auto prepared = arnis::prepare_building_data(elements);
+		UTEST(prepared.outline_suppression.contains({"way", 10}),
+				"outline suppression missing; part-group=%d, groups=%zu",
+				prepared.part_groups.contains(11), prepared.part_groups.size());
 	}
 };
 

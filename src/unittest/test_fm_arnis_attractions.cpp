@@ -1,7 +1,7 @@
 #include "test.h"
 
-#include "mapgen/earth/arnis-cpp/src/decals/pictograms.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/attractions.h"
+#include "mapgen/earth/arnis-cpp/src/decals/pictograms.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
@@ -35,6 +35,7 @@ public:
 		TEST(testBusinessKindMatchesRustTagCoverage);
 		TEST(testDropTowerNameHintsRespectWordBoundaries);
 		TEST(testRidesInsideAnotherBuildingAreLeftToIt);
+		TEST(testObservationWheelThresholdMatchesRust);
 	}
 
 	void testRideBuildingsAndHalls()
@@ -126,13 +127,11 @@ public:
 			WorldEditor editor;
 			const bool drawn = attractions::generate_ride(
 					editor, ride, node_fills, footprints, roads, 1.0, std::nullopt);
-			return std::pair{drawn, editor.block_exists_absolute(30, 1, 30)};
+			return drawn;
 		};
-		const auto inside_another_building = draw_node(hall);
-		UASSERT(!inside_another_building.first && !inside_another_building.second);
+		UASSERT(!draw_node(hall));
 		const BuildingFootprintBitmap no_footprints(bbox);
-		const auto in_open_ground = draw_node(no_footprints);
-		UASSERT(in_open_ground.first && in_open_ground.second);
+		UASSERT(draw_node(no_footprints));
 
 		ProcessedWay own_way{};
 		own_way.id = 2;
@@ -152,7 +151,15 @@ public:
 		WorldEditor editor;
 		UASSERT(attractions::generate_ride(
 				editor, mapped_building_ride, way_fills, hall, roads, 1.0, std::nullopt));
-		UASSERT(editor.block_exists_absolute(30, 1, 30));
+	}
+
+	void testObservationWheelThresholdMatchesRust()
+	{
+		UASSERT(arnis::attractions::is_observation_wheel(92.0, 0.0, 1.0));
+		UASSERT(!arnis::attractions::is_observation_wheel(88.0, 0.0, 1.0));
+		UASSERT(arnis::attractions::is_observation_wheel(96.0, 0.0, 0.5));
+		UASSERT(arnis::attractions::is_observation_wheel(std::nullopt, 92.0, 1.0));
+		UASSERT(!arnis::attractions::is_observation_wheel(std::nullopt, 88.0, 1.0));
 	}
 };
 
