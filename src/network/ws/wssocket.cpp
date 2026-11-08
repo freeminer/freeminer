@@ -33,6 +33,9 @@ openssl req -new -x509 -key privkey.pem > fullchain.pem
 #include "endpoint.h"
 #include "transport.h"
 #include "http.h"
+#if USE_WEBSOCKET_SCTP
+#include "shared.h"
+#endif
 #if USE_SSL
 #include "tls.h"
 #endif
@@ -99,6 +102,10 @@ void WSSocket::on_fail(const websocketpp::connection_hdl &hdl)
 
 void WSSocket::on_close(const websocketpp::connection_hdl &hdl)
 {
+#if USE_WEBSOCKET_SCTP
+	if (m_shared_sctp && m_shared_sctp->closed(hdl))
+		return;
+#endif
 	cs << "Close handler" << '\n';
 
 	// auto ws = hdls.at(hdl);
@@ -115,8 +122,22 @@ void WSSocket::on_close(const websocketpp::connection_hdl &hdl)
 	hdls.erase(hdl);
 }
 
-void WSSocket::on_open(const websocketpp::connection_hdl &)
+void WSSocket::on_open(const websocketpp::connection_hdl &hdl)
 {
+#if USE_WEBSOCKET_SCTP
+	const auto connection = server.get_con_from_hdl(hdl);
+	auto path = connection->get_resource();
+	if (const auto query = path.find('?'); query != std::string::npos)
+		path.resize(query);
+	if (path == "/sctp") {
+		if (openSctp(hdl))
+			return;
+		websocketpp::lib::error_code close_error;
+		server.close(hdl, websocketpp::close::status::policy_violation,
+				"SCTP unavailable", close_error);
+		return;
+	}
+#endif
 	cs << "open handler" << '\n';
 }
 
@@ -226,6 +247,11 @@ void WSSocket::sendClientPacket(const std::string &payload)
 
 void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_ptr &msg)
 {
+#if USE_WEBSOCKET_SCTP
+	if (m_shared_sctp && m_shared_sctp->message(hdl, msg->get_payload(),
+								 msg->get_opcode() == websocketpp::frame::opcode::binary))
+		return;
+#endif
 	// emsocket service connections must never enter the game packet queue
 	if (auto it = m_proxies.find(hdl); it != m_proxies.end()) {
 		it->second->receive(msg->get_payload());
@@ -234,6 +260,22 @@ void WSSocket::on_message(const websocketpp::connection_hdl &hdl, const message_
 	const bool text = msg->get_opcode() == websocketpp::frame::opcode::text;
 	if (m_datagrams && m_datagrams->receive(hdl, msg->get_payload(), text))
 		return;
+#if USE_WEBSOCKET_SCTP
+	// Older SCTP clients use / and identify themselves with a binary INIT.
+	// Datagram clients start with NEWADDR or BIND and are handled above.
+	const auto &payload = msg->get_payload();
+	const auto &resource = server.get_con_from_hdl(hdl)->get_resource();
+	const auto query = resource.find('?');
+	if (!text && resource.substr(0, query) == "/" && payload.size() >= 32 &&
+			payload.compare(4, 4, "\0\0\0\0", 4) == 0 &&
+			static_cast<unsigned char>(payload[12]) == 1 && payload[13] == 0 &&
+			((static_cast<unsigned char>(payload[14]) << 8) |
+					static_cast<unsigned char>(payload[15])) >= 20 &&
+			openSctp(hdl)) {
+		m_shared_sctp->message(hdl, payload, true);
+		return;
+	}
+#endif
 	if (text && msg->get_payload().starts_with("PROXY ")) {
 		bool enabled = false;
 		g_settings->getBoolNoEx("ws_proxy_enable", enabled);
@@ -290,6 +332,10 @@ WSSocket::context_ptr WSSocket::on_client_tls_init(const websocketpp::connection
 
 WSSocket::~WSSocket()
 {
+#if USE_WEBSOCKET_SCTP
+	if (m_shared_sctp)
+		m_shared_sctp->stop();
+#endif
 	if (m_server_thread.joinable()) {
 		server.stop();
 		m_server_thread.join();
@@ -305,6 +351,31 @@ WSSocket::~WSSocket()
 	for (auto &[hdl, proxy] : m_proxies)
 		proxy->stop();
 }
+
+#if USE_WEBSOCKET_SCTP
+bool WSSocket::openSctp(const websocketpp::connection_hdl &hdl)
+{
+	if (!m_shared_sctp)
+		return false;
+	ws_transport::Error error;
+	const auto endpoint =
+			server.get_con_from_hdl(hdl)->get_raw_socket().remote_endpoint(error);
+	if (error)
+		return false;
+	Address address =
+			endpoint.address().is_v6()
+					? Address(*reinterpret_cast<const sockaddr_in6 *>(endpoint.data()))
+					: Address(*reinterpret_cast<const sockaddr_in *>(endpoint.data()));
+	return m_shared_sctp->open(hdl, address);
+}
+
+void WSSocket::shareSctp(const std::shared_ptr<ws_transport::Transport> &transport)
+{
+	m_shared_sctp = std::make_shared<ws_transport::SharedSctpEndpoint<ws_server_t>>(
+			server, transport);
+	transport->attachSharedServer(m_shared_sctp);
+}
+#endif
 
 bool WSSocket::Connect(const Address &addr)
 {

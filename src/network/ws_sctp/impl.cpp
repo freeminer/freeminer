@@ -211,6 +211,10 @@ void Connection::stopWebSockets()
 }
 int Connection::receive()
 {
+	// A shared listener can receive a WebSocket immediately after Serve is
+	// queued. Process its events only after the SCTP listening port is set.
+	if (!m_port && !m_connecting && m_websockets.empty())
+		return con_sctp::Connection::receive();
 	int progress = 0;
 	for (auto &event : m_transport->poll()) {
 		++progress;

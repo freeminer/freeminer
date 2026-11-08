@@ -10,6 +10,14 @@
 
 namespace ws_transport
 {
+class SharedServer
+{
+public:
+	virtual ~SharedServer() = default;
+	virtual int send(uint64_t id, const void *data, size_t size) = 0;
+	virtual void close(uint64_t id) = 0;
+	virtual void stop() = 0;
+};
 // URI syntax is shared by the native datagram client and binary carriers.
 inline std::string makeUri(const Address &address, bool secure)
 {
@@ -70,6 +78,10 @@ public:
 	~Transport();
 	bool connect(const Address &address, std::string_view host_name = {});
 	bool listen(const Address &address);
+	void attachSharedServer(std::shared_ptr<SharedServer> server);
+	void sharedOpen(Id id, const Address &address);
+	void sharedMessage(Id id, std::string data);
+	void sharedClose(Id id);
 	int send(Id id, const void *data, size_t size);
 	void close(Id id);
 	void stop();

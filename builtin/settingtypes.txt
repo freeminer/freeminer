@@ -456,7 +456,7 @@ sctp_peer_timeout (SCTP peer response timeout) int 30 0 86400
 # WebSocket carrier endpoint.
 #    Optional full ws:// or wss:// URL for SCTP over WebSocket.
 #    Useful for browser TLS certificates and reverse-proxy paths.
-#    Empty uses the selected server address and port. HTTPS pages use wss://.
+#    Empty uses the selected server address and port with /sctp. HTTPS pages use wss://.
 ws_sctp_url (SCTP WebSocket URL override) string
 # ===
 

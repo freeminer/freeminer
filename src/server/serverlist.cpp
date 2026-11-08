@@ -55,7 +55,14 @@ void addMultiProto(Json::Value &server, const u16 port)
 	{
 		u16 port_multi = 0;
 		if (!g_settings->getU16NoEx("port_wss_sctp", port_multi)) {
+			// fm: SCTP shares the ordinary WebSocket listener by default.
+#if USE_WEBSOCKET
+			if (!g_settings->getU16NoEx("port_wss", port_multi))
+				port_multi = port + con::wss_port_diff;
+#else
 			port_multi = port + con::wss_sctp_port_diff;
+#endif
+			// ===
 		}
 		server["proto_multi"]["sctp_wss"] = port_multi;
 	}

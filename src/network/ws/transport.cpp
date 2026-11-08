@@ -34,19 +34,26 @@ namespace
 {
 std::string connectionUri(const Address &address, bool secure, std::string_view host_name)
 {
-	if (!host_name.empty())
-		return makeUri(address, secure, host_name);
-	std::string uri = makeUri(address, secure);
+	std::string uri = makeUri(address, secure, host_name);
 	// Allows a DNS name matching a TLS certificate, or a reverse-proxy path.
 	std::string configured_uri;
 	g_settings->getNoEx("ws_sctp_url", configured_uri);
 	if (!configured_uri.empty())
 		uri = configured_uri;
+	const auto scheme = uri.find("://");
+	const auto authority = scheme == std::string::npos ? 0 : scheme + 3;
+	const auto path = uri.find('/', authority);
+	const auto query = uri.find('?', authority);
+	if (path == std::string::npos || (query != std::string::npos && path > query))
+		uri.insert(query == std::string::npos ? uri.size() : query, "/sctp");
+	else if (path + 1 == (query == std::string::npos ? uri.size() : query))
+		uri.insert(path + 1, "sctp");
 	return uri;
 }
 }
 struct Transport::Impl
 {
+	std::shared_ptr<SharedServer> shared_server;
 	bool local = false;
 	bool local_client = false;
 	u16 local_port = 0;
@@ -63,6 +70,11 @@ struct Transport::Impl
 		client->push({Type::Open, 1, true, {}, {}});
 	}
 	std::mutex mutex;
+	std::shared_ptr<SharedServer> getSharedServer()
+	{
+		std::lock_guard lock(mutex);
+		return shared_server;
+	}
 	std::vector<Event> events;
 	struct Send
 	{
@@ -324,6 +336,10 @@ bool Transport::connect(const Address &address, std::string_view host_name)
 }
 bool Transport::listen(const Address &address)
 {
+	if (m_impl->getSharedServer()) {
+		m_impl->running = true;
+		return true;
+	}
 	if (m_impl->local) {
 		std::lock_guard lock(Impl::local_mutex);
 		const auto port = address.getPort();
@@ -364,6 +380,23 @@ bool Transport::listen(const Address &address)
 	return true;
 #endif
 }
+void Transport::attachSharedServer(std::shared_ptr<SharedServer> server)
+{
+	std::lock_guard lock(m_impl->mutex);
+	m_impl->shared_server = std::move(server);
+}
+void Transport::sharedOpen(Id id, const Address &address)
+{
+	m_impl->push({Type::Open, id, false, address, {}});
+}
+void Transport::sharedMessage(Id id, std::string data)
+{
+	m_impl->push({Type::Message, id, false, {}, std::move(data)});
+}
+void Transport::sharedClose(Id id)
+{
+	m_impl->push({Type::Closed, id, false, {}, {}});
+}
 int Transport::send(Id id, const void *data, size_t size)
 {
 	if (size > 16 * 1024 * 1024)
@@ -380,6 +413,10 @@ int Transport::send(Id id, const void *data, size_t size)
 }
 void Transport::close(Id id)
 {
+	if (auto shared = m_impl->getSharedServer()) {
+		shared->close(id);
+		return;
+	}
 	if (m_impl->local) {
 		std::lock_guard lock(Impl::local_mutex);
 		if (id != 1)
@@ -418,6 +455,11 @@ std::vector<Transport::Event> Transport::poll()
 		state.outgoing_bytes = 0;
 	}
 	for (auto &packet : outgoing) {
+		if (auto shared = state.getSharedServer()) {
+			if (shared->send(packet.id, packet.data.data(), packet.data.size()))
+				state.push({Type::Failed, packet.id, false, {}, "send failed"});
+			continue;
+		}
 		if (state.local) {
 			std::lock_guard lock(Impl::local_mutex);
 			if (auto peer = state.local_peer.lock())
@@ -478,6 +520,16 @@ void Transport::stop()
 {
 	auto &state = *m_impl;
 	state.running.store(false, std::memory_order_release);
+	if (auto shared = state.getSharedServer()) {
+		shared->stop();
+		std::lock_guard lock(state.mutex);
+		state.shared_server.reset();
+		state.events.clear();
+		state.outgoing.clear();
+		state.outgoing_bytes = state.incoming_bytes = 0;
+		state.overflow = false;
+		return;
+	}
 	if (state.local) {
 		close(1);
 		{
