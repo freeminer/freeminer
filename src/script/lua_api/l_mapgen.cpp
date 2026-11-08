@@ -392,10 +392,10 @@ Biome *read_biome_def(lua_State *L, int index, const NodeDefManager *ndef)
 	nn.push_back(getstringfield_default(L, index, "node_riverbed",      ""));
 	nn.push_back(getstringfield_default(L, index, "node_dust",          ""));
 
-	//freeminer:
+	// fm:
 	nn.push_back(getstringfield_default(L, index, "node_ice", "mapgen_ice"));
 	nn.push_back(getstringfield_default(L, index, "node_top_cold", "mapgen_dirt_with_snow"));
-
+    // ===
 
 	size_t nnames = getstringlistfield(L, index, "node_cave_liquid", &nn);
 	// If no cave liquids defined, set list to "ignore" to trigger old hardcoded
@@ -566,20 +566,6 @@ int ModApiMapgen::l_get_humidity(lua_State *L)
 
 	return 1;
 }
-
-// get_wind(pos)
-// returns the wind at the position
-int ModApiMapgen::l_get_wind(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-
-	const auto pos = read_v3pos(L, 1);
-	const auto block_add = lua_isnumber(L, 2) ? lua_tonumber(L, 2) : true;
-	GET_ENV_PTR_NO_MAP_LOCK;
-	push_v3f(L, env->getServerMap().updateBlockWind(env, pos, nullptr, nullptr, block_add));
-	return 1;
-}
-
 
 // get_biome_data(pos)
 // returns a table containing the biome id, heat and humidity at the position
@@ -2115,99 +2101,20 @@ Mapgen *ModApiMapgen::getMapgen(lua_State *L)
 	return getServer(L)->getEmergeManager()->getCurrentMapgen();
 }
 
-
-// fm:
-// get_ground_level(x = num, z = num)
-int ModApiMapgen::l_get_ground_level(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-
-	pos_t x = luaL_checkinteger(L, 1);
-	pos_t z = luaL_checkinteger(L, 2);
-
-	EmergeManager *emerge = getServer(L)->getEmergeManager();
-	lua_pushinteger(L, emerge->getGroundLevelAtPoint(v2pos_t(x, z)));
-	return 1;
-}
-
-int ModApiMapgen::l_earth_pos_to_ll(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	auto *mg = getMapgen(L);
-	if (!mg) {
-		auto *emerge = getServer(L)->getEmergeManager();
-		if (!emerge->m_mapgens.empty())
-			mg = emerge->m_mapgens.front();
-	}
-	auto *earth = dynamic_cast<MapgenEarth *>(mg);
-	if (!earth)
-		return luaL_error(L, "earth projection API requires the earth mapgen");
-	const auto sample = earth->sampleEarth(check_v3pos(L, 1));
-	lua_newtable(L);
-	lua_pushnumber(L, sample.lat);
-	lua_setfield(L, -2, "lat");
-	lua_pushnumber(L, sample.lon);
-	lua_setfield(L, -2, "lon");
-	lua_pushnumber(L, sample.altitude);
-	lua_setfield(L, -2, "altitude");
-	return 1;
-}
-
-int ModApiMapgen::l_earth_ll_to_pos(lua_State *L)
-{
-	NO_MAP_LOCK_REQUIRED;
-	auto *mg = getMapgen(L);
-	if (!mg) {
-		auto *emerge = getServer(L)->getEmergeManager();
-		if (!emerge->m_mapgens.empty())
-			mg = emerge->m_mapgens.front();
-	}
-	auto *earth = dynamic_cast<MapgenEarth *>(mg);
-	if (!earth)
-		return luaL_error(L, "earth projection API requires the earth mapgen");
-	luaL_checktype(L, 1, LUA_TTABLE);
-	lua_getfield(L, 1, "lat");
-	const double lat = luaL_checknumber(L, -1);
-	lua_pop(L, 1);
-	lua_getfield(L, 1, "lon");
-	const double lon = luaL_checknumber(L, -1);
-	lua_pop(L, 1);
-	lua_getfield(L, 1, "altitude");
-	const bool automatic_altitude = lua_isnil(L, -1) && lua_toboolean(L, 2);
-	double altitude = lua_isnil(L, -1) ? 0.0 : luaL_checknumber(L, -1);
-	lua_pop(L, 1);
-	if (automatic_altitude)
-		altitude = std::max(earth->projectedElevation({lat, lon, 0}, 0),
-				double(earth->water_level)) + 2.0;
-	const auto pos = earth->ll_to_pos3({lat, lon}, altitude);
-	lua_newtable(L);
-	lua_pushnumber(L, pos.X);
-	lua_setfield(L, -2, "x");
-	lua_pushnumber(L, pos.Y);
-	lua_setfield(L, -2, "y");
-	lua_pushnumber(L, pos.Z);
-	lua_setfield(L, -2, "z");
-	lua_pushboolean(L, earth->projection.curved);
-	lua_setfield(L, -2, "curved");
-	return 1;
-}
-// ===
-
-
-
 void ModApiMapgen::Initialize(lua_State *L, int top)
 {
 // fm:
 	API_FCT(get_ground_level);
 	API_FCT(earth_pos_to_ll);
 	API_FCT(earth_ll_to_pos);
+	API_FCT(set_mapgen_y_bounds);
+	API_FCT(get_wind);
 // ===
 
-API_FCT(get_biome_id);
+	API_FCT(get_biome_id);
 	API_FCT(get_biome_name);
 	API_FCT(get_heat);
 	API_FCT(get_humidity);
-	API_FCT(get_wind);
 	API_FCT(get_biome_data);
 	API_FCT(get_mapgen_object);
 	API_FCT(get_spawn_level);
@@ -2248,11 +2155,14 @@ API_FCT(get_biome_id);
 
 void ModApiMapgen::InitializeEmerge(lua_State *L, int top)
 {
+// fm:
+	API_FCT(get_wind);
+// ===
+
 	API_FCT(get_biome_id);
 	API_FCT(get_biome_name);
 	API_FCT(get_heat);
 	API_FCT(get_humidity);
-	API_FCT(get_wind);
 	API_FCT(get_biome_data);
 	API_FCT(get_mapgen_object);
 
