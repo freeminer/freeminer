@@ -24,6 +24,17 @@ void main(void)
 	float closest_error = 1e20;
 	float optical_depth = 0.0;
 	float closest_optical_depth = 0.0;
+	vec4 distant_fog = vec4(0.0);
+	float distant_optical_depth = 0.0;
+	float distant_total = 0.0;
+	float near_plane = max(fmFogDepthRange.x, 0.001);
+	float far_plane = max(fmFogDepthRange.y, near_plane + 1.0);
+	float view_distance = near_plane * far_plane /
+		max(far_plane - depth * (far_plane - near_plane), 0.001);
+	// At distant silhouettes the half-resolution samples may all see the sky.
+	// Allow their fog through gradually; keep strict rejection for nearby objects.
+	float distant_surface = smoothstep(near_plane * 5000.0,
+		near_plane * 20000.0, view_distance);
 	for (int y = 0; y < 2; ++y) {
 		for (int x = 0; x < 2; ++x) {
 			vec2 offset = vec2(float(x), float(y));
@@ -40,10 +51,16 @@ void main(void)
 				closest_optical_depth = sample_optical_depth;
 			}
 			vec2 weights = mix(vec2(1.0) - fraction, fraction, offset);
-			float weight = weights.x * weights.y * (1.0 - smoothstep(0.01, 0.05, error));
+			float depth_weight = 1.0 - smoothstep(0.01, 0.05, error);
+			float weight = weights.x * weights.y * depth_weight;
 			fog += value * weight;
 			optical_depth += sample_optical_depth * weight;
 			total += weight;
+			float distant_weight = weights.x * weights.y *
+				(sample_depth > depth ? 1.0 : depth_weight);
+			distant_fog += value * distant_weight;
+			distant_optical_depth += sample_optical_depth * distant_weight;
+			distant_total += distant_weight;
 		}
 	}
 	// If no low-res sample represents this surface, suppress fog rather than
@@ -51,6 +68,11 @@ void main(void)
 	fog = total > 1e-5 ? fog / total : (closest_error < 0.05 ? closest : vec4(0.0));
 	optical_depth = total > 1e-5 ? optical_depth / total :
 		(closest_error < 0.05 ? closest_optical_depth : 0.0);
+	if (distant_total > 1e-5) {
+		fog = mix(fog, distant_fog / distant_total, distant_surface);
+		optical_depth = mix(optical_depth, distant_optical_depth / distant_total,
+			distant_surface);
+	}
 	vec4 scene = texture2D(texture1, varTexCoord);
 	// Apply one attenuation to the combined underside contributions instead
 	// of darkening every thin puff independently.
@@ -63,10 +85,6 @@ void main(void)
 	// Aerial perspective complements the local puffs without hiding nearby
 	// geometry. Leave the sky untouched because it already contains its tint.
 	if (depth < 0.999999 && fogDistance > 0.0) {
-		float near_plane = max(fmFogDepthRange.x, 0.001);
-		float far_plane = max(fmFogDepthRange.y, near_plane + 1.0);
-		float view_distance = near_plane * far_plane /
-			max(far_plane - depth * (far_plane - near_plane), 0.001);
 		float fog_start = fogShadingParameter > 1.0 ?
 			1.0 - 1.0 / fogShadingParameter : 0.0;
 		float relative_distance = clamp(view_distance / fogDistance, 0.0, 1.0);
