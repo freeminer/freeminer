@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "filesys.h"
 #include "fm_weather.h"
+#include "fm_weather_sync.h"
 #include "irrlichttypes.h"
 #include "network/connection.h"
 #include "network/networkexceptions.h"
@@ -783,6 +784,24 @@ MapBlockPtr loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos
 	return {};
 }
 
+void Server::SendWeatherUpdates(
+		session_t peer_id, const std::vector<weather::Update> &updates)
+{
+	if (updates.empty())
+		return;
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATAS_FM, 2);
+	PACK(TOCLIENT_BLOCKDATA_BLOCKS, updates.size());
+	PACK(TOCLIENT_BLOCKDATA_BLOCKS_DATA, weather::encode_updates(updates));
+#if MINETEST_PROTO
+	NetworkPacket pkt(TOCLIENT_BLOCKDATAS_FM, buffer.size(), peer_id);
+	pkt.putLongString({buffer.data(), buffer.size()});
+	Send(&pkt);
+#else
+	m_clients.send(peer_id, 2, buffer, true);
+#endif
+	g_profiler->add("Server: weather blocks sent", updates.size());
+}
+
 void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 		u16 net_proto_version, SerializedBlockCache *cache)
 {
@@ -799,10 +818,10 @@ void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 	block->serializeNetworkSpecific(os);
 
 	PACK(TOCLIENT_BLOCKDATA_DATA, os.str());
-	PACK(TOCLIENT_BLOCKDATA_HEAT, (weather::heat_t)(block->heat + block->heat_add));
-	PACK(TOCLIENT_BLOCKDATA_HUMIDITY,
-			(weather::humidity_t)(block->humidity + block->humidity_add));
-	PACK(TOCLIENT_BLOCKDATA_WIND, (weather::wind_t)(block->wind));
+	const auto climate = weather::snapshot(*block);
+	PACK(TOCLIENT_BLOCKDATA_HEAT, climate.heat);
+	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, climate.humidity);
+	PACK(TOCLIENT_BLOCKDATA_WIND, climate.wind);
 	PACK(TOCLIENT_BLOCKDATA_STEP, block->far_step);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY,
 			block->m_is_mono_block ? block->data[0].param0 : CONTENT_IGNORE);
@@ -840,11 +859,10 @@ void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8
 		block->serializeNetworkSpecific(os);
 
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_DATA, os.str());
-		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HEAT,
-				(weather::heat_t)(block->heat + block->heat_add));
-		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HUMIDITY,
-				(weather::humidity_t)(block->humidity + block->humidity_add));
-		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_WIND, (weather::wind_t)(block->wind));
+		const auto climate = weather::snapshot(*block);
+		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HEAT, climate.heat);
+		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HUMIDITY, climate.humidity);
+		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_WIND, climate.wind);
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_STEP, block->far_step);
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_CONTENT_ONLY,
 				block->m_is_mono_block ? block->data[0].param0 : CONTENT_IGNORE);

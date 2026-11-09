@@ -4,14 +4,16 @@
 
 #pragma once
 
+// fm: Independent, bounded weather delivery state.
+#include "fm_weather_sync.h"
 #include "mapblock.h"
 #include "threading/concurrent_set.h"
 #include "threading/concurrent_unordered_map.h"
-#include "threading/concurrent_unordered_set.h"
 #include "threading/concurrent_set.h"
 #include "util/unordered_map_hash.h"
 #include <atomic>
 #include "msgpack_fix.h"
+// ===
 
 
 #include "irr_v3d.h"                   // for irrlicht datatypes
@@ -265,11 +267,14 @@ public:
 	uint32_t far_blocks_requested_iteration{};
 	bool far_blocks_requested_iteration_valid{};
 	std::mutex far_blocks_requested_mutex;
+	//  Weather updates do not alter voxel delivery timestamps.
+	weather::ClientSync m_weather_sync;
+	void SendWeatherUpdates(ServerEnvironment *env, const v3bpos_t &center, u64 max_ms);
 	int GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge, float dtime,
 			std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime, u64 max_ms);
 	uint32_t SendFarBlocks(
 			int32_t uptime, const far_blocks_ready_t &new_far_blocks);
-	// ==
+	// ===
 
 	/* Authentication information */
 	std::string enc_pwd = "";

@@ -365,7 +365,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					humidity_sum += nblock->humidity;
 					heat_add_sum += nblock->heat_add;
 					humidity_add_sum += nblock->humidity_add;
-					const auto wind = nblock->wind;
+					const auto wind = nblock->wind.load();
 					if (std::isfinite(wind.X) && std::isfinite(wind.Y) &&
 							std::isfinite(wind.Z)) {
 						wind_sum += wind;

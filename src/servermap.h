@@ -123,9 +123,12 @@ public:
 	MapBlockPtr emergeBlockPtr(v3bpos_t p, bool create_blank = false) override;
 
 	static std::atomic_uint time_life;
-	u32 m_weather_update_last{};
+	// Resume by hash bucket without retaining invalidatable iterators.
+	size_t m_weather_update_last{};
+	size_t m_weather_update_offset{};
+	size_t m_weather_bucket_count{};
 
-	// == end of freeminer
+	// === end of freeminer
 
 	/*
 		savedir: directory to which map data should be saved
