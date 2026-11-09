@@ -1,4 +1,5 @@
 #include <limits>
+#include <type_traits>
 #include "common/c_converter.h"
 #include "emerge.h"
 #include "lua_api/l_internal.h"
@@ -38,17 +39,18 @@ int ModApiMapgen::l_set_mapgen_y_bounds(lua_State *L)
 		return luaL_error(L, "mapgen definition not found");
 
 	const auto set_bounds = [&](auto &min_y, auto &max_y) {
+		using bound_t = std::remove_reference_t<decltype(min_y)>;
 		if (!lua_isnil(L, 3)) {
-			pos_t value = luaL_checkinteger(L, 3);
-			if (value < std::numeric_limits<s16>::min() ||
-					value > std::numeric_limits<s16>::max())
+			lua_Integer value = luaL_checkinteger(L, 3);
+			if (value < std::numeric_limits<bound_t>::min() ||
+					value > std::numeric_limits<bound_t>::max())
 				luaL_error(L, "mapgen y_min is out of range");
 			min_y = value;
 		}
 		if (!lua_isnil(L, 4)) {
-			pos_t value = luaL_checkinteger(L, 4);
-			if (value < std::numeric_limits<s16>::min() ||
-					value > std::numeric_limits<s16>::max())
+			lua_Integer value = luaL_checkinteger(L, 4);
+			if (value < std::numeric_limits<bound_t>::min() ||
+					value > std::numeric_limits<bound_t>::max())
 				luaL_error(L, "mapgen y_max is out of range");
 			max_y = value;
 		}
