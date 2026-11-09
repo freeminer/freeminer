@@ -30,6 +30,7 @@ public:
 		for (int z = 1; z < 4; ++z)
 			for (int x = 1; x < 4; ++x)
 				expected.emplace_back(x, z);
+		std::sort(expected.begin(), expected.end());
 		UASSERT(filled == expected);
 	}
 
@@ -62,7 +63,10 @@ public:
 		UASSERT(!filled.empty());
 		UASSERT(filled.size() < 100000);
 		UASSERT(std::all_of(filled.begin(), filled.end(), [](const auto &cell) {
-			return cell.first > cell.second && cell.first - cell.second < 10;
+			// Rust's half-open scanline includes the bottom horizontal row.
+			// Floating-point crossings can round an edge by one cell, as in Rust.
+			return cell.first >= cell.second && cell.first - cell.second <= 10 &&
+				   cell.second >= 0 && cell.second < 6000;
 		}));
 	}
 

@@ -218,8 +218,8 @@ public:
 		using arnis::decals::TextStyle;
 		using arnis::decals::TextStyleKind;
 		Canvas plate(128, 128);
-		plate.rounded_rect(4, 46, 120, 36, 3, arnis::decals::colors::WHITE);
-		plate.stroke_rounded_rect(4, 46, 120, 36, 3, 2, arnis::decals::colors::DARK_GRAY);
+		plate.rounded_rect(0, 46, 128, 36, 3, arnis::decals::colors::WHITE);
+		plate.stroke_rounded_rect(0, 46, 128, 36, 3, 2, arnis::decals::colors::DARK_GRAY);
 		const auto blank_plate = plate.pixels();
 		arnis::decals::templates::text_sign(
 				plate, TextStyle{TextStyleKind::StopName}, "Bethaniendamm");
@@ -233,8 +233,8 @@ public:
 	{
 		using namespace arnis::decals;
 		Canvas baseline(128, 128);
-		baseline.rounded_rect(4, 46, 120, 36, 3, colors::WHITE);
-		baseline.stroke_rounded_rect(4, 46, 120, 36, 3, 2, colors::DARK_GRAY);
+		baseline.rounded_rect(0, 46, 128, 36, 3, colors::WHITE);
+		baseline.stroke_rounded_rect(0, 46, 128, 36, 3, 2, colors::DARK_GRAY);
 		std::vector<std::string> names{"Varian-Fry-Straße/Potsdamer Platz",
 				"Friedrichstraße/Reinhardtstraße", "Mollstraße/Otto-Braun-Straße"};
 		for (int n = 1; n < 40; ++n)

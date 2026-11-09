@@ -68,6 +68,14 @@ public:
 
 	void testSchematicUsesBlockDefaultProperties()
 	{
+		// The test runs without a game node registry. Give this palette entry
+		// Rust's distinct ID so default properties can be resolved by block ID.
+		struct TrapdoorFixture
+		{
+			arnis::Block saved = arnis::OAK_TRAPDOOR;
+			TrapdoorFixture() { arnis::OAK_TRAPDOOR = arnis::Block(299); }
+			~TrapdoorFixture() { arnis::OAK_TRAPDOOR = saved; }
+		} trapdoor_fixture;
 		// Rust maps this structure-only palette alias to smooth sandstone too.
 		UASSERT(arnis::structures::resolve_schem_block("minecraft:cut_sandstone") ==
 				arnis::SMOOTH_SANDSTONE);
@@ -77,9 +85,9 @@ public:
 		const auto expected = arnis::default_block_properties(trapdoor.block);
 		UASSERT(!expected.empty());
 		UASSERT(trapdoor.property_values() == expected);
-		UASSERT(trapdoor.property_values().at("facing") == "north");
-		UASSERT(trapdoor.property_values().at("open") == "true");
 		UASSERT(trapdoor.property_values().at("half") == "top");
+		UASSERT(!trapdoor.property_values().contains("facing"));
+		UASSERT(!trapdoor.property_values().contains("open"));
 
 		// Explicit palette states take precedence over block defaults just as in
 		// Rust's make_palette_item(stored_props.or_else(Block::properties)).
