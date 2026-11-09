@@ -142,6 +142,7 @@ if has_stage deps; then
                 openal-soft-devel \
                 openssl-devel \
                 protozero-devel \
+                sdl2-compat-devel \
                 SDL2-devel \
                 spatialindex-devel \
                 sqlite-devel \
@@ -152,6 +153,7 @@ if has_stage deps; then
         elif command -v pacman > /dev/null 2>&1; then
             ${SUDO} pacman --needed --noconfirm -Sy \
                 boost \
+                boost-libs \
                 bzip2 \
                 ccache \
                 clang \
@@ -164,8 +166,10 @@ if has_stage deps; then
                 hiredis \
                 libc++ \
                 libc++abi \
+                libdeflate \
                 libjpeg-turbo \
                 libpng \
+                libtiff \
                 libvorbis \
                 libxi \
                 libxxf86vm \
@@ -176,10 +180,11 @@ if has_stage deps; then
                 ninja \
                 openal \
                 protozero \
+                sdl2 \
                 sqlite3 \
                 subversion \
                 which \
-                zstd
+                zstd \
 
             # libunwind
             CMAKE_OPT=${CMAKE_OPT:-"-DCMAKE_BUILD_WITH_INSTALL_RPATH=1"}
