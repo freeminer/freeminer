@@ -54,6 +54,12 @@ public:
 		TEST(testTallManMadeTowerRelationIsIncluded);
 		TEST(testOutlineReplacedByItsPartsDoesNotRaiseHeightEstimate);
 		TEST(testRoundedSummitIsSteepenedWithoutASeam);
+		TEST(testNearbySummitsKeepTheirTaggedHeightsRegardlessOfInputOrder);
+		TEST(testForeSummitKeepsItsHeightInsideTheMainStretch);
+		TEST(testDuplicateSummitIsSteepenedOnlyOnce);
+		TEST(testTableTopIsNotRaisedAsAWhole);
+		TEST(testVolcanoNodeInCraterIsLeftAlone);
+		TEST(testNodeBesideExistingSummitIsLeftAlone);
 		TEST(testPeakLiftRespectsOneWorldSeams);
 		TEST(testOutlineSuppressionIsUsedForTerrainHeightHints);
 	}
@@ -119,6 +125,117 @@ public:
 		UASSERT(summit(std::nullopt) > 700.0);
 		UASSERT(summit(64) > 700.0);
 		UASSERT(summit(65) == 530.0);
+	}
+
+	void testNearbySummitsKeepTheirTaggedHeightsRegardlessOfInputOrder()
+	{
+		const auto b = peak_bbox();
+		const auto bump = [](std::size_t x, std::size_t y, double cx, double top) {
+			const double d2 = (std::pow(static_cast<double>(x) - cx, 2.0) +
+									  std::pow(static_cast<double>(y) - 120.0, 2.0)) *
+							  25.0;
+			return 700.0 + (top - 700.0) * std::exp(-d2 / (2.0 * 150.0 * 150.0));
+		};
+		std::vector<std::vector<double>> original(241, std::vector<double>(241));
+		for (std::size_t y = 0; y < original.size(); ++y)
+			for (std::size_t x = 0; x < original[y].size(); ++x)
+				original[y][x] =
+						std::max(bump(x, y, 100.0, 1000.0), bump(x, y, 140.0, 985.0));
+		const auto at = [&](double x, double elevation) {
+			return arnis::elevation::PeakHint{(b.min().lat() + b.max().lat()) * 0.5,
+					b.min().lng() + x / 240.0 * (b.max().lng() - b.min().lng()),
+					elevation};
+		};
+		const auto high = at(100.0, 1045.0);
+		const auto low = at(140.0, 1030.0);
+		auto first = original;
+		auto second = original;
+		arnis::elevation::raise_peaks(first, b, {high, low}, 5.0);
+		arnis::elevation::raise_peaks(second, b, {low, high}, 5.0);
+		UASSERT(first == second);
+		UASSERT(std::abs(first[120][100] - 1045.0) < 1.0);
+		UASSERT(std::abs(first[120][140] - 1030.0) < 1.0);
+	}
+
+	void testForeSummitKeepsItsHeightInsideTheMainStretch()
+	{
+		const auto b = peak_bbox();
+		const auto bump = [](std::size_t x, std::size_t y, double cx, double top) {
+			const double d2 = (std::pow(static_cast<double>(x) - cx, 2.0) +
+									  std::pow(static_cast<double>(y) - 120.0, 2.0)) *
+							  25.0;
+			return 700.0 + (top - 700.0) * std::exp(-d2 / (2.0 * 150.0 * 150.0));
+		};
+		std::vector<std::vector<double>> grid(241, std::vector<double>(241));
+		for (std::size_t y = 0; y < grid.size(); ++y)
+			for (std::size_t x = 0; x < grid[y].size(); ++x)
+				grid[y][x] =
+						std::max(bump(x, y, 100.0, 1000.0), bump(x, y, 130.0, 985.0));
+		const auto at = [&](double x, double elevation) {
+			return arnis::elevation::PeakHint{(b.min().lat() + b.max().lat()) * 0.5,
+					b.min().lng() + x / 240.0 * (b.max().lng() - b.min().lng()),
+					elevation};
+		};
+		arnis::elevation::raise_peaks(
+				grid, b, {at(100.0, 1045.0), at(130.0, 990.0)}, 5.0);
+		UASSERT(std::abs(grid[120][100] - 1045.0) < 1.0);
+		UASSERT(grid[120][130] <= 990.0 + 1e-9);
+	}
+
+	void testDuplicateSummitIsSteepenedOnlyOnce()
+	{
+		auto [once, peak] = dome(8564.0, 0.8);
+		peak.ele_m = 8611.0;
+		auto twice = once;
+		arnis::elevation::raise_peaks(once, peak_bbox(), {peak}, 5.0);
+		arnis::elevation::raise_peaks(twice, peak_bbox(), {peak, peak}, 5.0);
+		UASSERT(once == twice);
+	}
+
+	void testTableTopIsNotRaisedAsAWhole()
+	{
+		auto [grid, peak] = dome(900.0, 0.0);
+		for (std::size_t y = 0; y < grid.size(); ++y) {
+			for (std::size_t x = 0; x < grid[y].size(); ++x) {
+				const double d = std::hypot(static_cast<double>(x) - 120.0,
+										 static_cast<double>(y) - 120.0) *
+								 5.0;
+				grid[y][x] -= std::max((d - 120.0) * 2.0, 0.0);
+			}
+		}
+		peak.ele_m = 940.0;
+		const auto before = grid;
+		arnis::elevation::raise_peaks(grid, peak_bbox(), {peak}, 5.0);
+		UASSERT(grid == before);
+	}
+
+	void testVolcanoNodeInCraterIsLeftAlone()
+	{
+		std::vector<std::vector<double>> grid(241, std::vector<double>(241));
+		for (std::size_t y = 0; y < grid.size(); ++y)
+			for (std::size_t x = 0; x < grid[y].size(); ++x) {
+				const double d = std::hypot(static_cast<double>(x) - 120.0,
+										 static_cast<double>(y) - 120.0) *
+								 5.0;
+				grid[y][x] = 3750.0 - std::min(std::abs(d - 250.0) * 0.95, 1200.0);
+			}
+		const auto b = peak_bbox();
+		const arnis::elevation::PeakHint peak{(b.min().lat() + b.max().lat()) * 0.5,
+				(b.min().lng() + b.max().lng()) * 0.5, 3776.0};
+		const auto before = grid;
+		arnis::elevation::raise_peaks(grid, b, {peak}, 5.0);
+		UASSERT(grid == before);
+	}
+
+	void testNodeBesideExistingSummitIsLeftAlone()
+	{
+		auto [grid, peak] = dome(3749.0, 0.8);
+		for (auto &row : grid)
+			std::rotate(row.rbegin(), row.rbegin() + 20, row.rend());
+		peak.ele_m = 3749.0;
+		const auto before = grid;
+		arnis::elevation::raise_peaks(grid, peak_bbox(), {peak}, 5.0);
+		UASSERT(grid == before);
 	}
 
 	void testTallBuildingPartInsideRideIsSuppressed()
