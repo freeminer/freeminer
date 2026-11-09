@@ -333,6 +333,16 @@ weather_heat_width      () float 3000
 # Enable hot core (start at, nodes from bottom), 0 for disable
 weather_hot_core        () float 1000
 
+# Geothermal temperature addition at Y = -31007, in degrees Celsius.
+# Controls the existing hot-core ramp; weather_hot_core = 0 disables the ramp.
+weather_hot_core_heat (Hot core heat) float 6000 0 32767
+
+# Minimum temperature adjustment to local biome/monthly climate below Y = -31007.
+# Temperature cools for 31007 nodes, then warms for 31007 nodes, repeatedly.
+# Warm peaks match the existing lapse-rate and hot-core adjustment at Y = -31007.
+# A minimum above that warm peak produces a constant deep adjustment.
+weather_heat_deep_min (Deep cold-layer temperature adjustment) float -40 -32768 32767
+
 # Add 1c on every height (in nodes)  333 = 3c per 1000 nodes
 weather_heat_height     () float -333
 

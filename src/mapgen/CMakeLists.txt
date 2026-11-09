@@ -1,14 +1,15 @@
 set(freeminer_mapgen_SRCS
-    ${freeminer_mapgen_SRCS}
+	${freeminer_mapgen_SRCS}
+	${CMAKE_CURRENT_SOURCE_DIR}/fm_mg_biome.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/hgt.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/earth/http.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_voxel_earth.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_earth.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_voxel_earth.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_erosion.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_terraindiffusion.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_terraindiffusion_native.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_indev.cpp
+	${CMAKE_CURRENT_SOURCE_DIR}/mapgen_math.cpp
 )
 add_subdirectory(earth)
 set(FREEMINER_SERVER_LIBRARIES ${FREEMINER_SERVER_LIBRARIES} PARENT_SCOPE)
@@ -16,7 +17,7 @@ set(FREEMINER_CLIENT_LIBRARIES ${FREEMINER_CLIENT_LIBRARIES} PARENT_SCOPE)
 
 file(GLOB mapgen_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 set(mapgen_SRCS
-    ${freeminer_mapgen_SRCS}
+	${freeminer_mapgen_SRCS}
 	${mapgen_SRCS}
 	${mapgen_HDRS}
 	${CMAKE_CURRENT_SOURCE_DIR}/cavegen.cpp

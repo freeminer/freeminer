@@ -23,6 +23,7 @@ list(
     fm_server.cpp
     fm_serverenvironment.cpp
     fm_util.cpp
+    fm_weather_sync.cpp
     fm_world_merge.cpp
     key_value_storage.cpp
     log_types.cpp

@@ -270,10 +270,12 @@ private:
 
 	friend class EmergeThread;
 
-	//freeminer:
+	// fm:
 public:
+	// Weather queries can arrive before mapgen initialization.
 	Mapgen *getFirstMapgen() {
-		return m_mapgens[0];
+		return m_mapgens.empty() ? nullptr : m_mapgens[0];
 	}
+	// ===
 
 };

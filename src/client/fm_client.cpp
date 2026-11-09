@@ -33,6 +33,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "filesys.h"
 #include "fm_far_calc.h"
 #include "fm_weather.h"
+#include "fm_weather_sync.h"
 #include "fm_world_merge.h"
 #include "irr_v3d.h"
 #include "log.h"
@@ -322,6 +323,9 @@ void Client::handleCommand_BlockDatasFm(NetworkPacket *pkt)
 
 void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 {
+	if (weather::apply_update(m_env.getMap(), packet))
+		return;
+
 	v3bpos_t bpos = packet[TOCLIENT_BLOCKDATA_POS].as<v3bpos_t>();
 	block_step_t step = 0;
 	packet.convert_safe(TOCLIENT_BLOCKDATA_STEP, step);

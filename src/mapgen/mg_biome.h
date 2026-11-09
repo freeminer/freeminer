@@ -234,7 +234,7 @@ public:
 		return new Biome;
 	}
 
-	//freeminer:
+	// fm:
 	u32 year_days;
 	s32 weather_heat_season;
 	s32 weather_heat_width;
@@ -248,13 +248,16 @@ public:
 	s32 weather_humidity_morning;
 	s32 weather_humidity_morning_height;
 	s32 weather_hot_core;
+	// Bounded temperature layers below the legacy weather range.
+	double weather_heat_deep_min = -40.0;
+	double weather_hot_core_heat = 6000.0;
 	s32 cloud_height;
 
 	MapgenParams * mapgen_params{};
 	weather::heat_t calcBlockHeat(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	weather::humidity_t calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather = 1);
 	weather::humidity_t calcBlockHumidity(const v3pos_t &p, uint64_t seed, float timeofday, float totaltime, bool use_weather, pos_t surface_y);
-	//====
+	// ===
 
 	BiomeGen *createBiomeGen(BiomeGenType type, BiomeParams *params, v3pos_t chunksize)
 	{

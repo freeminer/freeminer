@@ -140,6 +140,63 @@ BlockSendPrediction predictBlockSendCorridor(
 	return result;
 }
 
+void RemoteClient::SendWeatherUpdates(
+		ServerEnvironment *env, const v3bpos_t &center, u64 max_ms)
+{
+	if (net_proto_version_fm < weather::sync_protocol_version || !env->m_use_weather ||
+			!max_ms)
+		return;
+	const auto client_lock = try_lock_unique_rec();
+	if (!client_lock->owns_lock())
+		return;
+	{
+		const auto sent_lock = m_blocks_sent.try_lock_shared_rec();
+		if (!sent_lock->owns_lock() || m_blocks_sent.empty())
+			return;
+	}
+	const u64 now = porting::getTimeMs();
+	const auto radius = static_cast<pos_t>(std::min<unsigned>(wanted_range.load(), 8));
+	if (!m_weather_sync.begin(center, radius, now))
+		return;
+	const u64 deadline = now + std::min<u64>(max_ms, 2);
+	std::vector<weather::Update> updates;
+	updates.reserve(64);
+	for (size_t scanned = 0;
+			scanned < 512 && updates.size() < 64 && porting::getTimeMs() < deadline;
+			++scanned) {
+		const auto pos = m_weather_sync.next(now);
+		if (!pos)
+			break;
+		bool known = false;
+		{
+			const auto sent_lock = m_blocks_sent.try_lock_shared_rec();
+			if (!sent_lock->owns_lock())
+				continue;
+			known = m_blocks_sent.find(*pos) != m_blocks_sent.end();
+		}
+		if (!known) {
+			m_weather_sync.forget(*pos);
+			continue;
+		}
+		const auto block = env->getMap().getBlock(*pos, true, true);
+		if (!block || !block->isGenerated())
+			continue;
+		std::unique_lock<std::mutex> state_lock(
+				block->weather_state.mutex, std::try_to_lock);
+		if (!state_lock.owns_lock() || !block->heat_last_update ||
+				!block->humidity_last_update)
+			continue;
+		const auto value = weather::snapshot(*block);
+		if (m_weather_sync.changed(*pos, value))
+			updates.push_back({*pos, value});
+	}
+	if (!updates.empty()) {
+		env->m_server->SendWeatherUpdates(peer_id, updates);
+		for (const auto &update : updates)
+			m_weather_sync.sent(update.pos, update.value);
+	}
+}
+
 int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 		float dtime, std::vector<PrioritySortedBlockTransfer> &dest, double m_uptime,
 		u64 max_ms)
@@ -183,6 +240,8 @@ int RemoteClient::GetNextBlocksFm(ServerEnvironment *env, EmergeManager *emerge,
 	*/
 
 	auto playerpos = sao->getBasePosition();
+	// Run independently of the voxel sender's idle/backoff timers.
+	SendWeatherUpdates(env, getNodeBlockPos(floatToInt(playerpos, BS)), max_ms);
 
 	v3f playerspeed = player->getSpeed();
 	ServerActiveObject *movement_source = sao;
