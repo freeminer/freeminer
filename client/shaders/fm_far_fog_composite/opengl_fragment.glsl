@@ -31,10 +31,10 @@ void main(void)
 	float far_plane = max(fmFogDepthRange.y, near_plane + 1.0);
 	float view_distance = near_plane * far_plane /
 		max(far_plane - depth * (far_plane - near_plane), 0.001);
-	// At distant silhouettes the half-resolution samples may all see the sky.
-	// Allow their fog through gradually; keep strict rejection for nearby objects.
-	float distant_surface = smoothstep(near_plane * 5000.0,
-		near_plane * 20000.0, view_distance);
+	// Distant terrain and sky can alternate within a half-resolution pixel.
+	// Reconstruct their fog together, retaining strict rejection near the camera.
+	float distant_surface =
+			smoothstep(near_plane * 5000.0, near_plane * 20000.0, view_distance);
 	for (int y = 0; y < 2; ++y) {
 		for (int x = 0; x < 2; ++x) {
 			vec2 offset = vec2(float(x), float(y));
@@ -56,8 +56,16 @@ void main(void)
 			fog += value * weight;
 			optical_depth += sample_optical_depth * weight;
 			total += weight;
-			float distant_weight = weights.x * weights.y *
-				(sample_depth > depth ? 1.0 : depth_weight);
+			// Accept distant samples on either side of the surface depth, so
+			// closer terrain cannot leave holes on sky or farther terrain pixels.
+			// Keep nearby occluders out of this reconstruction.
+			float sample_distance =
+					near_plane * far_plane /
+					max(far_plane - sample_depth * (far_plane - near_plane), 0.001);
+			float distant_sample = smoothstep(
+					near_plane * 5000.0, near_plane * 20000.0, sample_distance);
+			float distant_weight =
+					weights.x * weights.y * mix(depth_weight, 1.0, distant_sample);
 			distant_fog += value * distant_weight;
 			distant_optical_depth += sample_optical_depth * distant_weight;
 			distant_total += distant_weight;
