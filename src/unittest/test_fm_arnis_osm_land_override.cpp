@@ -113,7 +113,11 @@ public:
 				ProcessedElement(rectangle(4, 140, 10, 150, 20, {{"building", "yes"}})),
 				ProcessedElement(pier)};
 
-		UASSERT(overture::drop_footprints_in_water(elements, ground, bbox, 1.0) == 1);
+		UASSERT(overture::drop_footprints_in_water(
+						elements, 1.0, [&ground, &bbox](int x, int z) {
+							return ground.cover_class({x - bbox.min_x(),
+										   z - bbox.min_z()}) == LC_WATER;
+						}) == 1);
 		UASSERT(std::none_of(elements.begin(), elements.end(), [](const auto &element) {
 			const auto *feature =
 					std::get_if<ProcessedWay>(static_cast<const variant_t *>(&element));
