@@ -26,6 +26,7 @@ import tempfile
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Any
@@ -458,11 +459,16 @@ class MCPClient:
         return text[:MAX_TOOL_RESULT_CHARS]
 
 
-def http_json(url: str, payload: dict[str, Any], timeout: int) -> dict[str, Any]:
+def http_json(
+    url: str, payload: dict[str, Any], timeout: int, api_key: str = ""
+) -> dict[str, Any]:
+    headers = {"Content-Type": "application/json"}
+    if api_key:
+        headers["Authorization"] = f"Bearer {api_key}"
     request = urllib.request.Request(
         url,
         data=json.dumps(payload).encode(),
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
     with urllib.request.urlopen(request, timeout=timeout) as response:
@@ -512,7 +518,7 @@ def wait_ready(
         try:
             with urllib.request.urlopen(url, timeout=2):
                 return
-        except (urllib.error.URLError, TimeoutError):
+        except (urllib.error.URLError, TimeoutError, ConnectionResetError):
             time.sleep(0.5)
     raise TimeoutError(f"Timed out waiting for {label} at {url}")
 
@@ -549,6 +555,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--hf-file",
         help="Exact model filename within --hf-repo, passed to llama-server",
+    )
+    parser.add_argument(
+        "--inference-url",
+        help="External OpenAI-compatible base URL ending in /v1, or full chat/completions URL; "
+        "use --model for the remote model ID and LLAMA_MCP_API_KEY for authentication",
     )
     parser.add_argument("server", nargs="?", help="Luanti host[:port]; port defaults to 30000")
     parser.add_argument("--local-world", type=Path, help="Create or open a local world at this path")
@@ -632,6 +643,15 @@ def parse_args() -> argparse.Namespace:
     args, trailing_args = parser.parse_known_args()
     if args.hf_file and not args.hf_repo:
         parser.error("--hf-file requires --hf-repo")
+    if args.inference_url:
+        if args.hf_repo:
+            parser.error("--inference-url requires --model, not --hf-repo")
+        parsed = urllib.parse.urlsplit(args.inference_url)
+        if (
+            parsed.scheme not in ("http", "https") or not parsed.netloc
+            or parsed.username or parsed.password or parsed.query or parsed.fragment
+        ):
+            parser.error("--inference-url must be an HTTP(S) URL without credentials, query, or fragment")
     if not args.local_world and not args.server:
         parser.error("a server or --local-world is required")
     if not args.local_world and (args.mapgen is not None or args.seed is not None):
@@ -661,7 +681,15 @@ def main() -> int:
         if client_bin_arg.is_file()
         else Path(shutil.which(args.client_bin) or args.client_bin).expanduser()
     )
-    if args.hf_repo:
+    if args.inference_url:
+        model_args = []
+        model_display = f"{args.model} (external inference)"
+        inference_url = args.inference_url.rstrip("/")
+        if not inference_url.endswith("/chat/completions"):
+            inference_url += "/chat/completions"
+        request_model = args.model
+        api_key = os.environ.get("LLAMA_MCP_API_KEY", "")
+    elif args.hf_repo:
         model_args = ["--hf-repo", args.hf_repo]
         if args.hf_file:
             model_args.extend(["--hf-file", args.hf_file])
@@ -683,6 +711,10 @@ def main() -> int:
             return 2
         model_args = ["-hf", hf_model]
         model_display = f"Hugging Face {hf_model} (downloaded and cached by llama.cpp)"
+    if not args.inference_url:
+        inference_url = f"http://127.0.0.1:{args.llama_port}/v1/chat/completions"
+        request_model = "luanti-player"
+        api_key = ""
     if not client_bin.is_file():
         print(f"Freeminer executable does not exist: {client_bin}", file=sys.stderr)
         print(
@@ -718,29 +750,30 @@ def main() -> int:
     messages: list[dict[str, Any]] = []
     operator_instructions: list[str] = []
     try:
-        llama_command = [
-            args.llama_server,
-            *model_args,
-            "--alias",
-            "luanti-player",
-            "--host",
-            "127.0.0.1",
-            "--port",
-            str(args.llama_port),
-            # "--cache-ram", "0",
-            # "--ctx-size", str(args.ctx_size),
-            "--jinja",
-            *args.llama_arg,
-        ]
-        print(f"[launch] llama-server: {shlex.join(llama_command)}", flush=True)
-        llama = subprocess.Popen(llama_command)
-        processes.append(llama)
-        wait_ready(
-            f"http://127.0.0.1:{args.llama_port}/health",
-            llama,
-            "llama-server",
-            timeout=args.llama_startup_timeout,
-        )
+        if not args.inference_url:
+            llama_command = [
+                args.llama_server,
+                *model_args,
+                "--alias",
+                "luanti-player",
+                "--host",
+                "127.0.0.1",
+                "--port",
+                str(args.llama_port),
+                # "--cache-ram", "0",
+                # "--ctx-size", str(args.ctx_size),
+                "--jinja",
+                *args.llama_arg,
+            ]
+            print(f"[launch] llama-server: {shlex.join(llama_command)}", flush=True)
+            llama = subprocess.Popen(llama_command)
+            processes.append(llama)
+            wait_ready(
+                f"http://127.0.0.1:{args.llama_port}/health",
+                llama,
+                "llama-server",
+                timeout=args.llama_startup_timeout,
+            )
 
         config = tempfile.NamedTemporaryFile(
             "w", prefix="luanti-ai-", suffix=".conf", delete=False
@@ -971,7 +1004,7 @@ def main() -> int:
             turn += 1
             messages = compact_messages(messages, MAX_RECENT_MESSAGES)
             request_payload = {
-                "model": "luanti-player",
+                "model": request_model,
                 "messages": messages,
                 "tools": [
                     {
@@ -994,9 +1027,10 @@ def main() -> int:
             for attempt in range(3):
                 try:
                     response = http_json(
-                        f"http://127.0.0.1:{args.llama_port}/v1/chat/completions",
+                        inference_url,
                         request_payload,
                         timeout=args.llm_timeout,
+                        api_key=api_key,
                     )
                     break
                 except urllib.error.HTTPError as error:
