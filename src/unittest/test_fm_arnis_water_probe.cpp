@@ -73,12 +73,15 @@ public:
 		const Footing post{60, 0, 0, true};
 		UASSERT(probe.get(5, 5, 60) == post);
 		UASSERT(probe.get(7, 7, 60) == post);
-		UASSERT(!probe.get(6, 6, 60));
+		UASSERT(probe.get(6, 6, 60) == post);
+		UASSERT(!probe.get(8, 8, 60));
+		const int reads_after_first = reads;
+		UASSERT(reads_after_first == 25);
 		probe.read_region(0, 0, [&](int, int, int) {
 			++reads;
 			return Footing{};
 		});
-		UASSERT(reads == 1);
+		UASSERT(reads == reads_after_first);
 	}
 
 	void testWalkSpotClassifiesBlocks()

@@ -72,6 +72,7 @@ public:
 	{
 		using namespace arnis;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bbox(0, 0, 63, 63);
 		const auto way = rectangular_pool();
 		const std::vector<ProcessedElement> elements{ProcessedElement(way)};
@@ -119,6 +120,7 @@ public:
 		ground.elevation_enabled = true;
 
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		editor.ground = &ground;
 		const XZBBox bbox(0, 0, 63, 63);
 		auto way = rectangular_ring(704, 10, 10, 21, 15);
@@ -149,6 +151,7 @@ public:
 	{
 		using namespace arnis;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bbox(0, 0, 63, 63);
 		const auto way = rectangular_pool();
 		const std::vector<ProcessedElement> elements{ProcessedElement(way)};
@@ -183,6 +186,7 @@ public:
 		const RoadMaskBitmap roads(bbox);
 
 		WorldEditor hall;
+		hall.enable_standalone_storage();
 		for (int x = 8; x <= 21; ++x)
 			for (int z = 8; z <= 17; ++z)
 				hall.set_block_absolute(STONE_BRICKS, x, 0, z);
@@ -195,6 +199,7 @@ public:
 
 		// The same footprint without a floor represents a canopy on posts, not a hall.
 		WorldEditor canopy;
+		canopy.enable_standalone_storage();
 		swimming_pools::generate(canopy, way, Args{}, cache, footprints, roads);
 		UASSERT(contains(canopy, 14, 0, 12, WATER));
 		UASSERT(contains(canopy, 9, 0, 12, swimming_pools::COPING));
@@ -204,6 +209,7 @@ public:
 	{
 		using namespace arnis;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bbox(0, 0, 63, 63);
 		auto way = rectangular_ring(702, 5, 5, 29, 16);
 		way.tags.emplace("leisure", "swimming_pool");
@@ -223,6 +229,7 @@ public:
 	{
 		using namespace arnis;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bbox(0, 0, 63, 63);
 		auto way = rectangular_pool();
 		// Finite, parseable depth above the range of lround's return type. Rust's
@@ -243,6 +250,7 @@ public:
 	{
 		using namespace arnis;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bbox(0, 0, 63, 63);
 		ProcessedRelation relation{};
 		relation.id = 901;
@@ -268,6 +276,7 @@ public:
 	{
 		using namespace arnis;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bbox(0, 0, 63, 63);
 		auto way = rectangular_ring(702, 5, 5, 29, 16);
 		way.tags.emplace("leisure", "swimming_pool");
@@ -297,6 +306,7 @@ public:
 		const RoadMaskBitmap roads(bbox);
 
 		WorldEditor tagged_editor;
+		tagged_editor.enable_standalone_storage();
 		tagged_editor.set_projection_info("test", 1.0);
 		auto tagged = way;
 		tagged.tags.emplace("depth", "3.5 m");
@@ -309,6 +319,7 @@ public:
 		UASSERT(contains(tagged_editor, 14, -4, 12, swimming_pools::LINING));
 
 		WorldEditor scaled_editor;
+		scaled_editor.enable_standalone_storage();
 		scaled_editor.set_projection_info("test", 2.0);
 		swimming_pools::generate(scaled_editor, way, Args{}, cache, footprints, roads);
 		// The default two-metre pool depth scales to four blocks in a 2x world.
@@ -320,6 +331,7 @@ public:
 	{
 		using namespace arnis;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		editor.set_projection_info("test", 2.0);
 		const XZBBox bbox(0, 0, 63, 63);
 		auto way = rectangular_ring(703, 5, 5, 54, 28);
