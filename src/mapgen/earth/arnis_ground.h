@@ -296,6 +296,8 @@ struct GroundFetchPlan
 	// World block of the padded grid's first sample, present only when the grid
 	// is an exact one-cell-per-block One World fetch.
 	std::optional<std::pair<std::int64_t, std::int64_t>> origin;
+	// A padded One World grid has a fixed block-to-cell scale across areas.
+	std::optional<double> meters_per_cell;
 };
 
 // The Rust GroundFrame contract, split from the Freeminer host so library

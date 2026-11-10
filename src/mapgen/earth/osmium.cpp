@@ -710,6 +710,8 @@ arnis::Args earth_arnis_args()
 	// Match Rust's default. The shared canopy cache keeps this single raster
 	// available across chunk-generation threads without per-thread downloads.
 	arnis.canopy_height = true;
+	arnis.pedestrians = true;
+
 	const ::arnis::Args freeminer_defaults = arnis;
 
 	// Settings::getNoEx only exposes strings, so parse values here while leaving
@@ -827,6 +829,7 @@ arnis::Args earth_arnis_args()
 	read_bool("zombie_outbreak", arnis.zombie_outbreak);
 	read_bool("moving_vehicles", arnis.moving_vehicles);
 	read_bool("moving_cars", arnis.moving_cars);
+	read_bool("pedestrians", arnis.pedestrians);
 	read_bool("benchmark", arnis.benchmark);
 	read_bool("debug", arnis.debug);
 	if (arnis.vanilla_height) {

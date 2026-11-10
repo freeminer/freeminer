@@ -269,6 +269,8 @@ WorldEditor WorldEditor::make_tile_worker() const
 	// ===
 	worker.rail_heights = rail_heights;
 	worker.rail_heights_mutex = rail_heights_mutex;
+	worker.water_probe = water_probe;
+	worker.walk_probe = walk_probe;
 	worker.sealed_surface = sealed_surface;
 	worker.clear_corridors = clear_corridors;
 	worker.station_tree_clearance = station_tree_clearance;
@@ -1043,6 +1045,78 @@ std::optional<int> WorldEditor::highest_block_between(
 	}
 	return std::nullopt;
 }
+
+void WorldEditor::probe_resident()
+{
+	std::set<std::pair<int, int>> regions;
+	if (water_probe)
+		for (const auto &region : water_probe->regions())
+			regions.insert(region);
+	if (walk_probe)
+		for (const auto &region : walk_probe->regions())
+			regions.insert(region);
+	for (const auto &[rx, rz] : regions) {
+		if (water_probe) {
+			water_probe->read_region(rx, rz, [this](int x, int z, int) {
+				const int level = get_water_level(x, z);
+				const auto [low, high] = arnis::water_probe::water_span(level);
+				std::optional<int> top;
+				for (int y = std::min(high, world_editor::world_max_y());
+						y >= std::max(low, world_editor::min_y()); --y) {
+					const auto block = get_block_absolute(x, y, z);
+					if (block && block->id() != AIR.id() &&
+							block->id() != CONTENT_IGNORE) {
+						top = y;
+						break;
+					}
+				}
+				if (!top)
+					return arnis::water_probe::Sample{};
+				const auto spot = [this, x, z](int y) {
+					const auto block = get_block_absolute(x, y, z);
+					if (!block)
+						return arnis::water_probe::Spot::Open;
+					if (block->id() == WATER.id())
+						return arnis::water_probe::Spot::Water;
+					if (block->id() == AIR.id() || block->id() == LILY_PAD.id())
+						return arnis::water_probe::Spot::Open;
+					return arnis::water_probe::Spot::Solid;
+				};
+				return arnis::water_probe::water_column(spot, level, *top);
+			});
+		}
+		if (walk_probe) {
+			walk_probe->read_region_round(
+					rx, rz,
+					[this](int x, int z, int level) {
+						const auto spot = [this, x, z](int y) {
+							const auto block = get_block_absolute(x, y, z);
+							if (!block)
+								return arnis::water_probe::Spot::Open;
+							if (block->id() == WATER.id())
+								return arnis::water_probe::Spot::Water;
+							const auto name = block_name(*block);
+							if (!name)
+								return arnis::water_probe::Spot::Open;
+							bool bottom_slab = false;
+							if (const auto state =
+											get_block_with_properties_absolute(x, y, z)) {
+								const auto &props = state->property_values();
+								const auto type = props.find("type");
+								// Rust treats a slab with no explicit type as bottom-half;
+								// only an explicit non-bottom state is a full block.
+								bottom_slab =
+										type == props.end() || type->second == "bottom";
+							}
+							return arnis::water_probe::walk_spot(*name, bottom_slab);
+						};
+						return arnis::water_probe::footing(spot, level);
+					},
+					[](const arnis::water_probe::Footing &f) { return f.post(); });
+		}
+	}
+}
+
 std::pair<int, int> WorldEditor::get_min_coords() const
 {
 	return std::make_pair(mg->node_min.X, mg->node_min.Z);
@@ -1380,7 +1454,9 @@ std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 	const auto overlay = active_tile_overlay
 								 ? mg->readTileOverlay(*active_tile_overlay, pos)
 								 : std::nullopt;
-	if (!overlay && !written_cells.contains({x, y, z}))
+	const auto cell = std::tuple{x, y, z};
+	if (!overlay && !written_cells.contains(cell) &&
+			!tile_merged_written_cells.contains(cell))
 		return std::nullopt;
 	return Block(overlay.value_or(mg->vm->getNode(pos)));
 }

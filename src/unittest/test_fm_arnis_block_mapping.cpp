@@ -5,6 +5,7 @@
 #include "mapgen/earth/arnis-cpp/src/luanti_block_map.h"
 
 #include <string>
+#include <array>
 
 class TestFmArnisBlockMapping : public TestBase
 {
@@ -13,6 +14,34 @@ public:
 	const char *getName() override { return "TestFmArnisBlockMapping"; }
 	void runTests(IGameDef *) override
 	{
+		using namespace arnis;
+		// The Rust palette has stable, distinct IDs. The host palette is normally
+		// populated from the loaded game, which is absent in these unit tests.
+		struct PaletteFixture
+		{
+			std::array<std::pair<Block *, content_t>, 11> entries{
+					{{&STONE, 84}, {&KELP, 66}, {&OAK_STAIRS, 144}, {&FLOWER_POT, 235},
+							{&POTTED_RED_TULIP, 246}, {&POTTED_DANDELION, 247},
+							{&POTTED_BLUE_ORCHID, 248}, {&HOPPER, 284},
+							{&CHISELED_SANDSTONE, 516}, {&CUT_SANDSTONE, 517},
+							{&RAW_GOLD_BLOCK, 518}}};
+			std::array<Block, 11> saved;
+			Block lapis = LAPIS_BLOCK;
+			PaletteFixture()
+			{
+				for (std::size_t i = 0; i < entries.size(); ++i) {
+					saved[i] = *entries[i].first;
+					*entries[i].first = Block(entries[i].second);
+				}
+				LAPIS_BLOCK = Block(519);
+			}
+			~PaletteFixture()
+			{
+				for (std::size_t i = 0; i < entries.size(); ++i)
+					*entries[i].first = saved[i];
+				LAPIS_BLOCK = lapis;
+			}
+		} palette;
 		TEST(testNewRustBlocksHaveLuantiMappings);
 		TEST(testPottedPlantBedrockMapping);
 		TEST(testWaterloggedBedrockState);
