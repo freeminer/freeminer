@@ -26,6 +26,7 @@
 #include "arnis_projection_frame.h"
 #include "arnis-cpp/src/args.h"
 #include "arnis-cpp/src/bedrock_addon.h"
+#include "arnis-cpp/src/water_probe.h"
 #include "arnis-cpp/src/decals/registry.h"
 #include "arnis-cpp/src/trees/tree_library.h"
 #include "mapgen/earth/arnis_projection_frame.h"
@@ -159,6 +160,10 @@ struct WorldEditor
 	// storage is written by parallel tile editors and read after generation.
 	std::shared_ptr<RailHeightMap> rail_heights;
 	std::shared_ptr<std::mutex> rail_heights_mutex;
+	// Shared water/footing samples for ship and pedestrian plans. Probes are filled
+	// only after the corresponding world regions have completed their final terrain pass.
+	std::shared_ptr<water_probe::WaterProbe> water_probe;
+	std::shared_ptr<water_probe::WalkProbe> walk_probe;
 	// Surface rails whose overhead foliage gauge is cleared after ground decoration.
 	// Tile workers keep independent lists; the merged editor handles sequential passes.
 	std::shared_ptr<std::vector<std::tuple<int, int, int>>> laid_rails =
@@ -175,6 +180,16 @@ struct WorldEditor
 		rail_heights = std::make_shared<RailHeightMap>();
 		rail_heights_mutex = std::make_shared<std::mutex>();
 	}
+	void set_water_probe(std::shared_ptr<water_probe::WaterProbe> probe)
+	{
+		water_probe = std::move(probe);
+	}
+	void set_walk_probe(std::shared_ptr<water_probe::WalkProbe> probe)
+	{
+		walk_probe = std::move(probe);
+	}
+	/// Read planned samples from the completed voxel world while it remains resident.
+	void probe_resident();
 	void register_rail(std::uint64_t way, int x, int z, int y) const
 	{
 		// Track all rails inside the generation rectangle for foliage-gauge cleanup;
