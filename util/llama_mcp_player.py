@@ -483,6 +483,11 @@ def compact_messages(
     return [messages[0], messages[1], *recent]
 
 
+def is_repetitive_response(content: str) -> bool:
+    """Detect a model stuck repeating a short fragment of its answer."""
+    return bool(re.search(r'(.{3,40}?)(?:[\s,"\']*\1){7,}', content, re.I))
+
+
 def is_context_overflow(
     error: urllib.error.HTTPError, detail: str | None = None
 ) -> bool:
@@ -545,7 +550,11 @@ def parse_args() -> argparse.Namespace:
         "--hf-file",
         help="Exact model filename within --hf-repo, passed to llama-server",
     )
-    parser.add_argument("server", help="Luanti host[:port]; port defaults to 30000")
+    parser.add_argument("server", nargs="?", help="Luanti host[:port]; port defaults to 30000")
+    parser.add_argument("--local-world", type=Path, help="Create or open a local world at this path")
+    parser.add_argument("--mapgen", help="Mapgen for a new local world, for example v7")
+    parser.add_argument("--seed", help="Seed for a new local world")
+    parser.add_argument("--gameid", default="default", help="Game for a new local world (default: default)")
     parser.add_argument(
         "--goal",
         default=os.environ.get("LLAMA_MCP_GOAL")
@@ -572,6 +581,12 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=1800,
         help="Seconds to wait for a llama.cpp completion (default: 1800)",
+    )
+    parser.add_argument(
+        "--llama-startup-timeout",
+        type=int,
+        default=600,
+        help="Seconds to wait for llama-server to start (default: 600)",
     )
     parser.add_argument("--name", default=f"Llama{random.randint(1000, 9999)}")
     parser.add_argument(
@@ -617,6 +632,14 @@ def parse_args() -> argparse.Namespace:
     args, trailing_args = parser.parse_known_args()
     if args.hf_file and not args.hf_repo:
         parser.error("--hf-file requires --hf-repo")
+    if not args.local_world and not args.server:
+        parser.error("a server or --local-world is required")
+    if not args.local_world and (args.mapgen is not None or args.seed is not None):
+        parser.error("--mapgen and --seed require --local-world")
+    if args.mapgen is not None and not re.fullmatch(r"[A-Za-z0-9_-]+", args.mapgen):
+        parser.error("invalid mapgen name")
+    if args.seed is not None and ("\n" in args.seed or "\r" in args.seed):
+        parser.error("seed must be a single line")
     if trailing_args and trailing_args[0] == "--":
         trailing_args = trailing_args[1:]
     args.freeminer_args = trailing_args
@@ -666,10 +689,18 @@ def main() -> int:
             "Build it first or pass --client-bin /path/to/freeminer.", file=sys.stderr
         )
         return 2
-    host, port = split_server_address(args.server)
-    if not host or not 1 <= port <= 65535:
-        print("Invalid Luanti server address or port", file=sys.stderr)
-        return 2
+    if args.local_world:
+        world_path = args.local_world.expanduser().resolve()
+        host, port = f"local:{world_path}", 0
+        if any((world_path / f"map_meta.{suffix}").exists() for suffix in ("txt", "json")) and (
+            args.mapgen is not None or args.seed is not None
+        ):
+            print("[world] Existing map metadata takes precedence over --mapgen and --seed.", flush=True)
+    else:
+        host, port = split_server_address(args.server)
+        if not host or not 1 <= port <= 65535:
+            print("Invalid Luanti server address or port", file=sys.stderr)
+            return 2
     if not re.fullmatch(r"[A-Za-z0-9_-]{1,20}", args.name):
         print(
             "Player name must be 1–20 letters, digits, underscores, or hyphens",
@@ -704,13 +735,23 @@ def main() -> int:
         print(f"[launch] llama-server: {shlex.join(llama_command)}", flush=True)
         llama = subprocess.Popen(llama_command)
         processes.append(llama)
-        wait_ready(f"http://127.0.0.1:{args.llama_port}/health", llama, "llama-server")
+        wait_ready(
+            f"http://127.0.0.1:{args.llama_port}/health",
+            llama,
+            "llama-server",
+            timeout=args.llama_startup_timeout,
+        )
 
         config = tempfile.NamedTemporaryFile(
             "w", prefix="luanti-ai-", suffix=".conf", delete=False
         )
         temp_config = config.name
         config.write(f"name = {args.name}\nrespawn_auto = false\n")
+        if args.local_world:
+            if args.mapgen is not None:
+                config.write(f"mg_name = {args.mapgen}\n")
+            if args.seed is not None:
+                config.write(f"fixed_map_seed = {args.seed}\n")
         if password:
             config.write(f"password = {password}\n")
         config.close()
@@ -718,10 +759,8 @@ def main() -> int:
         client_command = [
             str(client_bin),
             "--go",
-            "--address",
-            host,
-            "--port",
-            str(port),
+            *(["--world", str(world_path), "--gameid", args.gameid] if args.local_world
+              else ["--address", host, "--port", str(port)]),
             "--name",
             args.name,
             "--config",
@@ -753,7 +792,7 @@ def main() -> int:
 
         print(f"Model: {model_display}", flush=True)
         print(
-            f"Connected to {host}:{port} as {args.name}; MCP exposes {len(tools)} tools.",
+            f"Connected to {host if args.local_world else f'{host}:{port}'} as {args.name}; MCP exposes {len(tools)} tools.",
             flush=True,
         )
 
@@ -846,7 +885,15 @@ def main() -> int:
         ]
         restored = {} if args.no_resume else load_context(checkpoint)
         if restored:
-            messages.extend(restored["messages"][2:])
+            messages.extend(
+                message for message in restored["messages"][2:]
+                if not (
+                    message.get("role") == "assistant"
+                    and not message.get("tool_calls")
+                    and isinstance(message.get("content"), str)
+                    and is_repetitive_response(message["content"])
+                )
+            )
             operator_instructions = restored.get("operator_instructions", [])[-8:]
             if operator_instructions:
                 messages[0]["content"] = system_prompt + (
@@ -942,8 +989,7 @@ def main() -> int:
                 ]
                 + [MEMORY_TOOL, LOAD_PLAYER_MEMORY_TOOL],
                 "tool_choice": "auto",
-                "temperature": 0.2,
-                "max_tokens": 1200,
+                # "max_tokens": 1200,
             }
             for attempt in range(3):
                 try:
@@ -991,7 +1037,13 @@ def main() -> int:
                     request_payload["messages"] = messages
             choice = response["choices"][0]["message"]
             calls = choice.get("tool_calls", [])
-            if choice.get("content"):
+            repetitive = isinstance(choice.get("content"), str) and is_repetitive_response(
+                choice["content"]
+            )
+            if repetitive:
+                print("[agent] Discarding repetitive model text.", flush=True)
+                choice["content"] = None
+            elif choice.get("content"):
                 print(f"[agent] {choice['content']}", flush=True)
             if not calls:
                 if choice.get("content"):

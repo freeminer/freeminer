@@ -321,6 +321,17 @@ struct WorldEditor
 		}
 	};
 	MapgenEarth *mg{};
+	// Optional sparse backend for standalone/library callers and unit tests that
+	// exercise generation without a host MapgenEarth/VoxelManipulator.
+	using StandaloneBlockMap =
+			std::unordered_map<std::tuple<int, int, int>, Block, FrameCellHash>;
+	StandaloneBlockMap standalone_blocks;
+	bool standalone_storage = false;
+	void enable_standalone_storage(bool enabled = true)
+	{
+		standalone_storage = enabled;
+		standalone_blocks.clear();
+	}
 	// Projection-aware local frame. Flat worlds retain the legacy X/Z behavior.
 	ProjectionFrame projection_frame;
 	Ground *ground{};

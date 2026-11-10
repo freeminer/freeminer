@@ -865,6 +865,11 @@ bool WorldEditor::finalize_persistence()
 }
 bool WorldEditor::pos_ok(int x, int z) const
 {
+	if (standalone_storage)
+		return x >= std::numeric_limits<pos_t>::min() &&
+			   x <= std::numeric_limits<pos_t>::max() &&
+			   z >= std::numeric_limits<pos_t>::min() &&
+			   z <= std::numeric_limits<pos_t>::max();
 	// A tile editor's strict bounds identify ownership, not its writable region:
 	// Rust lets normal geometry write into the editor halo and resolves overlap
 	// when the tile overlay is merged. owns() remains for single-owner side data
@@ -909,6 +914,31 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 		return false;
 	const v3pos_t pos{
 			static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
+	if (standalone_storage) {
+		const auto key = std::tuple{x, y, z};
+		const auto current = standalone_blocks.find(key);
+		bool should_set = current == standalone_blocks.end();
+		if (current != standalone_blocks.end()) {
+			const auto content = current->second.getContent();
+			if (maybe_variants)
+				should_set = std::any_of(maybe_variants->begin(), maybe_variants->end(),
+						[content](const Block &candidate) {
+							return candidate.getContent() == content;
+						});
+			else if (maybe_replacements)
+				should_set = std::none_of(maybe_replacements->begin(),
+						maybe_replacements->end(), [content](const Block &candidate) {
+							return candidate.getContent() == content;
+						});
+		}
+		if (!should_set)
+			return false;
+		standalone_blocks.insert_or_assign(key, block);
+		written_cells.insert(key);
+		full_top_state_cells.erase(key);
+		block_properties_by_cell.erase(key);
+		return true;
+	}
 
 	if (!mg || !mg->vm || !pos_ok(x, z) || !mg->vm->exists(pos)) {
 		if (mg)
@@ -1394,6 +1424,25 @@ bool WorldEditor::check_for_block_absolute(int x, int y, int z,
 	if (y > world_editor::world_max_y())
 		return false;
 	y = std::max(y, world_editor::min_y());
+	if (standalone_storage) {
+		const auto found = standalone_blocks.find({x, y, z});
+		if (found == standalone_blocks.end())
+			return false;
+		const auto content = found->second.getContent();
+		if (content == CONTENT_AIR || content == CONTENT_IGNORE)
+			return false;
+		if (blocks)
+			return std::any_of(
+					blocks->begin(), blocks->end(), [content](const Block &candidate) {
+						return candidate.getContent() == content;
+					});
+		if (avoid)
+			return std::any_of(
+					avoid->begin(), avoid->end(), [content](const Block &candidate) {
+						return candidate.getContent() == content;
+					});
+		return true;
+	}
 	const v3pos_t pos{
 			static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
 	if (!mg || !mg->vm || !pos_ok(x, z) || !mg->vm->exists(pos))
@@ -1424,6 +1473,8 @@ bool WorldEditor::block_exists_absolute(int x, int y, int z) const
 }
 std::pair<int, int> WorldEditor::writable_y_bounds() const
 {
+	if (standalone_storage)
+		return {world_editor::min_y(), world_editor::world_max_y()};
 	if (!mg || !mg->vm)
 		return {1, 0};
 	return {mg->vm->m_area.MinEdge.Y, mg->vm->m_area.MaxEdge.Y};
@@ -1435,7 +1486,8 @@ bool WorldEditor::check_for_block_type_absolute(
 	const auto current = get_block_absolute(x, y, z);
 	if (!current)
 		return false;
-	++mg->stat.check;
+	if (mg)
+		++mg->stat.check;
 	const auto content = current->getContent();
 	return content != CONTENT_AIR && content != CONTENT_IGNORE &&
 		   content == block.getContent();
@@ -1445,6 +1497,11 @@ std::optional<Block> WorldEditor::get_block_absolute(int x, int y, int z) const
 	if (y > world_editor::world_max_y())
 		return std::nullopt;
 	y = std::max(y, world_editor::min_y());
+	if (standalone_storage) {
+		const auto found = standalone_blocks.find({x, y, z});
+		return found == standalone_blocks.end() ? std::nullopt
+												: std::optional<Block>{found->second};
+	}
 	if (!mg || !mg->vm || !pos_ok(x, z))
 		return std::nullopt;
 	const v3pos_t pos{
@@ -1548,7 +1605,8 @@ std::optional<Block> WorldEditor::support_column(int x, int z) const
 void WorldEditor::fill_column_absolute(
 		const Block &block, int x, int z, int min_y, int max_y, bool skip_existing)
 {
-	if (min_y > world_editor::world_max_y() || !mg || !mg->vm || !pos_ok(x, z))
+	if (min_y > world_editor::world_max_y() ||
+			(!standalone_storage && (!mg || !mg->vm || !pos_ok(x, z))))
 		return;
 	min_y = std::clamp(min_y, world_editor::min_y(), world_editor::world_max_y());
 	max_y = std::clamp(max_y, world_editor::min_y(), world_editor::world_max_y());
@@ -1565,13 +1623,22 @@ void WorldEditor::fill_column_absolute(
 void WorldEditor::fill_column_with_absolute(int x, int z, int min_y, int max_y,
 		const std::function<Block(int)> &block_at, bool skip_existing)
 {
-	if (!block_at || min_y > world_editor::world_max_y() || !mg || !mg->vm ||
-			!pos_ok(x, z))
+	if (!block_at || min_y > world_editor::world_max_y() ||
+			(!standalone_storage && (!mg || !mg->vm || !pos_ok(x, z))))
 		return;
 	min_y = std::clamp(min_y, world_editor::min_y(), world_editor::world_max_y());
 	max_y = std::clamp(max_y, world_editor::min_y(), world_editor::world_max_y());
 	if (max_y < min_y)
 		return;
+	if (standalone_storage) {
+		for (int y = min_y; y <= max_y; ++y) {
+			if (skip_existing && check_for_block_absolute(x, y, z))
+				continue;
+			try_set_block_absolute(block_at(y), x, y, z, std::nullopt,
+					std::optional<std::vector<Block>>(std::vector<Block>{}));
+		}
+		return;
+	}
 	for (int y = min_y; y <= max_y; ++y) {
 		const Block block = block_at(y);
 		if (y < std::numeric_limits<pos_t>::min() ||

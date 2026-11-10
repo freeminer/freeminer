@@ -57,6 +57,7 @@ public:
 				road(2, {node(3, 0, -40), node(9, 0, 0, true), node(4, 0, 40)})};
 		const auto signals = highways::SignalIndex::build(elements, 1.0, false, roads);
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		UASSERT(signals->place_node(
 				editor, elements.front().as_way().nodes[1], [](int, int) { return 0; }));
 
