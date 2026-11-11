@@ -118,8 +118,7 @@
 
 
 
-
-
+# fm:
 
 [Freeminer]
 
@@ -380,6 +379,12 @@ world_merge_throttle_per_client (World merge delay per player) int 20 0 1000
 #    Number of players allowed before the per-player merge delay applies.
 #    Defaults to 1 in singleplayer when not explicitly set.
 world_merge_max_clients (World merge players without delay) int 0 0
+
+#    Reduce background emerge_smart columns in flight as more players connect.
+emerge_smart_throttle_players (Throttle smart emerge for players) bool true
+
+#    Number of connected players before smart emerge concurrency is reduced.
+emerge_smart_free_players (Smart emerge players without throttling) int 1 0 65535
 
 
 #mgindev_np_terrain_base   () string -4,   20,  (250, 250, 250), 82341, 5, 0.6,  10,  10
