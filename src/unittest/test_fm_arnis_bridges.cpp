@@ -258,11 +258,11 @@ void TestFmArnisBridges::testSideBySideCarriagewaysAreOneStructure()
 	const auto b =
 			way(2, {{"highway", "secondary"}, {"bridge", "yes"}, {"oneway", "yes"}},
 					{{70, 48}, {10, 48}});
-	const auto far =
+	const auto far_ =
 			way(3, {{"highway", "secondary"}, {"bridge", "yes"}, {"oneway", "yes"}},
 					{{70, 90}, {10, 90}});
 	const auto under = way(4, {{"highway", "residential"}}, {{30, 20}, {30, 80}});
-	const auto built = structuresOver({a, b, far, under});
+	const auto built = structuresOver({a, b, far_, under});
 	const auto &nearA = ys(built.structures, 1);
 	const auto &farProfile = ys(built.structures, 3);
 	UASSERT(nearA.size() == farProfile.size());
@@ -825,9 +825,9 @@ void TestFmArnisBridges::testSideBySideRailBridgesShareLevel()
 	const Tags tags{{"railway", "rail"}, {"bridge", "yes"}};
 	const auto a = way(1, tags, {{10, 40}, {70, 40}});
 	const auto b = way(2, tags, {{10, 46}, {45, 46}});
-	const auto far = way(3, tags, {{10, 70}, {45, 70}});
+	const auto far_ = way(3, tags, {{10, 70}, {45, 70}});
 	const auto built = structuresOver(
-			{a, b, far}, [](std::size_t x) { return x > 50 ? 12.0f : 0.0f; });
+			{a, b, far_}, [](std::size_t x) { return x > 50 ? 12.0f : 0.0f; });
 	UASSERT(railLevel(built.structures, 1) == railLevel(built.structures, 2));
 	UASSERT(railLevel(built.structures, 3) < railLevel(built.structures, 1));
 }

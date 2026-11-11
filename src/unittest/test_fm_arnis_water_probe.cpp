@@ -92,6 +92,7 @@ public:
 		UASSERT(walk_spot("minecraft:stone_slab", false) == Spot::Solid);
 		UASSERT(walk_spot("minecraft:oak_leaves", false) == Spot::Leaves);
 		UASSERT(walk_spot("minecraft:oak_fence", false) == Spot::Tall);
+		UASSERT(walk_spot("minecraft:lily_pad", false) == Spot::Open);
 	}
 };
 
