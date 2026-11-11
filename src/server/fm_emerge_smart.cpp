@@ -106,6 +106,8 @@ struct GenerateJob
 	u64 last_progress_percent = 0;
 	u32 changed_since = 0;
 	u16 in_flight_limit = GENERATE_DEFAULT_IN_FLIGHT;
+	u32 throttle_free_players = 1;
+	bool throttle_players = true;
 	u32 max_cancel_retries = GENERATE_DEFAULT_MAX_CANCEL_RETRIES;
 	std::chrono::seconds task_timeout{GENERATE_DEFAULT_TASK_TIMEOUT_SECONDS};
 	std::array<u64, EMERGE_ACTION_COUNT> actions{};
@@ -280,6 +282,8 @@ public:
 		job->ring = min_ring;
 		job->total = total;
 		job->in_flight_limit = static_cast<u16>(in_flight_value);
+		g_settings->getU32NoEx("emerge_smart_free_players", job->throttle_free_players);
+		g_settings->getBoolNoEx("emerge_smart_throttle_players", job->throttle_players);
 		job->max_cancel_retries = max_cancel_retries;
 		job->task_timeout = std::chrono::seconds(task_timeout);
 
@@ -747,6 +751,9 @@ private:
 
 	void fill_in_flight(const std::shared_ptr<GenerateJob> &job, TimePoint now)
 	{
+		const auto limit = emerge_smart::inFlightLimit(job->in_flight_limit,
+				m_server->getEnv().getPlayerCount(), job->throttle_free_players,
+				job->throttle_players);
 		while (!job->cancelled.load(std::memory_order_relaxed)) {
 			const u64 size = ring_size(job->ring);
 			if (job->active.empty() && job->next_ring_index >= size) {
@@ -759,8 +766,7 @@ private:
 				continue;
 			}
 
-			if (job->active.size() >= job->in_flight_limit ||
-					job->next_ring_index >= size)
+			if (job->active.size() >= limit || job->next_ring_index >= size)
 				return;
 			add_ring_task(job, now);
 		}
@@ -775,9 +781,13 @@ private:
 		const auto elapsed =
 				std::chrono::duration_cast<std::chrono::seconds>(now - job->started_at)
 						.count();
+		const auto limit = emerge_smart::inFlightLimit(job->in_flight_limit,
+				m_server->getEnv().getPlayerCount(), job->throttle_free_players,
+				job->throttle_players);
 		actionstream << "[earth] Generation heartbeat: " << job->completed << "/"
 					 << job->total << " mapgen chunk columns, ring " << job->ring << "/"
 					 << job->max_ring << ", active=" << job->active.size()
+					 << ", in_flight_limit=" << limit
 					 << ", emerge_queue=" << m_server->getEmergeManager()->getQueueSize()
 					 << ", elapsed=" << elapsed
 					 << "s, actions cancelled/errored/memory/disk/generated="
