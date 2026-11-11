@@ -23,6 +23,7 @@
 
 #include "arnis_ground.h"
 #include "arnis_block.h"
+#include "arnis-cpp/src/fm_xz_bbox_shape.h"
 #include "arnis_projection_frame.h"
 #include "arnis-cpp/src/args.h"
 #include "arnis-cpp/src/bedrock_addon.h"
@@ -48,6 +49,7 @@ class TunnelPinIndex;
 namespace arnis
 {
 class CoordinateBitmap;
+class XZBBoxShape;
 
 namespace signage
 {
@@ -390,6 +392,9 @@ struct WorldEditor
 	std::function<void(
 			int, int, int, const std::vector<std::tuple<std::string, int, int>> &)>
 			chest_sink;
+	// Full Java-style chest item compounds for data components such as map IDs.
+	std::function<void(int, int, int, const std::vector<nlohmann::json> &)>
+			chest_nbt_sink;
 	std::function<void(
 			int, int, int, const std::vector<std::tuple<std::string, int, int>> &)>
 			barrel_sink;
@@ -466,6 +471,7 @@ struct WorldEditor
 	// Bounds of the full generation area. Tile merges keep the owning tile's
 	// road elevations and retain non-owned values only outside this area.
 	std::optional<std::tuple<int, int, int, int>> generation_bounds;
+	std::shared_ptr<const arnis::XZBBoxShape> generation_outline;
 	// Rust gives each tile editor its own clipped halo bbox. Keep that distinct
 	// from both the full world bounds and strict single-tile ownership bounds.
 	std::optional<std::tuple<int, int, int, int>> tile_editor_bounds;
@@ -604,8 +610,18 @@ struct WorldEditor
 	{
 		chest_sink = std::move(sink);
 	}
+	void set_chest_nbt_sink(
+			std::function<void(int, int, int, const std::vector<nlohmann::json> &)> sink)
+	{
+		chest_nbt_sink = std::move(sink);
+	}
 	void set_chest_with_items_absolute(int x, int y, int z,
 			const std::vector<std::tuple<std::string, int, int>> &items);
+	void set_chest_with_nbt_items_absolute(
+			int x, int y, int z, const std::vector<nlohmann::json> &items);
+	// Rust-compatible Java map/branding display built from backend-neutral world records.
+	void place_map_item_frame(int spawn_x, int spawn_z, int map_id, int branding_map_id);
+	void place_branding_map_only(int spawn_x, int spawn_z, int branding_map_id);
 	void set_barrel_sink(std::function<void(int, int, int,
 					const std::vector<std::tuple<std::string, int, int>> &)>
 					sink)
@@ -646,7 +662,7 @@ struct WorldEditor
 	void retain_schematic_entity(
 			int x, int y, int z, const std::vector<std::uint8_t> &nbt)
 	{
-		if (!owns(x, z))
+		if (!owns(x, z) || !in_bounds(x, z))
 			return;
 		if (schem_entity_sink && schem_entity_sink(active_tile_overlay, x, y, z, nbt))
 			return;
@@ -690,7 +706,7 @@ struct WorldEditor
 	}
 	void set_bed_block_entity_absolute(int x, int y, int z)
 	{
-		if (!block_exists_absolute(x, y, z) || !owns(x, z))
+		if (!block_exists_absolute(x, y, z) || !owns(x, z) || !in_bounds(x, z))
 			return;
 		if (bed_sink) {
 			bed_sink(x, y, z);
@@ -719,12 +735,15 @@ struct WorldEditor
 	{
 		if (tile_active && tile_editor_bounds) {
 			const auto &[min_x, min_z, max_x, max_z] = *tile_editor_bounds;
-			return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+			return x >= min_x && x <= max_x && z >= min_z && z <= max_z &&
+				   (!generation_outline || generation_outline->contains(x, z));
 		}
 		if (!generation_bounds)
-			return pos_ok(x, z);
+			return pos_ok(x, z) &&
+				   (!generation_outline || generation_outline->contains(x, z));
 		const auto &[min_x, min_z, max_x, max_z] = *generation_bounds;
-		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+		return x >= min_x && x <= max_x && z >= min_z && z <= max_z &&
+			   (!generation_outline || generation_outline->contains(x, z));
 	}
 	std::tuple<int, int, int, int> bounds() const
 	{
@@ -871,6 +890,10 @@ struct WorldEditor
 	{
 		generation_bounds = std::tuple{min_x, min_z, max_x, max_z};
 	}
+	void set_generation_outline(std::shared_ptr<const arnis::XZBBoxShape> outline)
+	{
+		generation_outline = std::move(outline);
+	}
 	void set_tile_editor_bounds(int min_x, int min_z, int max_x, int max_z)
 	{
 		tile_editor_bounds = std::tuple{min_x, min_z, max_x, max_z};
@@ -965,7 +988,8 @@ struct WorldEditor
 
 	bool try_set_block_absolute(const Block &block, int x, int y, int z,
 			const std::optional<std::vector<Block>> &maybe_variants = {},
-			const std::optional<std::vector<Block>> &maybe_replacements = {});
+			const std::optional<std::vector<Block>> &maybe_replacements = {},
+			bool allow_outside_outline = false);
 
 	void set_block_absolute(const Block &block, int x, int y, int z,
 			const std::optional<std::vector<Block>> &maybe_variants = {},
@@ -1105,6 +1129,8 @@ struct WorldEditor
 	bool cell_open_at(int x, int y, int z) const;
 
 	bool set_block_if_absent_absolute(const Block &block, int x, int y, int z);
+	// Fills a rectangular flat world's columns excluded by a polygon outline.
+	void set_filler_outside_outline(int x, int z);
 	bool set_block_with_properties_if_absent_absolute(
 			const BlockWithProperties &bwp, int x, int y, int z);
 	void register_support_column(int x, int z, const Block &block);

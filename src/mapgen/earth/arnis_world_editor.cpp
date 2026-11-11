@@ -254,8 +254,9 @@ bool WorldEditor::tile_worker_callbacks_safe() const
 		   (!mapped_regional_tree_placer || mapped_regional_tree_placer_thread_safe) &&
 		   !flush_sink && !save_sink && !preview_sink && !map_item_sink &&
 		   !world_settings_sink && !block_properties_sink && !chest_sink &&
-		   !barrel_sink && !barrel_nbt_sink && !bed_sink && !fluid_tick_sink &&
-		   !item_frame_sink && !entity_sink && !banner_sink && !facade_panel_sink;
+		   !chest_nbt_sink && !barrel_sink && !barrel_nbt_sink && !bed_sink &&
+		   !fluid_tick_sink && !item_frame_sink && !entity_sink && !banner_sink &&
+		   !facade_panel_sink;
 }
 
 WorldEditor WorldEditor::make_tile_worker() const
@@ -317,6 +318,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.spawn_y = spawn_y;
 	worker.spawn_z = spawn_z;
 	worker.projection_scale = projection_scale;
+	worker.chest_nbt_sink = chest_nbt_sink;
 	worker.schem_entity_sink = schem_entity_sink;
 	worker.schem_entity_sink_thread_safe = schem_entity_sink_thread_safe;
 	worker.item_frame_sink = item_frame_sink;
@@ -338,6 +340,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.ground_origin_z = ground_origin_z;
 	worker.ground_origin_set = ground_origin_set;
 	worker.generation_bounds = generation_bounds;
+	worker.generation_outline = generation_outline;
 	return worker;
 }
 
@@ -541,6 +544,76 @@ void WorldEditor::set_chest_with_items_absolute(
 			{{"id", "minecraft:chest"}, {"x", x}, {"y", y}, {"z", z},
 					{"Items", std::move(nbt_items)}, {"keepPacked", 0}}});
 }
+
+void WorldEditor::set_chest_with_nbt_items_absolute(
+		int x, int y, int z, const std::vector<nlohmann::json> &items)
+{
+	if (!try_set_block_absolute(
+				block_definitions::CHEST, x, y, z, std::nullopt, std::nullopt) ||
+			!owns(x, z))
+		return;
+	if (chest_nbt_sink) {
+		chest_nbt_sink(x, y, z, items);
+		return;
+	}
+	placed_block_entities.push_back({x, y, z,
+			{{"id", "minecraft:chest"}, {"x", x}, {"y", y}, {"z", z}, {"Items", items},
+					{"keepPacked", 0}}});
+	if (chest_sink) {
+		std::vector<std::tuple<std::string, int, int>> simple_items;
+		for (const auto &item : items) {
+			if (!item.is_object() || !item.contains("id") || !item["id"].is_string())
+				continue;
+			simple_items.emplace_back(item["id"].get<std::string>(),
+					item.value("Slot", 0), item.value("count", item.value("Count", 1)));
+		}
+		chest_sink(x, y, z, simple_items);
+	}
+}
+
+namespace
+{
+void add_filled_map_frame(
+		WorldEditor &editor, int x, int absolute_y, int frame_z, int map_id)
+{
+	nlohmann::json item = {{"id", "minecraft:filled_map"}, {"count", 1},
+			{"components", {{"minecraft:map_id", map_id}}}};
+	nlohmann::json extra = {{"Facing", 2}, {"ItemRotation", 0}, {"Item", std::move(item)},
+			{"ItemDropChance", 1.0}, {"Fixed", 0}, {"TileX", x}, {"TileY", absolute_y},
+			{"TileZ", frame_z}, {"block_pos", {x, absolute_y, frame_z}}};
+	const int relative_y = absolute_y - editor.get_absolute_y(x, 0, frame_z);
+	editor.add_entity("minecraft:item_frame", x, relative_y, frame_z, extra);
+}
+} // namespace
+
+void WorldEditor::place_map_item_frame(
+		int spawn_x, int spawn_z, int map_id, int branding_map_id)
+{
+	const int ground = get_absolute_y(spawn_x, 0, spawn_z);
+	const int lower_y = ground + 1;
+	const int eye_y = ground + 2;
+	const int frame_z = spawn_z + 2;
+	const int post_z = spawn_z + 3;
+	set_block_absolute(block_definitions::SMOOTH_STONE, spawn_x, lower_y, post_z);
+	set_block_absolute(block_definitions::AIR, spawn_x, eye_y, frame_z);
+	set_block_absolute(block_definitions::AIR, spawn_x, lower_y, frame_z);
+	add_filled_map_frame(*this, spawn_x, eye_y, frame_z, map_id);
+	add_filled_map_frame(*this, spawn_x, lower_y, frame_z, branding_map_id);
+	std::vector<nlohmann::json> items{{{"Slot", 13}, {"id", "minecraft:filled_map"},
+			{"count", 1}, {"components", {{"minecraft:map_id", map_id}}}}};
+	set_chest_with_nbt_items_absolute(spawn_x, eye_y, post_z, items);
+}
+
+void WorldEditor::place_branding_map_only(int spawn_x, int spawn_z, int branding_map_id)
+{
+	const int display_y = get_absolute_y(spawn_x, 0, spawn_z) + 2;
+	const int frame_z = spawn_z + 2;
+	const int post_z = spawn_z + 3;
+	set_block_absolute(block_definitions::SMOOTH_STONE, spawn_x, display_y, post_z);
+	set_block_absolute(block_definitions::AIR, spawn_x, display_y, frame_z);
+	add_filled_map_frame(*this, spawn_x, display_y, frame_z, branding_map_id);
+}
+
 void WorldEditor::set_barrel_with_items_absolute(
 		int x, int y, int z, const std::vector<std::tuple<std::string, int, int>> &items)
 {
@@ -667,8 +740,9 @@ bool WorldEditor::add_entity_exact(const std::string &id, double x, double absol
 	const auto bx = static_cast<int>(std::floor(x));
 	const auto by = static_cast<int>(std::floor(absolute_y));
 	const auto bz = static_cast<int>(std::floor(z));
-	if (!owns(bx, bz) || (mg && (bx < mg->node_min.X || bx > mg->node_max.X ||
-										bz < mg->node_min.Z || bz > mg->node_max.Z)))
+	if (!owns(bx, bz) || !in_bounds(bx, bz) ||
+			(mg && (bx < mg->node_min.X || bx > mg->node_max.X || bz < mg->node_min.Z ||
+						   bz > mg->node_max.Z)))
 		return false;
 	if (!extra.is_object())
 		return false;
@@ -702,7 +776,7 @@ bool WorldEditor::add_entity_exact(const std::string &id, double x, double absol
 bool WorldEditor::add_entity(
 		const std::string &id, int x, int y, int z, const nlohmann::json &extra)
 {
-	if (!owns(x, z) ||
+	if (!owns(x, z) || !in_bounds(x, z) ||
 			(mg && (x < mg->node_min.X || x > mg->node_max.X || z < mg->node_min.Z ||
 						   z > mg->node_max.Z)) ||
 			!extra.is_object())
@@ -898,8 +972,12 @@ v3pos_t WorldEditor::projection_position(double east, double up, double north) c
 }
 bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z,
 		const std::optional<std::vector<Block>> &maybe_variants,
-		const std::optional<std::vector<Block>> &maybe_replacements)
+		const std::optional<std::vector<Block>> &maybe_replacements,
+		bool allow_outside_outline)
 {
+	if (!allow_outside_outline && generation_outline &&
+			!generation_outline->contains(x, z))
+		return false;
 	// Match Rust WorldToModify: discard writes above the selected world's ceiling,
 	// but clamp writes below its floor onto the floor section (bedrock placement
 	// relies on this when the host VM exposes a deeper range).
@@ -1579,6 +1657,19 @@ bool WorldEditor::set_block_if_absent_absolute(const Block &block, int x, int y,
 	return false;
 }
 
+void WorldEditor::set_filler_outside_outline(int x, int z)
+{
+	if (!pos_ok(x, z) || !generation_bounds ||
+			(generation_outline && generation_outline->contains(x, z)))
+		return;
+	const auto &[min_x, min_z, max_x, max_z] = *generation_bounds;
+	if (x < min_x || x > max_x || z < min_z || z > max_z)
+		return;
+	try_set_block_absolute(
+			Block(static_cast<content_t>(world_editor::base_chunk_block_id())), x,
+			world_editor::base_chunk_y(), z, std::nullopt, std::nullopt, true);
+}
+
 bool WorldEditor::set_block_with_properties_if_absent_absolute(
 		const BlockWithProperties &bwp, int x, int y, int z)
 {
@@ -1605,7 +1696,8 @@ std::optional<Block> WorldEditor::support_column(int x, int z) const
 void WorldEditor::fill_column_absolute(
 		const Block &block, int x, int z, int min_y, int max_y, bool skip_existing)
 {
-	if (min_y > world_editor::world_max_y() ||
+	if ((generation_outline && !generation_outline->contains(x, z)) ||
+			min_y > world_editor::world_max_y() ||
 			(!standalone_storage && (!mg || !mg->vm || !pos_ok(x, z))))
 		return;
 	min_y = std::clamp(min_y, world_editor::min_y(), world_editor::world_max_y());
@@ -1623,7 +1715,8 @@ void WorldEditor::fill_column_absolute(
 void WorldEditor::fill_column_with_absolute(int x, int z, int min_y, int max_y,
 		const std::function<Block(int)> &block_at, bool skip_existing)
 {
-	if (!block_at || min_y > world_editor::world_max_y() ||
+	if (!block_at || (generation_outline && !generation_outline->contains(x, z)) ||
+			min_y > world_editor::world_max_y() ||
 			(!standalone_storage && (!mg || !mg->vm || !pos_ok(x, z))))
 		return;
 	min_y = std::clamp(min_y, world_editor::min_y(), world_editor::world_max_y());
@@ -1687,6 +1780,10 @@ bool WorldEditor::bulk_fill_chunk_sections_below(int chunk_x, int chunk_z,
 			x0 + 15 > std::numeric_limits<pos_t>::max() ||
 			z0 < std::numeric_limits<pos_t>::min() ||
 			z0 + 15 > std::numeric_limits<pos_t>::max())
+		return false;
+	if (generation_outline &&
+			!generation_outline->covers(static_cast<int>(x0), static_cast<int>(z0),
+					static_cast<int>(x0 + 15), static_cast<int>(z0 + 15)))
 		return false;
 
 	bool all_clean = true;
