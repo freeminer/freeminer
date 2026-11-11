@@ -23,6 +23,7 @@ public:
 	void runTests(IGameDef *gamedef) override;
 
 	void testEmptyCell();
+	void testPlayerThrottle();
 	void testSparsePreferredSolidBecomesAir();
 	void testSurfaceTieStaysSolid();
 	void testMaterialVoteAfterOccupancy();
@@ -46,6 +47,7 @@ void TestFmWorldMerge::runTests(IGameDef *gamedef)
 {
 	(void)gamedef;
 	TEST(testEmptyCell);
+	TEST(testPlayerThrottle);
 	TEST(testSparsePreferredSolidBecomesAir);
 	TEST(testSurfaceTieStaysSolid);
 	TEST(testMaterialVoteAfterOccupancy);
@@ -61,6 +63,16 @@ void TestFmWorldMerge::runTests(IGameDef *gamedef)
 	TEST(testBrighterLightSurvives);
 	TEST(testLightOnlyBlockPersistence, gamedef);
 	// ===
+}
+
+void TestFmWorldMerge::testPlayerThrottle()
+{
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(0, 1, 20), 0);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(1, 1, 20), 0);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(4, 1, 20), 60);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(100, 0, 20), 1000);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(UINT32_MAX, 0, UINT32_MAX), 1000);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(100, 0, 0), 0);
 }
 
 void TestFmWorldMerge::testEmptyCell()

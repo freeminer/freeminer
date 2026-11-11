@@ -38,6 +38,14 @@ class NodeDefManager;
 
 namespace world_merge
 {
+// Extra delay is bounded so player load never stops merge progress.
+constexpr uint32_t playerThrottleMs(
+		uint32_t players, uint32_t free_players, uint32_t per_player_ms)
+{
+	const uint64_t delay =
+			uint64_t(players > free_players ? players - free_players : 0) * per_player_ms;
+	return delay > 1000 ? 1000 : static_cast<uint32_t>(delay);
+}
 // Select the representative sample for a 2x2x2 far node. Occupancy is decided
 // independently from material so a preferred solid sample cannot outweigh an
 // otherwise empty cell.
@@ -60,7 +68,7 @@ class WorldMerger
 {
 public:
 	std::function<bool(void)> stop_func;
-	std::function<bool(void)> throttle_func;
+	std::function<uint32_t(void)> throttle_func;
 	std::function<uint32_t(void)> get_time_func;
 	std::function<void(const MapBlockPtr &, block_step_t)> far_block_ready_func;
 
@@ -85,7 +93,6 @@ public:
 	~WorldMerger();
 	void init();
 	bool stop();
-	bool throttle();
 
 	struct one_block_stat_t
 	{

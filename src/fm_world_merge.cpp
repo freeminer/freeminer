@@ -798,14 +798,10 @@ bool WorldMerger::merge_one_step(
 				printstat();
 			}
 
-			if (throttle()) {
-				tracestream << "World merge throttle" << '\n';
-
-				std::this_thread::sleep_for(std::chrono::seconds(1));
-			} else if (world_merge_throttle) {
-				std::this_thread::sleep_for(
-						std::chrono::milliseconds(world_merge_throttle));
-			}
+			const uint64_t delay = uint64_t(world_merge_throttle) +
+								   (throttle_func ? throttle_func() : 0);
+			if (delay)
+				std::this_thread::sleep_for(std::chrono::milliseconds(delay));
 
 #if !EXCEPTION_DEBUG
 		} catch (const std::exception &e) {
@@ -898,13 +894,6 @@ bool WorldMerger::stop()
 {
 	if (stop_func)
 		return stop_func();
-	return false;
-}
-
-bool WorldMerger::throttle()
-{
-	if (throttle_func)
-		return throttle_func();
 	return false;
 }
 
