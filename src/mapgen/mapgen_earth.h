@@ -121,6 +121,10 @@ struct maps_holder_t
 	std::unordered_map<EarthHorizontalKey, EarthVerticalBounds, EarthHorizontalKeyHash>
 			vertical_bounds;
 	std::unique_ptr<PngImage> heat_image;
+	bool tavg_legacy = true;
+	bool vapr_legacy = true;
+	std::unique_ptr<PngImage> global_tavg_image;
+	std::array<std::unique_ptr<PngImage>, 12> global_tavg_month_images;
 	std::unique_ptr<PngImage> tavg_image;
 	std::array<std::unique_ptr<PngImage>, 12> tavg_month_images;
 	std::unique_ptr<PngImage> vapr_image;
