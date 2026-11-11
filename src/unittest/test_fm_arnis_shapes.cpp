@@ -117,6 +117,13 @@ public:
 		UASSERT(l_shape->touches(5, 5, 15, 15));
 		UASSERT(!l_shape->touches(10, 10, 20, 20));
 
+		const auto edge_shape = arnis::XZBBoxShape::create(
+				frame, {{{{10.5, 12.0}, {21.5, 5.0}, {22.0, 8.0}}}});
+		UASSERT(edge_shape.has_value());
+		UASSERT(!edge_shape->contains(22, 7));
+		UASSERT(edge_shape->contains(22, 8));
+		UASSERT(edge_shape->contains(21, 7));
+
 		const auto overlapping = arnis::XZBBoxShape::create(
 				frame, {{{{0, 0}, {15, 0}, {15, 15}, {0, 15}}},
 							   {{{10, 10}, {25, 10}, {25, 25}, {10, 25}}}});
@@ -337,6 +344,23 @@ public:
 		const auto rectangle =
 				arnis::cartesian::XZBBox::rect_from_min_max(10, 10, 20, 20);
 		UASSERT(rectangle.default_spawn() == std::pair(11, 11));
+
+		const arnis::cartesian::XZBBoxRect large_rect({0, 0}, {400, 400});
+		const auto slanted = arnis::XZBBoxShape::create(
+				large_rect, {{{{20.0, 0.0}, {40.0, 20.0}, {20.0, 40.0}, {0.0, 20.0}}}});
+		UASSERT(slanted.has_value());
+		const auto slanted_spawn = slanted->first_inside();
+		UASSERT(slanted_spawn.has_value());
+		UASSERT(slanted->covers(slanted_spawn->x - 4, slanted_spawn->z - 4,
+				slanted_spawn->x + 4, slanted_spawn->z + 4));
+		UASSERT(slanted_spawn->z <= 10);
+
+		const auto thin = arnis::XZBBoxShape::create(
+				large_rect, {{{{2.0, 2.0}, {30.0, 2.0}, {30.0, 3.0}}}});
+		UASSERT(thin.has_value());
+		const auto thin_spawn = thin->first_inside();
+		UASSERT(thin_spawn.has_value());
+		UASSERT(thin->contains(thin_spawn->x, thin_spawn->z));
 	}
 
 	void testSpawnMustBeInsideSelectedShape()
@@ -365,6 +389,12 @@ public:
 		args.spawn_lat = 0.25;
 		args.spawn_lng = 0.25;
 		UASSERT(!args.validation_error().has_value());
+
+		args.one_world = true;
+		const auto one_world_error = args.validation_error();
+		UASSERT(one_world_error.has_value());
+		UASSERT(one_world_error->find("cannot be combined with --one-world") !=
+				std::string::npos);
 	}
 
 	void testBedrockGenerationCanUseParallelTiles()

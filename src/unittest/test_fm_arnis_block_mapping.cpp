@@ -1,11 +1,14 @@
 #include "test.h"
 
 #include "mapgen/earth/arnis_block.h"
+#include "mapgen/earth/arnis_world_editor.h"
 #include "mapgen/earth/arnis-cpp/src/bedrock_block_map.h"
 #include "mapgen/earth/arnis-cpp/src/luanti_block_map.h"
+#include "mapgen/earth/arnis-cpp/src/world_editor/common.h"
 
 #include <string>
 #include <array>
+#include <cstdint>
 
 class TestFmArnisBlockMapping : public TestBase
 {
@@ -47,6 +50,7 @@ public:
 		TEST(testWaterloggedBedrockState);
 		TEST(testGenericBedrockNameMapping);
 		TEST(testBedrockHoppersStartUnlocked);
+		TEST(testNestedBlockPropertyValuesSurviveSectionsAndPalettePacking);
 	}
 
 	void testNewRustBlocksHaveLuantiMappings()
@@ -126,6 +130,64 @@ public:
 		const auto enabled = to_bedrock_block_with_properties(BlockWithProperties{
 				HOPPER, BlockWithProperties::Properties{{"enabled", "true"}}});
 		UASSERT(!std::get<bool>(enabled.states.at("toggle_bit")));
+	}
+
+	void testNestedBlockPropertyValuesSurviveSectionsAndPalettePacking()
+	{
+		using namespace arnis;
+		using namespace arnis::world_editor;
+		auto first = nlohmann::json{{"nested", {{"z", 7}, {"a", true}}},
+				{"list", nlohmann::json::array({1, "two", false})}};
+		auto same = nlohmann::json::object();
+		same["list"] = nlohmann::json::array({1, "two", false});
+		same["nested"] = nlohmann::json{{"a", true}, {"z", 7}};
+		SectionToModify source;
+		source.set_block_with_properties(
+				0, 0, 0, BlockWithProperties::from_value(STONE, first));
+		source.set_block_with_properties(
+				1, 0, 0, BlockWithProperties::from_value(STONE, same));
+
+		const auto stored = source.get_block_with_properties(1, 0, 0);
+		UASSERT(stored.nbt_properties && *stored.nbt_properties == first);
+		UASSERT(stored.property_values().empty());
+		UASSERT(source.get_block_with_properties(0, 0, 0).nbt_properties ==
+				stored.nbt_properties);
+		const auto int_number = BlockWithProperties::intern_value(NbtValue::int_(7));
+		const auto long_number = BlockWithProperties::intern_value(NbtValue::long_(7));
+		const auto byte_array = BlockWithProperties::intern_value(
+				NbtValue::byte_array({std::int8_t{1}, std::int8_t{2}}));
+		const auto list = BlockWithProperties::intern_value(
+				NbtValue::list_value({NbtValue::byte(1), NbtValue::byte(2)}));
+		UASSERT(int_number != long_number);
+		UASSERT(byte_array != list);
+		UASSERT(canonical_property_value(NbtValue::compound_value(
+						{{"z", NbtValue::int_(7)}, {"a", NbtValue::byte(1)}})) ==
+				canonical_property_value(NbtValue::compound_value(
+						{{"a", NbtValue::byte(1)}, {"z", NbtValue::int_(7)}})));
+
+		WorldEditor editor;
+		editor.enable_standalone_storage();
+		editor.set_block_with_properties_absolute(
+				BlockWithProperties::from_value(STONE, first), 4, 12, 9);
+		const auto editor_state = editor.get_block_with_properties_absolute(4, 12, 9);
+		UASSERT(editor_state && editor_state->nbt_properties &&
+				*editor_state->nbt_properties == first);
+		const std::vector<Block> replace_stone{STONE};
+		editor.set_block_absolute(DIRT, 4, 12, 9, &replace_stone, nullptr);
+		const auto replaced_state = editor.get_block_with_properties_absolute(4, 12, 9);
+		UASSERT(replaced_state && !replaced_state->nbt_properties);
+
+		SectionToModify merged;
+		merged.merge_non_air(source, true);
+		const auto merged_state = merged.get_block_with_properties(0, 0, 0);
+		UASSERT(merged_state.nbt_properties && *merged_state.nbt_properties == first);
+		merged.set_block(0, 0, 0, DIRT);
+		UASSERT(!merged.get_block_with_properties(0, 0, 0).nbt_properties);
+
+		const auto packed = pack_palette(source);
+		UASSERT(packed.palette.size() == 2);
+		UASSERT(packed.palette.front().property_value == first);
+		UASSERT(packed.palette.front().property_value == same);
 	}
 };
 

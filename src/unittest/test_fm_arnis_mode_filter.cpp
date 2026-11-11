@@ -217,6 +217,11 @@ public:
 
 		args.one_world_run = arnis::one_world::RunContext{};
 		UASSERT(!arnis::datapack::Extras::from_args(args).any());
+
+		args.one_world_run.reset();
+		args.one_world = true;
+		UASSERT(args.one_world_enabled());
+		UASSERT(!arnis::datapack::Extras::from_args(args).any());
 	}
 };
 

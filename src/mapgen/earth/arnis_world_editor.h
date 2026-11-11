@@ -484,6 +484,11 @@ struct WorldEditor
 	std::unordered_map<std::tuple<int, int, int>, std::shared_ptr<const BlockProperties>,
 			FrameCellHash>
 			block_properties_by_cell;
+	// Retain non-string fastnbt::Value shapes without forcing them through the
+	// block-state string view above.
+	std::unordered_map<std::tuple<int, int, int>,
+			std::shared_ptr<const BlockWithProperties::PropertyValue>, FrameCellHash>
+			nbt_properties_by_cell;
 	// Retain only the block-state bit needed by winter roof styling. MapNode does
 	// not carry generic Java/Sponge properties, so the output callback alone
 	// cannot answer whether a generated slab or stair has a full top face.

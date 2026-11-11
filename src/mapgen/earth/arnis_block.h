@@ -3,7 +3,9 @@
 #include <nlohmann/json_fwd.hpp>
 #include <algorithm>
 #include <array>
+#include <cstdint>
 #include <functional>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <optional>
@@ -14,6 +16,55 @@
 namespace arnis
 {
 using BlockProperties = std::unordered_map<std::string, std::string>;
+
+// Rust's fastnbt::Value keeps the NBT tag on every value (notably BYTE_ARRAY,
+// INT_ARRAY and LONG_ARRAY, which JSON alone cannot distinguish from lists).
+// Keep an equivalent recursive value for backend-neutral palettes and schematics.
+struct NbtValue
+{
+	enum class Tag : std::uint8_t
+	{
+		Null,
+		Byte,
+		Short,
+		Int,
+		Long,
+		Float,
+		Double,
+		ByteArray,
+		String,
+		List,
+		Compound,
+		IntArray,
+		LongArray,
+	};
+
+	Tag tag = Tag::Null;
+	std::int64_t integer = 0;
+	double decimal = 0.0;
+	std::string text;
+	std::vector<std::int8_t> bytes;
+	std::vector<std::int32_t> ints;
+	std::vector<std::int64_t> longs;
+	std::vector<NbtValue> list;
+	std::map<std::string, NbtValue> compound;
+
+	static NbtValue byte(std::int8_t value);
+	static NbtValue short_(std::int16_t value);
+	static NbtValue int_(std::int32_t value);
+	static NbtValue long_(std::int64_t value);
+	static NbtValue float_(float value);
+	static NbtValue double_(double value);
+	static NbtValue byte_array(std::vector<std::int8_t> value);
+	static NbtValue string(std::string value);
+	static NbtValue list_value(std::vector<NbtValue> value);
+	static NbtValue compound_value(std::map<std::string, NbtValue> value);
+	static NbtValue int_array(std::vector<std::int32_t> value);
+	static NbtValue long_array(std::vector<std::int64_t> value);
+	static NbtValue from_json(const nlohmann::json &value);
+	bool operator==(const NbtValue &other) const;
+	bool operator==(const nlohmann::json &other) const;
+};
 
 class Block : public MapNode
 {
@@ -31,7 +82,7 @@ class BlockWithProperties
 {
 public:
 	using Properties = BlockProperties;
-	using PropertyValue = nlohmann::json;
+	using PropertyValue = NbtValue;
 
 	Block block;
 	// Java/Sponge block-state values.  MapNode has no portable generic state
@@ -59,6 +110,8 @@ public:
 	{
 	}
 	static BlockWithProperties from_value(Block b, PropertyValue value);
+	static BlockWithProperties from_value(Block b, const nlohmann::json &value);
+	static std::shared_ptr<const PropertyValue> intern_value(PropertyValue value);
 	const Properties &property_values() const
 	{
 		static const Properties empty;
@@ -191,6 +244,9 @@ public:
 		return shared;
 	}
 };
+
+// Stable, type-sensitive representation used to intern recursive property values.
+std::string canonical_property_value(const BlockWithProperties::PropertyValue &value);
 
 // Rust's Block::properties() defaults for significant Java block states.
 BlockWithProperties::Properties default_block_properties(const Block &block);
