@@ -49,9 +49,9 @@ if has_stage deps; then
                 libboost-all-dev \
                 libbrotli-dev \
                 libbz2-dev \
-                libcurl4-openssl-dev \
-                libc++abi-dev \
                 libc++-dev \
+                libc++abi-dev \
+                libcurl4-openssl-dev \
                 libdeflate-dev \
                 libfreetype6-dev \
                 libgettextpo0 \
@@ -66,6 +66,7 @@ if has_stage deps; then
                 libprotozero-dev \
                 libpsl-dev \
                 libsdl2-dev \
+                libspatialindex-dev \
                 libsqlite3-dev \
                 libssl-dev \
                 libtiff-dev \
@@ -76,7 +77,7 @@ if has_stage deps; then
                 libzstd-dev \
                 lld \
                 ninja-build \
-                zlib1g-dev
+                zlib1g-dev \
 
             for PACKAGE in \
                 libgl1-mesa-dev \
