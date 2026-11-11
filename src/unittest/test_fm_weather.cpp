@@ -8,6 +8,7 @@
 #include "network/fm_networkprotocol.h"
 #include "util/msgpack_serialize.h"
 #include "mapgen/mg_biome.h"
+#include "mapgen/fm_earth_climate.h"
 #include "mock_server.h"
 #include "serverenvironment.h"
 #include "servermap.h"
@@ -34,6 +35,7 @@ public:
 		TEST(testBiomeAltitude);
 		TEST(testClock);
 		TEST(testMonths);
+		TEST(testEarthClimateFallback);
 		TEST(testWindEvolution);
 		TEST(testCalmAir);
 		TEST(testWindSnapshots);
@@ -41,6 +43,19 @@ public:
 		TEST(testScheduler);
 		TEST(testWeatherDelivery);
 		TEST(testWeatherPackets);
+	}
+
+	void testEarthClimateFallback()
+	{
+		using namespace fm_earth_climate;
+		UASSERT(!valid_pixel(0, 0, 0, 255, true));
+		UASSERT(valid_pixel(0, 0, 0, 255, false));
+		UASSERT(!valid_pixel(100, 100, 100, 0, false));
+		UASSERT(valid_pixel(1, 1, 1, 255, true));
+		UASSERT(temperature(0, 0, 365, true) == 27.0f);
+		UASSERT(temperature(90, 0, 365, false) < 0);
+		UASSERT(temperature(45, 0, 365, true) != temperature(-45, 0, 365, true));
+		UASSERT(humidity(0) == 75.0f);
 	}
 
 	void testFractionalEvolution()

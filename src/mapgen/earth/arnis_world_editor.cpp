@@ -1203,6 +1203,10 @@ void WorldEditor::probe_resident()
 								return arnis::water_probe::Spot::Open;
 							if (block->id() == WATER.id())
 								return arnis::water_probe::Spot::Water;
+							// Rust's walker probe treats lily pads like air here: they float on
+							// water and must not become a solid footing or head obstruction.
+							if (block->id() == LILY_PAD.id())
+								return arnis::water_probe::Spot::Open;
 							const auto name = block_name(*block);
 							if (!name)
 								return arnis::water_probe::Spot::Open;

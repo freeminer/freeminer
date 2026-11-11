@@ -39,6 +39,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "constants.h"
 #include "fm_weather_simulation.h"
 #include "fm_weather_altitude.h"
+#include "fm_earth_climate.h"
 #include "emerge.h"
 #include "mapgen/earth/png_holder.h"
 #include "mapgen/mg_decoration.h"
@@ -425,19 +426,22 @@ std::string earth_wind_month_filename(char component, size_t month)
 template <typename Decode>
 std::optional<float> earth_sample_weather_value(const std::unique_ptr<PngImage> &annual,
 		const std::array<std::unique_ptr<PngImage>, 12> &months, const ll &position,
-		bool use_weather, float totaltime, const BiomeManager *biomemgr, Decode decode)
+		bool use_weather, float totaltime, const BiomeManager *biomemgr, Decode decode,
+		bool legacy_annual_black_is_missing = false)
 {
-	const auto sample = [&](const PngImage *image) -> std::optional<float> {
+	const auto sample = [&](const PngImage *image,
+								bool legacy = false) -> std::optional<float> {
 		if (!image)
 			return std::nullopt;
 		const auto pixel = earth_sample_image(*image, position);
-		if (!pixel || !pixel->getAlpha())
+		if (!pixel || !fm_earth_climate::valid_pixel(pixel->getRed(), pixel->getGreen(),
+							  pixel->getBlue(), pixel->getAlpha(), legacy))
 			return std::nullopt;
 		return decode(*pixel);
 	};
 	// Decode before interpolation: temperature, vapor pressure and signed wind
 	// components have different encodings. Invalid pixels use a stable fallback.
-	auto fallback = sample(annual.get());
+	auto fallback = sample(annual.get(), legacy_annual_black_is_missing);
 	if (!fallback) {
 		for (const auto &month : months) {
 			fallback = sample(month.get());
@@ -619,8 +623,30 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		maps_holder = std::make_unique<maps_holder_t>(world_elevation_step);
 	}
 
+	// Optional global climate rasters use the same encoding and alpha mask as
+	// WorldClim. They fill missing land pixels, including ocean coverage.
 	{
-		const auto tavg_img = maps_holder->data_root + "/earth_tavg.png";
+		const auto lock = std::lock_guard(maps_holder->download_lock);
+		const auto load = [&](const std::string &name, std::unique_ptr<PngImage> &image) {
+			const auto path = maps_holder->data_root + "/" + name;
+			if (!image && std::filesystem::exists(path) &&
+					std::filesystem::file_size(path))
+				image = std::make_unique<PngImage>(path);
+		};
+		load("earth_global_tavg.png", maps_holder->global_tavg_image);
+		for (size_t month = 0; month < 12; ++month) {
+			char filename[40];
+			std::snprintf(
+					filename, sizeof(filename), "earth_global_tavg_%02zu.png", month + 1);
+			load(filename, maps_holder->global_tavg_month_images[month]);
+		}
+	}
+
+	{
+		const auto tavg_v2 = maps_holder->data_root + "/earth_tavg_v2.png";
+		const auto tavg_img = std::filesystem::exists(tavg_v2)
+									  ? tavg_v2
+									  : maps_holder->data_root + "/earth_tavg.png";
 		if (!std::filesystem::exists(tavg_img)) {
 			const auto lock = std::lock_guard(maps_holder->download_lock);
 			if (!std::filesystem::exists(tavg_img)) {
@@ -631,6 +657,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		if (std::filesystem::exists(tavg_img) && std::filesystem::file_size(tavg_img)) {
 			const auto lock = std::lock_guard(maps_holder->download_lock);
 			if (!maps_holder->tavg_image) {
+				maps_holder->tavg_legacy = tavg_img != tavg_v2;
 				maps_holder->tavg_image = std::make_unique<PngImage>(tavg_img);
 			}
 		}
@@ -667,7 +694,10 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 	}
 
 	{
-		const auto vapr_img = maps_holder->data_root + "/earth_vapr.png";
+		const auto vapr_v2 = maps_holder->data_root + "/earth_vapr_v2.png";
+		const auto vapr_img = std::filesystem::exists(vapr_v2)
+									  ? vapr_v2
+									  : maps_holder->data_root + "/earth_vapr.png";
 		if (!std::filesystem::exists(vapr_img)) {
 			const auto lock = std::lock_guard(maps_holder->download_lock);
 			if (!std::filesystem::exists(vapr_img)) {
@@ -678,6 +708,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 		if (std::filesystem::exists(vapr_img) && std::filesystem::file_size(vapr_img)) {
 			const auto lock = std::lock_guard(maps_holder->download_lock);
 			if (!maps_holder->vapr_image) {
+				maps_holder->vapr_legacy = vapr_img != vapr_v2;
 				maps_holder->vapr_image = std::make_unique<PngImage>(vapr_img);
 			}
 		}
@@ -1298,13 +1329,15 @@ int MapgenEarth::generateTerrain()
 {
 	if (projected_terrain)
 		return (this->*projected_terrain)();
-	const auto procedural_limit = static_cast<pos_t>(1000 / scale.Y);
+	const auto high_land = [&](pos_t height) {
+		return double(height) - double(water_level) > 1000.0 / std::abs(scale.Y);
+	};
 	bool need_procedural = false;
 	bool need_floatlands = false;
 	for (pos_t z = node_min.Z; z <= node_max.Z; ++z) {
 		for (pos_t x = node_min.X; x <= node_max.X; ++x) {
 			const auto height = get_height(x, z, 0);
-			need_procedural |= std::abs(height - water_level) > procedural_limit;
+			need_procedural |= high_land(height);
 			const auto &[bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
 			need_floatlands |= (spflags & MGV7_FLOATLANDS) && node_max.Y > bottom &&
 							   node_min.Y <= top;
@@ -1340,7 +1373,7 @@ int MapgenEarth::generateTerrain()
 									  v3pos_t(x, node_max.Y, z), nullptr, &heat_cache)
 							: 0;
 			const auto height = get_height(x, z, 0);
-			const bool procedural = std::abs(height - water_level) > procedural_limit;
+			const bool procedural = high_land(height);
 			const auto &[bottom, top] = earth_floatland_bounds(height, scale.Y, *sp);
 			const double taper = std::clamp(double(sp->floatland_taper), 1.0,
 					std::max(1.0, (top - bottom) / 2.0));
@@ -1648,7 +1681,8 @@ weather::heat_t MapgenEarth::calcBlockHeat(const v3pos_t &p, uint64_t seed,
 	if (maps_holder) {
 		const auto temperature = earth_sample_weather_value(maps_holder->tavg_image,
 				maps_holder->tavg_month_images, pos_to_ll(p), use_weather, totaltime,
-				m_emerge->biomemgr, earth_pixel_to_tavg_celsius);
+				m_emerge->biomemgr, earth_pixel_to_tavg_celsius,
+				maps_holder->tavg_legacy);
 		if (temperature) {
 			const float heat = earth_apply_heat_adjustments(*temperature,
 					climatePosition(p), m_emerge->biomemgr, timeofday, use_weather);
@@ -1656,27 +1690,19 @@ weather::heat_t MapgenEarth::calcBlockHeat(const v3pos_t &p, uint64_t seed,
 		}
 	}
 
-#if USE_OSMIUM
-	const auto ll = pos_to_ll(p);
-	if (maps_holder && maps_holder->heat_image) {
-		const auto x = maps_holder->heat_image->width() *
-					   ((int(45 + ll.lon + 180) % 360) / 360.0);
-		const auto y = (std::min<int>(maps_holder->heat_image->height(),
-							   maps_holder->heat_image->width() / 1.6)) *
-					   ((90 - ll.lat) / 180);
-		const auto pixel = maps_holder->heat_image->get_pixel(x, y);
-		if (pixel) {
-			float heat =
-					rgbToCelsiusJet(pixel->getRed(), pixel->getGreen(), pixel->getBlue());
-			heat = earth_apply_heat_adjustments(
-					heat, climatePosition(p), m_emerge->biomemgr, timeofday, use_weather);
-			return static_cast<weather::heat_t>(
-					std::lround(std::clamp(heat, -32768.0f, 32767.0f)));
-		}
+	const auto position = pos_to_ll(p);
+	if (maps_holder) {
+		const auto global = earth_sample_weather_value(maps_holder->global_tavg_image,
+				maps_holder->global_tavg_month_images, position, use_weather, totaltime,
+				m_emerge->biomemgr, earth_pixel_to_tavg_celsius);
+		if (global)
+			return weather::heat_value(earth_apply_heat_adjustments(*global,
+					climatePosition(p), m_emerge->biomemgr, timeofday, use_weather));
 	}
-#endif
-	return m_emerge->biomemgr->calcBlockHeat(
-			climatePosition(p), seed, timeofday, totaltime, use_weather);
+	const float estimate = fm_earth_climate::temperature(
+			position.lat, totaltime, m_emerge->biomemgr->year_days, use_weather);
+	return weather::heat_value(earth_apply_heat_adjustments(
+			estimate, climatePosition(p), m_emerge->biomemgr, timeofday, use_weather));
 }
 
 weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t seed,
@@ -1688,7 +1714,7 @@ weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t se
 
 		const auto vapor = earth_sample_weather_value(maps_holder->vapr_image,
 				maps_holder->vapr_month_images, pos_to_ll(p), use_weather, totaltime,
-				m_emerge->biomemgr, earth_pixel_to_vapr_kpa);
+				m_emerge->biomemgr, earth_pixel_to_vapr_kpa, maps_holder->vapr_legacy);
 		if (vapor && *vapor >= 0.0f) {
 			const float heat = calcBlockHeat(p, seed, timeofday, totaltime, use_weather);
 			const float saturation_kpa = weather::saturation(heat);
@@ -1697,6 +1723,11 @@ weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t se
 				humidity += m_emerge->biomemgr->weather_humidity_daily *
 							(sin(cycle_shift(timeofday, -0.1) * M_PI) - 0.5f);
 			}
+			have_humidity = true;
+		}
+
+		if (!have_humidity) {
+			humidity = fm_earth_climate::humidity(pos_to_ll(p).lat);
 			have_humidity = true;
 		}
 

@@ -3,6 +3,7 @@
 #include "mapgen/earth/arnis-cpp/src/building_suppression.h"
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/elevation/peaks.h"
+#include "mapgen/earth/arnis-cpp/src/elevation/pipeline.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
 
 #include <cmath>
@@ -53,6 +54,7 @@ public:
 		TEST(testTallManMadeTowerIsIncluded);
 		TEST(testTallManMadeTowerRelationIsIncluded);
 		TEST(testOutlineReplacedByItsPartsDoesNotRaiseHeightEstimate);
+		TEST(testSoftTopStretchMatchesRust);
 		TEST(testRoundedSummitIsSteepenedWithoutASeam);
 		TEST(testNearbySummitsKeepTheirTaggedHeightsRegardlessOfInputOrder);
 		TEST(testForeSummitKeepsItsHeightInsideTheMainStretch);
@@ -328,6 +330,21 @@ public:
 		UTEST(prepared.outline_suppression.contains({"way", 10}),
 				"outline suppression missing; part-group=%d, groups=%zu",
 				prepared.part_groups.contains(11), prepared.part_groups.size());
+	}
+
+	void testSoftTopStretchMatchesRust()
+	{
+		arnis::elevation::ProcessedElevationData data;
+		data.ground_level = 20;
+		data.min_height_m = 100.0;
+		data.blocks_per_meter = 2.0;
+		data.soft_top = arnis::elevation::SoftTop{150.0, 10.0};
+		// knee_y = 20 + (150 - 100) * 2 = 120.
+		UASSERT(data.soft_top_stretch(119) == 1.0);
+		UASSERT(data.soft_top_stretch(120) == 1.0);
+		UASSERT(std::abs(data.soft_top_stretch(130) - std::cosh(1.0)) < 1e-12);
+		data.soft_top.reset();
+		UASSERT(data.soft_top_stretch(1000) == 1.0);
 	}
 };
 
