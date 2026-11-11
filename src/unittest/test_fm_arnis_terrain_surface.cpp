@@ -75,7 +75,7 @@ public:
 		// A quarter turn points the pole direction along +X, perpendicular to this slope.
 		const SnowLine rotated(0, 1.0, 47.0, 90.0);
 		UASSERT(std::abs(rotated.shade(0.0, 1.0, 4.0)) < 1e-9);
-		UASSERT(std::abs(rotated.shade(1.0, 0.0, 4.0) - 1.0) < 1e-9);
+		UASSERT(std::abs(rotated.shade(-1.0, 0.0, 4.0) - 1.0) < 1e-9);
 	}
 
 	void testDisabledSnowLineDoesNotSnow()
@@ -174,7 +174,13 @@ public:
 	{
 		arnis::Ground ground;
 		const std::vector<std::vector<float>> heights{{1.0f, 2.0f}, {3.0f, 4.0f}};
-		ground.set_elevation_data(heights, 2, 2, 100, 80);
+		arnis::elevation::ProcessedElevationData elevation;
+		elevation.heights = heights;
+		elevation.width = 2;
+		elevation.height = 2;
+		elevation.world_width = 100;
+		elevation.world_height = 80;
+		ground.set_elevation_data(elevation, 0.0);
 		ground.set_world_dims(64, 48);
 		const auto elevation_dims = ground.world_dims();
 		UASSERT(elevation_dims.first == 100 && elevation_dims.second == 80);

@@ -464,7 +464,7 @@ public:
 	void serializeNetworkSpecific(std::ostream &os);
 	void deSerializeNetworkSpecific(std::istream &is);
 
-//fm:
+// fm:
 	/*
 		Flags
 	*/
@@ -542,7 +542,9 @@ public:
 	std::atomic_uint32_t humidity_last_update{};
 	float m_uptime_timer_last{};
 	std::atomic_short usage_timer_multiplier{1};
-	weather::wind_t wind{};
+	// Fractional ambient state and synchronized wind snapshots.
+	weather::SimulationState weather_state;
+	weather::Wind wind;
 	// Last really changed time (need send to client)
 	std::atomic_uint m_changed_timestamp{};
 	uint32_t m_next_analyze_timestamp{};

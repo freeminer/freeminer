@@ -18,6 +18,24 @@ class ModApiMapgen : public ModApiBase
 {
 	friend class LuaVoxelManip;
 private:
+
+	// fm:
+
+	// get_wind(pos)
+	// returns the wind at the position
+	static int l_get_wind(lua_State *L);
+
+	// get_ground_level(x = num, z = num)
+	static int l_get_ground_level(lua_State *L);
+
+	// Earth projection conversions; use the active C++ mapgen geometry.
+	static int l_earth_pos_to_ll(lua_State *L);
+	static int l_earth_ll_to_pos(lua_State *L);
+
+	static int l_set_mapgen_y_bounds(lua_State *L);
+	// ===
+
+
 	// get_biome_id(biomename)
 	// returns the biome id as used in biomemap and returned by 'get_biome_data()'
 	static int l_get_biome_id(lua_State *L);
@@ -34,10 +52,6 @@ private:
 	// returns the humidity at the position
 	static int l_get_humidity(lua_State *L);
 
-	// get_wind(pos)
-	// returns the wind at the position
-	static int l_get_wind(lua_State *L);
-
 	// get_biome_data(pos)
 	// returns a table containing the biome id, heat and humidity at the position
 	static int l_get_biome_data(lua_State *L);
@@ -48,13 +62,6 @@ private:
 
 	// get_spawn_level(x = num, z = num)
 	static int l_get_spawn_level(lua_State *L);
-
-	// get_ground_level(x = num, z = num)
-	static int l_get_ground_level(lua_State *L);
-
-	// Earth projection conversions; use the active C++ mapgen geometry.
-	static int l_earth_pos_to_ll(lua_State *L);
-	static int l_earth_ll_to_pos(lua_State *L);
 
 	// get_mapgen_params()
 	// returns the currently active map generation parameter set

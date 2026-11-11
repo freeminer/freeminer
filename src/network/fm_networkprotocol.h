@@ -28,7 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../msgpack_fix.h"
 #include "../config.h"
 
-#define CLIENT_PROTOCOL_VERSION_FM 3
+#define CLIENT_PROTOCOL_VERSION_FM 4
 #define SERVER_PROTOCOL_VERSION_FM 0
 
 enum
@@ -64,6 +64,7 @@ enum
 	TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM1,
 	TOCLIENT_BLOCKDATA_CONTENT_ONLY_PARAM2,
 	TOCLIENT_BLOCKDATA_WIND,
+	TOCLIENT_BLOCKDATA_WEATHER_ONLY, // Protocol 4: no voxel data or mesh invalidation.
 };
 
 enum

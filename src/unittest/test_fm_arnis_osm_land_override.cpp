@@ -2,7 +2,9 @@
 
 #include "mapgen/earth/arnis-cpp/src/land_cover/osm_land_override.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
+#include "mapgen/earth/arnis-cpp/src/overture.h"
 #include "mapgen/earth/arnis-cpp/src/osm_parser.h"
+#include "mapgen/earth/arnis_ground.h"
 
 #include <algorithm>
 #include <cstdint>
@@ -71,6 +73,7 @@ public:
 	const char *getName() override { return "TestFmArnisOsmLandOverride"; }
 	void runTests(IGameDef *) override
 	{
+		TEST(testOvertureWaterFootprintsRespectMappedDecks);
 		TEST(testShoreRoadReclaimsOnlyItsWaterCells);
 		TEST(testMappedWaterBoundaryTrimsTheMixedPixelRim);
 		TEST(testWaterwayCentrelineDoesNotCloseTheRiver);
@@ -80,6 +83,61 @@ public:
 		TEST(testPiersAndBridgesAreNotLandEvidence);
 		TEST(testOpenWaterFarFromShoreIsNotTrimmed);
 		TEST(testAbsurdWaterwayWidthIsClamped);
+	}
+
+	void testOvertureWaterFootprintsRespectMappedDecks()
+	{
+		LandCoverData cover;
+		cover.width = 300;
+		cover.height = 80;
+		cover.cells_per_meter = 1.0;
+		cover.grid.assign(
+				cover.height, std::vector<std::uint8_t>(cover.width, LC_GRASSLAND));
+		for (auto &row : cover.grid)
+			std::fill(row.begin() + 100, row.begin() + 200, LC_WATER);
+		cover.water_distance =
+				compute_water_distance(cover.grid, cover.width, cover.height);
+		auto ground = Ground::new_flat_with_land_cover(std::move(cover), 300, 80, 0);
+		const XZBBox bbox(0, 0, 299, 79);
+		const auto pier = way(17,
+				{node(1, 130, 35), node(2, 170, 35), node(3, 170, 55), node(4, 130, 55),
+						node(1, 130, 35)},
+				{{"man_made", "pier"}});
+		std::vector<ProcessedElement> elements{
+				ProcessedElement(rectangle(overture::OVERTURE_ID_HIGH_BIT | 1, 140, 10,
+						150, 20, {{"building", "yes"}})),
+				ProcessedElement(rectangle(overture::OVERTURE_ID_HIGH_BIT | 2, 40, 10, 50,
+						20, {{"building", "yes"}})),
+				ProcessedElement(rectangle(overture::OVERTURE_ID_HIGH_BIT | 3, 145, 40,
+						150, 45, {{"building", "yes"}})),
+				ProcessedElement(rectangle(4, 140, 10, 150, 20, {{"building", "yes"}})),
+				ProcessedElement(pier)};
+
+		UASSERT(overture::drop_footprints_in_water(
+						elements, 1.0, [&ground, &bbox](int x, int z) {
+							return ground.cover_class({x - bbox.min_x(),
+										   z - bbox.min_z()}) == LC_WATER;
+						}) == 1);
+		UASSERT(std::none_of(elements.begin(), elements.end(), [](const auto &element) {
+			const auto *feature =
+					std::get_if<ProcessedWay>(static_cast<const variant_t *>(&element));
+			return feature && feature->id == (overture::OVERTURE_ID_HIGH_BIT | 1);
+		}));
+		UASSERT(std::any_of(elements.begin(), elements.end(), [](const auto &element) {
+			const auto *feature =
+					std::get_if<ProcessedWay>(static_cast<const variant_t *>(&element));
+			return feature && feature->id == (overture::OVERTURE_ID_HIGH_BIT | 2);
+		}));
+		UASSERT(std::any_of(elements.begin(), elements.end(), [](const auto &element) {
+			const auto *feature =
+					std::get_if<ProcessedWay>(static_cast<const variant_t *>(&element));
+			return feature && feature->id == (overture::OVERTURE_ID_HIGH_BIT | 3);
+		}));
+		UASSERT(std::any_of(elements.begin(), elements.end(), [](const auto &element) {
+			const auto *feature =
+					std::get_if<ProcessedWay>(static_cast<const variant_t *>(&element));
+			return feature && feature->id == 4;
+		}));
 	}
 
 	void testShoreRoadReclaimsOnlyItsWaterCells()

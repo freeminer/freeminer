@@ -1140,9 +1140,18 @@ unless (@ARGV) {
     sleep 1;
 }
 
+my $ret = 0;
 while (@$task_run) {
     my $task = shift @$task_run;
     init_config()                     if $g->{keep_config}-- <= 0;
-    warn "task failed [$task] = [$_]" if $_ = task_start($task);
-    last                              if $signal ~~ [2, 3];
+    if ($_ = task_start($task)) {
+        warn "task failed [$task] = [$_]" ;
+        $ret = 1;
+    }
+    if ($signal ~~ [2, 3]) {
+        $ret =  $signal;
+        last;
+    }
 }
+
+exit $ret;

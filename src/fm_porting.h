@@ -25,6 +25,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 #if defined(linux) || defined(__linux)
 #include <sys/prctl.h>
+#include <sys/resource.h>
 #elif defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <pthread.h>
 #include <pthread_np.h>
@@ -115,6 +116,18 @@ inline void setThreadPriority(int priority)
 	if (pthread_setschedparam(pthread_self(), SCHED_FIFO /*SCHED_RR*/, &sch)) {
 		//std::cout << "Failed to setschedparam: " << std::strerror(errno) << '\n';
 	}
+#endif
+}
+
+inline bool setThreadPriorityLowest()
+{
+#if defined(__linux__)
+	// Linux applies nice to the calling thread.
+	return setpriority(PRIO_PROCESS, 0, 19) == 0;
+#elif defined(_WIN32)
+	return SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_IDLE) != 0;
+#else
+	return true;
 #endif
 }
 

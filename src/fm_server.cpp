@@ -32,7 +32,9 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "database/database.h"
 #include "emerge.h"
 #include "filesys.h"
+#include "fm_porting.h"
 #include "fm_weather.h"
+#include "fm_weather_sync.h"
 #include "irrlichttypes.h"
 #include "network/connection.h"
 #include "network/networkexceptions.h"
@@ -783,6 +785,24 @@ MapBlockPtr loadBlockNoStore(Map *smap, MapDatabase *dbase, const v3bpos_t &bpos
 	return {};
 }
 
+void Server::SendWeatherUpdates(
+		session_t peer_id, const std::vector<weather::Update> &updates)
+{
+	if (updates.empty())
+		return;
+	MSGPACK_PACKET_INIT((int)TOCLIENT_BLOCKDATAS_FM, 2);
+	PACK(TOCLIENT_BLOCKDATA_BLOCKS, updates.size());
+	PACK(TOCLIENT_BLOCKDATA_BLOCKS_DATA, weather::encode_updates(updates));
+#if MINETEST_PROTO
+	NetworkPacket pkt(TOCLIENT_BLOCKDATAS_FM, buffer.size(), peer_id);
+	pkt.putLongString({buffer.data(), buffer.size()});
+	Send(&pkt);
+#else
+	m_clients.send(peer_id, 2, buffer, true);
+#endif
+	g_profiler->add("Server: weather blocks sent", updates.size());
+}
+
 void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 		u16 net_proto_version, SerializedBlockCache *cache)
 {
@@ -799,10 +819,10 @@ void Server::SendBlockFm(session_t peer_id, MapBlockPtr block, u8 ver,
 	block->serializeNetworkSpecific(os);
 
 	PACK(TOCLIENT_BLOCKDATA_DATA, os.str());
-	PACK(TOCLIENT_BLOCKDATA_HEAT, (weather::heat_t)(block->heat + block->heat_add));
-	PACK(TOCLIENT_BLOCKDATA_HUMIDITY,
-			(weather::humidity_t)(block->humidity + block->humidity_add));
-	PACK(TOCLIENT_BLOCKDATA_WIND, (weather::wind_t)(block->wind));
+	const auto climate = weather::snapshot(*block);
+	PACK(TOCLIENT_BLOCKDATA_HEAT, climate.heat);
+	PACK(TOCLIENT_BLOCKDATA_HUMIDITY, climate.humidity);
+	PACK(TOCLIENT_BLOCKDATA_WIND, climate.wind);
 	PACK(TOCLIENT_BLOCKDATA_STEP, block->far_step);
 	PACK(TOCLIENT_BLOCKDATA_CONTENT_ONLY,
 			block->m_is_mono_block ? block->data[0].param0 : CONTENT_IGNORE);
@@ -840,11 +860,10 @@ void Server::SendBlocksFm(session_t peer_id, std::vector<MapBlockPtr> blocks, u8
 		block->serializeNetworkSpecific(os);
 
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_DATA, os.str());
-		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HEAT,
-				(weather::heat_t)(block->heat + block->heat_add));
-		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HUMIDITY,
-				(weather::humidity_t)(block->humidity + block->humidity_add));
-		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_WIND, (weather::wind_t)(block->wind));
+		const auto climate = weather::snapshot(*block);
+		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HEAT, climate.heat);
+		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_HUMIDITY, climate.humidity);
+		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_WIND, climate.wind);
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_STEP, block->far_step);
 		PACK_PK(pk_blocks, TOCLIENT_BLOCKDATA_CONTENT_ONLY,
 				block->m_is_mono_block ? block->data[0].param0 : CONTENT_IGNORE);
@@ -905,13 +924,16 @@ uint32_t Server::SendFarBlocks(float dtime)
 }
 
 WorldMergeThread::WorldMergeThread(Server *server) :
-		thread_vector("WorldMerge", 20), m_server(server)
+		thread_vector("WorldMerge"), m_server(server)
 {
 }
 
 void *WorldMergeThread::run()
 {
 	BEGIN_DEBUG_EXCEPTION_HANDLER
+
+	if (!porting::setThreadPriorityLowest())
+		warningstream << "World merge: could not lower thread priority\n";
 
 	u64 world_merge = 1;
 	g_settings->getU64NoEx("world_merge", world_merge);
@@ -921,11 +943,13 @@ void *WorldMergeThread::run()
 
 	std::this_thread::sleep_for(std::chrono::seconds(3));
 
+	uint32_t throttle_per_client = 20;
+	g_settings->getU32NoEx("world_merge_throttle_per_client", throttle_per_client);
 	WorldMerger merger{
 			.stop_func{[this]() { return stopRequested(); }},
 			.throttle_func{[&]() {
-				return (m_server->getEnv().getPlayerCount() >
-						merger.world_merge_max_clients);
+				return world_merge::playerThrottleMs(m_server->getEnv().getPlayerCount(),
+						merger.world_merge_max_clients, throttle_per_client);
 			}},
 			.get_time_func{[this]() { return m_server->getEnv().getGameTime(); }},
 			.far_block_ready_func{[this](const MapBlockPtr &block, block_step_t step) {
@@ -939,16 +963,19 @@ void *WorldMergeThread::run()
 	};
 
 	{
+		merger.world_merge_throttle = m_server->isSingleplayer() ? 10 : 0;
 		g_settings->getU32NoEx("world_merge_throttle", merger.world_merge_throttle);
 		merger.world_merge_max_clients = m_server->isSingleplayer() ? 1 : 0;
 		g_settings->getU32NoEx("world_merge_max_clients", merger.world_merge_max_clients);
 		g_settings->getU32NoEx("world_merge_lazy_up", merger.lazy_up);
 		g_settings->getU32NoEx("farlights", merger.farlights);
+		infostream << "World merge: " << throttle_per_client << " ms per player above "
+				   << merger.world_merge_max_clients << ", capped at 1000 ms, base "
+				   << merger.world_merge_throttle << " ms per block\n";
 
 		{
 			merger.world_merge_load_all = -1;
 			g_settings->getS16NoEx("world_merge_load_all", merger.world_merge_load_all);
-			merger.world_merge_throttle = m_server->isSingleplayer() ? 10 : 0;
 			uint64_t world_merge_all = 0;
 			g_settings->getU64NoEx("world_merge_all", world_merge_all);
 			if (world_merge_all) {
@@ -966,11 +993,6 @@ void *WorldMergeThread::run()
 	g_settings->getU64NoEx("world_merge_min", world_merge_min);
 
 	while (!stopRequested()) {
-		if (merger.throttle()) {
-			tracestream << "World merge wait" << '\n';
-			sleep(10);
-			continue;
-		}
 		if (merger.merge_server_diff(
 					m_server->getEnv().getServerMap().changed_blocks_for_merge,
 					world_merge_min)) {

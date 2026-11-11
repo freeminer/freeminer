@@ -232,6 +232,8 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("weather_heat_daily", "8");
 	settings->setDefault("weather_heat_width", "3000");
 	settings->setDefault("weather_hot_core", "1000");
+	settings->setDefault("weather_heat_deep_min", "-40");
+	settings->setDefault("weather_hot_core_heat", "6000");
 	settings->setDefault("weather_heat_height", "-333");
 	settings->setDefault("year_days", "30");
 	settings->setDefault("weather_humidity_season", "30");

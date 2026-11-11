@@ -3,6 +3,7 @@
 // Copyright (C) 2013 celeron55, Perttu Ahola <celeron55@gmail.com>
 
 #include "server/fm_emerge_smart.h"
+#include "lua_api/fm_l_key_value_storage.h"
 
 #include "scripting_server.h"
 #include "server.h"
@@ -18,7 +19,6 @@
 #include "lua_api/l_env.h"
 #include "lua_api/l_inventory.h"
 #include "lua_api/l_item.h"
-#include "lua_api/l_key_value_storage.h"
 #include "lua_api/l_itemstackmeta.h"
 #include "lua_api/l_mapgen.h"
 #include "lua_api/l_modchannels.h"

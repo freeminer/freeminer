@@ -44,6 +44,7 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_range_fetch.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_relation_holes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_road_markings.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shapes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_roof_layers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shoreline.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_swimming_pools.cpp
@@ -54,11 +55,13 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_train_speed.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_tree_packs.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_water_steps.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_water_probe.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_world_utils.cpp
 	)
 endif()
 
 list(APPEND unittest_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_weather.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_indev.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_blast_shell.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_earth_projection.cpp

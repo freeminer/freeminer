@@ -4,12 +4,38 @@
 #include "mapgen/earth/arnis-cpp/src/element_processing/traffic_lights.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
+#include <array>
 #include <cstdint>
 #include <utility>
 #include <vector>
 
 namespace
 {
+class ScopedTrafficTestBlocks
+{
+	std::array<std::pair<arnis::Block *, arnis::Block>, 4> saved;
+
+public:
+	ScopedTrafficTestBlocks()
+	{
+		using namespace arnis;
+		saved = {{{&block_definitions::AIR, block_definitions::AIR},
+				{&block_definitions::COBBLESTONE_WALL,
+						block_definitions::COBBLESTONE_WALL},
+				{&block_definitions::IRON_BARS, block_definitions::IRON_BARS},
+				{&block_definitions::BLACK_WOOL, block_definitions::BLACK_WOOL}}};
+		block_definitions::AIR = Block(CONTENT_AIR);
+		block_definitions::COBBLESTONE_WALL = Block(CONTENT_MAX - 40);
+		block_definitions::IRON_BARS = Block(CONTENT_MAX - 41);
+		block_definitions::BLACK_WOOL = Block(CONTENT_MAX - 42);
+	}
+	~ScopedTrafficTestBlocks()
+	{
+		for (auto &[block, previous] : saved)
+			*block = previous;
+	}
+};
+
 arnis::ProcessedNode node(std::uint64_t id, int x, int z, bool signal = false)
 {
 	arnis::ProcessedNode result{};
@@ -38,6 +64,7 @@ public:
 	const char *getName() override { return "TestFmArnisTrafficLights"; }
 	void runTests(IGameDef *) override
 	{
+		const ScopedTrafficTestBlocks block_ids;
 		TEST(testSignalizedIntersectionPlacesRoadsidePoles);
 	}
 
@@ -57,6 +84,7 @@ public:
 				road(2, {node(3, 0, -40), node(9, 0, 0, true), node(4, 0, 40)})};
 		const auto signals = highways::SignalIndex::build(elements, 1.0, false, roads);
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		UASSERT(signals->place_node(
 				editor, elements.front().as_way().nodes[1], [](int, int) { return 0; }));
 

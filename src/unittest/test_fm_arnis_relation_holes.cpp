@@ -58,6 +58,7 @@ public:
 		TEST(testHousingPartRelationUsesHousingStoreyHeight);
 		TEST(testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder);
 		TEST(testRepeatedRelationAreaOuterSuppressionMatchesRust);
+		TEST(testBuildingPartCoverageMatchesRust);
 	}
 
 	void testNestedOuterGetsItsOwnHoleGroup()
@@ -422,6 +423,8 @@ public:
 				result.nodes.push_back(node);
 				result.source_node_refs.push_back(node.id);
 			}
+			result.source_node_refs.back() = result.source_node_refs.front();
+			result.nodes.back().id = result.nodes.front().id;
 			return result;
 		};
 		auto outer = way(10, 0.0, 1.0);
@@ -472,6 +475,7 @@ public:
 			node.z = coordinates[i][1];
 			outer.nodes.push_back(node);
 		}
+		outer.nodes.back().id = outer.nodes.front().id;
 
 		ProcessedRelation relation{};
 		relation.id = 9;
@@ -564,6 +568,66 @@ public:
 		metadata_only.emplace("name", "Unclassified ring");
 		UASSERT(!arnis::osm_parser::repeats_relation_area_tags(
 				metadata_only, water_relation));
+	}
+
+	void testBuildingPartCoverageMatchesRust()
+	{
+		using namespace arnis;
+		auto way = [](std::uint64_t id, double min, double max, tags_t tags) {
+			ProcessedWay result;
+			result.id = id;
+			result.tags = std::move(tags);
+			const double coordinates[5][2]{
+					{min, min}, {min, max}, {max, max}, {max, min}, {min, min}};
+			for (std::size_t i = 0; i < 5; ++i) {
+				ProcessedNode node{};
+				node.id = id * 10 + i;
+				node.latitude = coordinates[i][0];
+				node.longitude = coordinates[i][1];
+				result.nodes.push_back(node);
+				result.source_node_refs.push_back(node.id);
+			}
+			result.source_node_refs.back() = result.source_node_refs.front();
+			result.nodes.back().id = result.nodes.front().id;
+			return result;
+		};
+
+		tags_t ground_part_tags;
+		ground_part_tags.emplace("building:part", "yes");
+		ProcessedRelation building{};
+		building.id = 300;
+		building.tags.emplace("type", "building");
+		building.source_members.push_back({"way", 100, "outline"});
+		for (std::uint64_t id = 200; id < 203; ++id)
+			building.source_members.push_back({"way", id, "part"});
+		std::vector<ProcessedElement> stacked;
+		stacked.emplace_back(way(100, 0.0, 0.001, {}));
+		for (std::uint64_t id = 200; id < 203; ++id)
+			stacked.emplace_back(way(id, 0.0002, 0.0008, ground_part_tags));
+		stacked.emplace_back(building);
+		// Three floors on the same 36% footprint must not be added as 108% coverage.
+		UASSERT(!prepare_building_data(stacked).outline_suppression.contains(
+				{"relation", building.id}));
+
+		tags_t podium_tags;
+		podium_tags.emplace("building:part", "yes");
+		podium_tags.emplace("height", "22");
+		auto podium = way(400, 0.002, 0.003, podium_tags);
+		tags_t tower_tags;
+		tower_tags.emplace("building:part", "yes");
+		tower_tags.emplace("height", "174");
+		auto tower = way(401, 0.0021, 0.0025, tower_tags);
+		ProcessedRelation towered_building{};
+		towered_building.id = 402;
+		towered_building.tags.emplace("type", "building");
+		towered_building.source_members = {
+				{"way", podium.id, "outline"}, {"way", tower.id, "part"}};
+		const auto podium_data = prepare_building_data({ProcessedElement(podium),
+				ProcessedElement(tower), ProcessedElement(towered_building)});
+		UASSERT(!podium_data.outline_suppression.contains({"way", podium.id}));
+		UASSERT(podium_data.part_groups.contains(podium.id));
+		UASSERT(podium_data.part_groups.at(podium.id) ==
+				podium_data.part_groups.at(tower.id));
 	}
 };
 

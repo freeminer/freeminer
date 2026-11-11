@@ -5,6 +5,7 @@
 #include <array>
 
 #include "fm_world_merge.h"
+#include "server/fm_emerge_smart.h"
 // fm: Exercise light thinning and actual light-only block persistence.
 #include <sstream>
 #include <vector>
@@ -23,6 +24,8 @@ public:
 	void runTests(IGameDef *gamedef) override;
 
 	void testEmptyCell();
+	void testPlayerThrottle();
+	void testEmergePlayerThrottle();
 	void testSparsePreferredSolidBecomesAir();
 	void testSurfaceTieStaysSolid();
 	void testMaterialVoteAfterOccupancy();
@@ -46,6 +49,8 @@ void TestFmWorldMerge::runTests(IGameDef *gamedef)
 {
 	(void)gamedef;
 	TEST(testEmptyCell);
+	TEST(testPlayerThrottle);
+	TEST(testEmergePlayerThrottle);
 	TEST(testSparsePreferredSolidBecomesAir);
 	TEST(testSurfaceTieStaysSolid);
 	TEST(testMaterialVoteAfterOccupancy);
@@ -61,6 +66,27 @@ void TestFmWorldMerge::runTests(IGameDef *gamedef)
 	TEST(testBrighterLightSurvives);
 	TEST(testLightOnlyBlockPersistence, gamedef);
 	// ===
+}
+
+void TestFmWorldMerge::testPlayerThrottle()
+{
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(0, 1, 20), 0);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(1, 1, 20), 0);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(4, 1, 20), 60);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(100, 0, 20), 1000);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(UINT32_MAX, 0, UINT32_MAX), 1000);
+	UASSERTEQ(uint32_t, world_merge::playerThrottleMs(100, 0, 0), 0);
+}
+
+void TestFmWorldMerge::testEmergePlayerThrottle()
+{
+	UASSERTEQ(uint32_t, emerge_smart::inFlightLimit(10, 0, 1, true), 10);
+	UASSERTEQ(uint32_t, emerge_smart::inFlightLimit(10, 1, 1, true), 10);
+	UASSERTEQ(uint32_t, emerge_smart::inFlightLimit(10, 2, 1, true), 5);
+	UASSERTEQ(uint32_t, emerge_smart::inFlightLimit(10, 3, 1, true), 3);
+	UASSERTEQ(uint32_t, emerge_smart::inFlightLimit(10, UINT32_MAX, 1, true), 1);
+	UASSERTEQ(uint32_t, emerge_smart::inFlightLimit(10, UINT32_MAX, 1, false), 10);
+	UASSERTEQ(uint32_t, emerge_smart::inFlightLimit(0, 0, 1, true), 1);
 }
 
 void TestFmWorldMerge::testEmptyCell()

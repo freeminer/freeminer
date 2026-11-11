@@ -37,6 +37,8 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <filesystem>
 
 #include "constants.h"
+#include "fm_weather_simulation.h"
+#include "fm_weather_altitude.h"
 #include "emerge.h"
 #include "mapgen/earth/png_holder.h"
 #include "mapgen/mg_decoration.h"
@@ -375,11 +377,6 @@ float earth_pixel_to_wind_ms(const RGBA &pixel)
 	return (gray * 2.0f - 1.0f) * EARTH_WIND_MAX_MS;
 }
 
-float earth_saturation_vapor_pressure_kpa(float temp_c)
-{
-	return 0.6108f * std::exp((17.27f * temp_c) / (temp_c + 237.3f));
-}
-
 float earth_apply_heat_adjustments(float heat, const v3pos_t &p,
 		const BiomeManager *biomemgr, float timeofday, bool use_weather)
 {
@@ -390,25 +387,11 @@ float earth_apply_heat_adjustments(float heat, const v3pos_t &p,
 		heat += biomemgr->weather_heat_daily *
 				(sin(cycle_shift(timeofday, -0.25) * M_PI) - 0.5f);
 	}
-	if (biomemgr->weather_heat_height)
-		heat += p.Y / static_cast<float>(biomemgr->weather_heat_height);
-	if (biomemgr->weather_hot_core &&
-			p.Y < -(WEATHER_LIMIT - biomemgr->weather_hot_core)) {
-		heat += 6000.0f * (1.0f - ((static_cast<float>(p.Y) - -WEATHER_LIMIT) /
-										  biomemgr->weather_hot_core));
-	}
+	heat += weather::altitude_heat(static_cast<double>(p.Y),
+			biomemgr->weather_heat_height, biomemgr->weather_hot_core,
+			biomemgr->weather_heat_deep_min, biomemgr->weather_hot_core_heat,
+			WEATHER_LIMIT);
 	return heat;
-}
-
-size_t earth_weather_month_index(float totaltime, const BiomeManager *biomemgr)
-{
-	const float year_days =
-			std::max(1.0f, static_cast<float>(biomemgr ? biomemgr->year_days : 365));
-	float year_phase = std::fmod(totaltime / (86400.0f * year_days), 1.0f);
-	if (year_phase < 0.0f)
-		year_phase += 1.0f;
-	return static_cast<size_t>(
-			std::clamp<int>(static_cast<int>(year_phase * 12.0f), 0, 11));
 }
 
 std::string earth_vapr_month_filename(size_t month)
@@ -439,26 +422,37 @@ std::string earth_wind_month_filename(char component, size_t month)
 	return name;
 }
 
-PngImage *earth_select_weather_image(std::unique_ptr<PngImage> &annual_image,
-		std::array<std::unique_ptr<PngImage>, 12> &month_images, bool use_weather,
-		float totaltime, const BiomeManager *biomemgr)
+template <typename Decode>
+std::optional<float> earth_sample_weather_value(const std::unique_ptr<PngImage> &annual,
+		const std::array<std::unique_ptr<PngImage>, 12> &months, const ll &position,
+		bool use_weather, float totaltime, const BiomeManager *biomemgr, Decode decode)
 {
-	PngImage *image = nullptr;
-	if (use_weather) {
-		const auto month = earth_weather_month_index(totaltime, biomemgr);
-		image = month_images[month].get();
-	}
-	if (!image)
-		image = annual_image.get();
-	if (!image) {
-		for (const auto &month_image : month_images) {
-			if (month_image) {
-				image = month_image.get();
+	const auto sample = [&](const PngImage *image) -> std::optional<float> {
+		if (!image)
+			return std::nullopt;
+		const auto pixel = earth_sample_image(*image, position);
+		if (!pixel || !pixel->getAlpha())
+			return std::nullopt;
+		return decode(*pixel);
+	};
+	// Decode before interpolation: temperature, vapor pressure and signed wind
+	// components have different encodings. Invalid pixels use a stable fallback.
+	auto fallback = sample(annual.get());
+	if (!fallback) {
+		for (const auto &month : months) {
+			fallback = sample(month.get());
+			if (fallback)
 				break;
-			}
 		}
 	}
-	return image;
+	if (!use_weather)
+		return fallback;
+	const float phase =
+			weather::month_phase(totaltime, biomemgr ? biomemgr->year_days : 365);
+	const size_t month = static_cast<size_t>(phase);
+	const auto first = sample(months[month].get());
+	const auto second = sample(months[(month + 1) % 12].get());
+	return weather::blend_monthly(first, second, fallback, phase - month);
 }
 }
 
@@ -1652,31 +1646,13 @@ weather::heat_t MapgenEarth::calcBlockHeat(const v3pos_t &p, uint64_t seed,
 		float timeofday, float totaltime, bool use_weather)
 {
 	if (maps_holder) {
-		PngImage *tavg_image = nullptr;
-		if (use_weather) {
-			const auto month = earth_weather_month_index(totaltime, m_emerge->biomemgr);
-			tavg_image = maps_holder->tavg_month_images[month].get();
-		}
-		if (!tavg_image)
-			tavg_image = maps_holder->tavg_image.get();
-		if (!tavg_image) {
-			for (const auto &month_image : maps_holder->tavg_month_images) {
-				if (month_image) {
-					tavg_image = month_image.get();
-					break;
-				}
-			}
-		}
-
-		if (tavg_image) {
-			const auto pixel = earth_sample_image(*tavg_image, pos_to_ll(p));
-			if (pixel && pixel->getAlpha()) {
-				float heat = earth_pixel_to_tavg_celsius(*pixel);
-				heat = earth_apply_heat_adjustments(heat, climatePosition(p),
-						m_emerge->biomemgr, timeofday, use_weather);
-				return static_cast<weather::heat_t>(
-						std::lround(std::clamp(heat, -32768.0f, 32767.0f)));
-			}
+		const auto temperature = earth_sample_weather_value(maps_holder->tavg_image,
+				maps_holder->tavg_month_images, pos_to_ll(p), use_weather, totaltime,
+				m_emerge->biomemgr, earth_pixel_to_tavg_celsius);
+		if (temperature) {
+			const float heat = earth_apply_heat_adjustments(*temperature,
+					climatePosition(p), m_emerge->biomemgr, timeofday, use_weather);
+			return weather::heat_value(heat);
 		}
 	}
 
@@ -1710,75 +1686,61 @@ weather::humidity_t MapgenEarth::calcBlockHumidity(const v3pos_t &p, uint64_t se
 		float humidity = 0.0f;
 		bool have_humidity = false;
 
-		auto *vapr_image = earth_select_weather_image(maps_holder->vapr_image,
-				maps_holder->vapr_month_images, use_weather, totaltime,
-				m_emerge->biomemgr);
-		if (vapr_image) {
-			const auto pixel = earth_sample_image(*vapr_image, pos_to_ll(p));
-			if (pixel && pixel->getAlpha()) {
-				const float vapr_kpa = earth_pixel_to_vapr_kpa(*pixel);
-				if (vapr_kpa > 0.0f) {
-					const float heat = static_cast<float>(
-							calcBlockHeat(p, seed, timeofday, totaltime, use_weather));
-					const float saturation_kpa =
-							earth_saturation_vapor_pressure_kpa(heat);
-					if (std::isfinite(saturation_kpa) && saturation_kpa > 0.0001f) {
-						humidity = 100.0f * vapr_kpa / saturation_kpa;
-						if (use_weather) {
-							humidity += m_emerge->biomemgr->weather_humidity_daily *
-										(sin(cycle_shift(timeofday, -0.1) * M_PI) - 0.5f);
-						}
-						have_humidity = true;
-					}
-				}
+		const auto vapor = earth_sample_weather_value(maps_holder->vapr_image,
+				maps_holder->vapr_month_images, pos_to_ll(p), use_weather, totaltime,
+				m_emerge->biomemgr, earth_pixel_to_vapr_kpa);
+		if (vapor && *vapor >= 0.0f) {
+			const float heat = calcBlockHeat(p, seed, timeofday, totaltime, use_weather);
+			const float saturation_kpa = weather::saturation(heat);
+			humidity = 100.0f * *vapor / saturation_kpa;
+			if (use_weather) {
+				humidity += m_emerge->biomemgr->weather_humidity_daily *
+							(sin(cycle_shift(timeofday, -0.1) * M_PI) - 0.5f);
 			}
+			have_humidity = true;
 		}
 
-		auto *cloud_image = earth_select_weather_image(maps_holder->cloud_image,
-				maps_holder->cloud_month_images, use_weather, totaltime,
-				m_emerge->biomemgr);
-		if (cloud_image) {
-			const auto pixel = earth_sample_image(*cloud_image, pos_to_ll(p));
-			if (pixel && pixel->getAlpha()) {
-				const float cloud_percent = earth_pixel_to_cloud_percent(*pixel);
-				const pos_t surface_y =
-						projection.curved ? earth_altitude_node(projectedElevation(
-													sampleEarth(p), 16))
-										  : getGroundLevelAtPointStep({p.X, p.Z}, 16);
-				if (!have_humidity) {
-					humidity = static_cast<float>(
-							m_emerge->biomemgr->calcBlockHumidity(climatePosition(p),
-									seed, timeofday, totaltime, use_weather, surface_y));
-					have_humidity = true;
-				}
-
-				const auto *biomemgr = m_emerge->biomemgr;
-				const float cloud_y =
-						static_cast<float>(biomemgr ? biomemgr->cloud_height : 500);
-				const float height_scale = std::max(64.0f,
-						std::abs(static_cast<float>(
-								biomemgr ? biomemgr->weather_humidity_height : -250)));
-				const float height_above_surface =
-						static_cast<float>(climatePosition(p).Y - surface_y);
-				const float cloud_base = cloud_y - std::max(90.0f, height_scale * 0.35f);
-				const float cloud_core_top =
-						cloud_y + std::max(80.0f, height_scale * 0.45f);
-				const float cloud_top = cloud_y + std::max(220.0f, height_scale * 1.10f);
-				const float cloud_band =
-						earth_smoothstep(cloud_base, cloud_y, height_above_surface) *
-						(1.0f - earth_smoothstep(
-										cloud_core_top, cloud_top, height_above_surface));
-				const float high_air = earth_smoothstep(
-						cloud_top, cloud_top + height_scale * 4.8f, height_above_surface);
-				const float cloud_strength =
-						earth_smoothstep(12.0f, 82.0f, cloud_percent);
-				const float cloud_target =
-						std::clamp(58.0f + cloud_percent * 0.42f, 0.0f, 100.0f);
-				const float boosted = std::max(humidity, cloud_target);
-				humidity += (boosted - humidity) * cloud_band * cloud_strength;
-				humidity *= 1.0f - high_air * 0.85f;
-				humidity -= high_air * 6.0f;
+		const auto cloud = earth_sample_weather_value(maps_holder->cloud_image,
+				maps_holder->cloud_month_images, pos_to_ll(p), use_weather, totaltime,
+				m_emerge->biomemgr, earth_pixel_to_cloud_percent);
+		if (cloud) {
+			const float cloud_percent = *cloud;
+			const pos_t surface_y =
+					projection.curved
+							? earth_altitude_node(projectedElevation(sampleEarth(p), 16))
+							: getGroundLevelAtPointStep({p.X, p.Z}, 16);
+			if (!have_humidity) {
+				humidity = static_cast<float>(
+						m_emerge->biomemgr->calcBlockHumidity(climatePosition(p), seed,
+								timeofday, totaltime, use_weather, surface_y));
+				have_humidity = true;
 			}
+
+			const auto *biomemgr = m_emerge->biomemgr;
+			const float cloud_y =
+					static_cast<float>(biomemgr ? biomemgr->cloud_height : 500);
+			const float height_scale = std::max(
+					64.0f, std::abs(static_cast<float>(
+								   biomemgr ? biomemgr->weather_humidity_height : -250)));
+			const float height_above_surface = static_cast<float>(
+					weather::relative_height(static_cast<double>(climatePosition(p).Y),
+							static_cast<double>(surface_y)));
+			const float cloud_base = cloud_y - std::max(90.0f, height_scale * 0.35f);
+			const float cloud_core_top = cloud_y + std::max(80.0f, height_scale * 0.45f);
+			const float cloud_top = cloud_y + std::max(220.0f, height_scale * 1.10f);
+			const float cloud_band =
+					earth_smoothstep(cloud_base, cloud_y, height_above_surface) *
+					(1.0f - earth_smoothstep(
+									cloud_core_top, cloud_top, height_above_surface));
+			const float high_air = earth_smoothstep(
+					cloud_top, cloud_top + height_scale * 4.8f, height_above_surface);
+			const float cloud_strength = earth_smoothstep(12.0f, 82.0f, cloud_percent);
+			const float cloud_target =
+					std::clamp(58.0f + cloud_percent * 0.42f, 0.0f, 100.0f);
+			const float boosted = std::max(humidity, cloud_target);
+			humidity += (boosted - humidity) * cloud_band * cloud_strength;
+			humidity *= 1.0f - high_air * 0.85f;
+			humidity -= high_air * 6.0f;
 		}
 
 		if (have_humidity) {
@@ -1800,21 +1762,17 @@ bool MapgenEarth::calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday
 	if (!wind || !maps_holder)
 		return false;
 
-	auto *wind_u_image = earth_select_weather_image(maps_holder->wind_u_image,
-			maps_holder->wind_u_month_images, use_weather, totaltime, m_emerge->biomemgr);
-	auto *wind_v_image = earth_select_weather_image(maps_holder->wind_v_image,
-			maps_holder->wind_v_month_images, use_weather, totaltime, m_emerge->biomemgr);
-	if (!wind_u_image || !wind_v_image)
+	const auto position = pos_to_ll(p);
+	const auto wind_u = earth_sample_weather_value(maps_holder->wind_u_image,
+			maps_holder->wind_u_month_images, position, use_weather, totaltime,
+			m_emerge->biomemgr, earth_pixel_to_wind_ms);
+	const auto wind_v = earth_sample_weather_value(maps_holder->wind_v_image,
+			maps_holder->wind_v_month_images, position, use_weather, totaltime,
+			m_emerge->biomemgr, earth_pixel_to_wind_ms);
+	if (!wind_u || !wind_v)
 		return false;
-
-	const auto ll = pos_to_ll(p);
-	const auto pixel_u = earth_sample_image(*wind_u_image, ll);
-	const auto pixel_v = earth_sample_image(*wind_v_image, ll);
-	if (!pixel_u || !pixel_v || !pixel_u->getAlpha() || !pixel_v->getAlpha())
-		return false;
-
-	const float u = earth_pixel_to_wind_ms(*pixel_u);
-	const float v = earth_pixel_to_wind_ms(*pixel_v);
+	const float u = *wind_u;
+	const float v = *wind_v;
 	if (!std::isfinite(u) || !std::isfinite(v))
 		return false;
 

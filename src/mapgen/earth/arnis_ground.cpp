@@ -395,7 +395,8 @@ GroundFetchPlan GroundFrame::fetch_plan(
 {
 	if (!world_dims) {
 		const auto dims = elevation::compute_grid_dims(bbox, scale);
-		return {bbox, dims, 0, {std::get<0>(dims), std::get<1>(dims)}, std::nullopt};
+		return {bbox, dims, 0, {std::get<0>(dims), std::get<1>(dims)}, std::nullopt,
+				std::nullopt};
 	}
 	const auto &[world_width, world_height] = *world_dims;
 	if (pad_blocks <= (std::numeric_limits<std::size_t>::max() - world_width) / 2 &&
@@ -425,7 +426,8 @@ GroundFetchPlan GroundFrame::fetch_plan(
 				return {centers, padded_dims, pad_blocks, {world_width, world_height},
 						std::pair<std::int64_t, std::int64_t>{
 								static_cast<std::int64_t>(std::llround(x0 - 0.5)),
-								static_cast<std::int64_t>(std::llround(z0 - 0.5))}};
+								static_cast<std::int64_t>(std::llround(z0 - 0.5))},
+						1.0 / scale};
 			} catch (const std::invalid_argument &) {
 				// Fall through to Rust's unpadded fetch plan below.
 			}
@@ -437,7 +439,7 @@ GroundFetchPlan GroundFrame::fetch_plan(
 				   "edges may not match the neighbouring areas exactly.\n";
 	}
 	const auto dims = elevation::compute_grid_dims_for_world(world_width, world_height);
-	return {bbox, dims, 0, {world_width, world_height}, std::nullopt};
+	return {bbox, dims, 0, {world_width, world_height}, std::nullopt, std::nullopt};
 }
 
 Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
@@ -447,6 +449,11 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 {
 	if (!args.valid())
 		throw std::invalid_argument("invalid Arnis ground-generation options");
+	// Rust's CLI establishes the active dimension range before elevation is
+	// fetched. The terrain pipeline reads world_editor::min_y() when it builds
+	// the water-carve floor, so setting bounds later in generate_world would fit
+	// against stale/default limits (notably for tall Java worlds and One World).
+	world_editor::set_world_bounds(extended_min_y_for(args), world_top_y_for(args));
 	// Rust only collects tall-model hints when 3D placement is enabled. Enforce
 	// that policy here too, including callers that supply TerrainHints directly
 	// instead of going through generate_ground_data_from_osm(). Natural peaks
@@ -502,7 +509,8 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 
 	std::optional<land_cover::LandCoverData> cover;
 	if (earth) {
-		auto fetched = land_cover::fetch_land_cover_data(bounds, grid_width, grid_height);
+		auto fetched = land_cover::fetch_land_cover_data(
+				bounds, grid_width, grid_height, true, plan.meters_per_cell);
 		if (fetched.width && fetched.height)
 			cover = std::move(fetched);
 	}
