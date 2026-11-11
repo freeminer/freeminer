@@ -1,5 +1,6 @@
 #pragma once
 #include "mapnode.h"
+#include <nlohmann/json_fwd.hpp>
 #include <algorithm>
 #include <array>
 #include <functional>
@@ -30,6 +31,7 @@ class BlockWithProperties
 {
 public:
 	using Properties = BlockProperties;
+	using PropertyValue = nlohmann::json;
 
 	Block block;
 	// Java/Sponge block-state values.  MapNode has no portable generic state
@@ -37,6 +39,10 @@ public:
 	// allows format-specific world writers to encode them. Immutable property
 	// maps are interned and shared like Rust's Arc<Value> block states.
 	std::shared_ptr<const Properties> properties;
+	// Rust stores the full fastnbt::Value here. Most generated block states are
+	// compounds of strings and use `properties`; retain other NBT-shaped values
+	// too for library callers and palette construction.
+	std::shared_ptr<const PropertyValue> nbt_properties;
 
 	BlockWithProperties(Block b = {}) : block(b) {}
 	BlockWithProperties(Block b, Properties p) :
@@ -47,6 +53,12 @@ public:
 			block(b), properties(std::move(p))
 	{
 	}
+	BlockWithProperties(Block b, std::shared_ptr<const Properties> p,
+			std::shared_ptr<const PropertyValue> value) :
+			block(b), properties(std::move(p)), nbt_properties(std::move(value))
+	{
+	}
+	static BlockWithProperties from_value(Block b, PropertyValue value);
 	const Properties &property_values() const
 	{
 		static const Properties empty;
