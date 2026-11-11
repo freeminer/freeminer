@@ -90,7 +90,7 @@ elevation::TerrainHints terrain_hints_for(const Args &args,
 	const bool collect_graded = args.terrain_enabled() && !args.aws_only_elevation;
 	const bool automatic_height = !args.vanilla_height && !args.disable_height_limit &&
 								  !args.luanti && is_earth(args.body) &&
-								  !args.one_world_run;
+								  !args.one_world_enabled();
 	const bool wants_structures = automatic_height && !args.skip_objects() &&
 								  args.mode != GenerationMode::Blueprint;
 	auto hints = elevation::terrain_hints_in(osm, args.scale,
@@ -220,7 +220,7 @@ int min_ground_level_for(const Args &args)
 bool auto_height_for(const Args &args)
 {
 	return !args.vanilla_height && !args.disable_height_limit && !args.luanti &&
-		   is_earth(args.body) && !args.one_world_run;
+		   is_earth(args.body) && !args.one_world_enabled();
 }
 
 int floor_div_16(int value)

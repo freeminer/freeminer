@@ -7,8 +7,10 @@
 #include "mapgen/earth/arnis-cpp/src/fm_ll_shapes.h"
 #include "mapgen/earth/arnis-cpp/src/fm_xz_bbox_shape.h"
 #include "mapgen/earth/arnis-cpp/src/map_transformation/rotate/rotator.h"
+#include "mapgen/earth/arnis-cpp/src/world_editor/floor_state.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
+#include <algorithm>
 #include <array>
 #include <memory>
 #include <string>
@@ -27,6 +29,7 @@ public:
 		TEST(testRustRasterizationEdgeCases);
 		TEST(testOutlineRasterRejectsOutsideSpans);
 		TEST(testWaterRingClipMatchesRustFastPaths);
+		TEST(testClippedRingPreservesSurvivingNodeIdsAndTags);
 		TEST(testShapeCropAndSpawnHelpers);
 		TEST(testSpawnMustBeInsideSelectedShape);
 		TEST(testBedrockGenerationCanUseParallelTiles);
@@ -55,10 +58,21 @@ public:
 		UASSERT(shapes->contains(arnis::geographic::LLPoint(52.1, 13.1)));
 		UASSERT(!shapes->contains(arnis::geographic::LLPoint(52.5, 13.5)));
 		UASSERT(shapes->contains(arnis::geographic::LLPoint(52.2, 13.5)));
+		const auto missing_geometry = arnis::LLShapes::from_geojson(
+				R"({"type":"FeatureCollection","features":[{"type":"Feature"},{"type":"Feature","geometry":null},{"type":"Feature","geometry":{"type":"Polygon","coordinates":[[[13,52],[14,52],[14,53],[13,53]]]}}]})",
+				&error);
+		UASSERT(missing_geometry.has_value());
+		UASSERT(missing_geometry->size() == 1);
 		auto point_only = arnis::LLShapes::from_geojson(
 				R"({"type":"Point","coordinates":[13,52]})", &error);
 		UASSERT(!point_only.has_value());
 		UASSERT(error == "no Polygon or MultiPolygon geometry found");
+		arnis::LLShapes::Polygons invalid_polygons;
+		invalid_polygons.push_back({{arnis::geographic::LLPoint(52.0, 13.0),
+				arnis::geographic::LLPoint(52.0, 13.1)}});
+		auto invalid_shape = arnis::LLShapes::create(invalid_polygons, &error);
+		UASSERT(!invalid_shape.has_value());
+		UASSERT(error.find("Shape 1: ") == 0);
 	}
 
 	void testOutlineRasterSupportsCoverageAndHoles()
@@ -102,6 +116,13 @@ public:
 		UASSERT(!l_shape->covers(0, 0, 15, 15));
 		UASSERT(l_shape->touches(5, 5, 15, 15));
 		UASSERT(!l_shape->touches(10, 10, 20, 20));
+
+		const auto edge_shape = arnis::XZBBoxShape::create(
+				frame, {{{{10.5, 12.0}, {21.5, 5.0}, {22.0, 8.0}}}});
+		UASSERT(edge_shape.has_value());
+		UASSERT(!edge_shape->contains(22, 7));
+		UASSERT(edge_shape->contains(22, 8));
+		UASSERT(edge_shape->contains(21, 7));
 
 		const auto overlapping = arnis::XZBBoxShape::create(
 				frame, {{{{0, 0}, {15, 0}, {15, 15}, {0, 15}}},
@@ -167,6 +188,26 @@ public:
 		const std::vector<arnis::ProcessedNode> crossing_open{
 				{21, {}, 1, 1}, {22, {}, 8, 1}, {23, {}, 12, 8}};
 		UASSERT(!arnis::clipping::clip_water_ring_to_bbox(crossing_open, bounds));
+	}
+
+	void testClippedRingPreservesSurvivingNodeIdsAndTags()
+	{
+		const ::XZBBox bounds(0, 0, 10, 10);
+		const std::vector<arnis::ProcessedNode> ring{
+				{101, {}, -5, 5},
+				{102, {{"barrier", "gate"}}, 5, 5},
+				{103, {}, 5, 15},
+				{104, {}, -5, 15},
+				{101, {}, -5, 5},
+		};
+		const auto clipped = arnis::clipping::clip_way_to_bbox(ring, bounds);
+		UASSERT(clipped.size() >= 4);
+		const auto kept = std::find_if(clipped.begin(), clipped.end(),
+				[](const auto &node) { return node.x == 5 && node.z == 5; });
+		UASSERT(kept != clipped.end());
+		UASSERT(kept->id == 102);
+		UASSERT(kept->tags.at("barrier") == "gate");
+		UASSERT(clipped.front().id == clipped.back().id);
 	}
 
 	void testNetworkWaysAreCutAtTheOutline()
@@ -303,6 +344,23 @@ public:
 		const auto rectangle =
 				arnis::cartesian::XZBBox::rect_from_min_max(10, 10, 20, 20);
 		UASSERT(rectangle.default_spawn() == std::pair(11, 11));
+
+		const arnis::cartesian::XZBBoxRect large_rect({0, 0}, {400, 400});
+		const auto slanted = arnis::XZBBoxShape::create(
+				large_rect, {{{{20.0, 0.0}, {40.0, 20.0}, {20.0, 40.0}, {0.0, 20.0}}}});
+		UASSERT(slanted.has_value());
+		const auto slanted_spawn = slanted->first_inside();
+		UASSERT(slanted_spawn.has_value());
+		UASSERT(slanted->covers(slanted_spawn->x - 4, slanted_spawn->z - 4,
+				slanted_spawn->x + 4, slanted_spawn->z + 4));
+		UASSERT(slanted_spawn->z <= 10);
+
+		const auto thin = arnis::XZBBoxShape::create(
+				large_rect, {{{{2.0, 2.0}, {30.0, 2.0}, {30.0, 3.0}}}});
+		UASSERT(thin.has_value());
+		const auto thin_spawn = thin->first_inside();
+		UASSERT(thin_spawn.has_value());
+		UASSERT(thin->contains(thin_spawn->x, thin_spawn->z));
 	}
 
 	void testSpawnMustBeInsideSelectedShape()
@@ -331,6 +389,12 @@ public:
 		args.spawn_lat = 0.25;
 		args.spawn_lng = 0.25;
 		UASSERT(!args.validation_error().has_value());
+
+		args.one_world = true;
+		const auto one_world_error = args.validation_error();
+		UASSERT(one_world_error.has_value());
+		UASSERT(one_world_error->find("cannot be combined with --one-world") !=
+				std::string::npos);
 	}
 
 	void testBedrockGenerationCanUseParallelTiles()
@@ -380,6 +444,19 @@ public:
 		for (int y = 1; y <= 7; ++y) {
 			UASSERT(editor.block_exists_absolute(inside.first, y, inside.second));
 			UASSERT(!editor.block_exists_absolute(outside.first, y, outside.second));
+		}
+		{
+			arnis::world_editor::ScopedFloorState restore(
+					arnis::world_editor::floor_state_snapshot());
+			arnis::world_editor::set_base_chunk_y(40);
+			arnis::world_editor::set_base_chunk_block_id(
+					static_cast<std::uint16_t>(test_block.id()));
+			editor.set_filler_outside_outline(inside.first, inside.second);
+			editor.set_filler_outside_outline(outside.first, outside.second);
+			editor.set_filler_outside_outline(70, 5);
+			UASSERT(!editor.block_exists_absolute(inside.first, 40, inside.second));
+			UASSERT(editor.block_exists_absolute(outside.first, 40, outside.second));
+			UASSERT(!editor.block_exists_absolute(70, 40, 5));
 		}
 	}
 
