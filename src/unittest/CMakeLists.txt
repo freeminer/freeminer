@@ -44,6 +44,7 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_range_fetch.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_relation_holes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_road_markings.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shapes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_roof_layers.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shoreline.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_swimming_pools.cpp

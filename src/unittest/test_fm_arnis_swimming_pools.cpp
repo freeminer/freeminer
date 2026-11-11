@@ -3,6 +3,7 @@
 #include "mapgen/earth/arnis_ground.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/swimming_pools.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
+#include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
 #include <optional>
@@ -12,6 +13,36 @@
 
 namespace
 {
+// These geometry tests use WorldEditor's sparse backend and don't have a live
+// NodeDefManager to resolve the Arnis palette. Give the blocks under test
+// distinct synthetic content IDs so checks distinguish water, lining, natural
+// terrain, and building floors just as they do after blocks::init() in-game.
+class ScopedPoolTestBlocks
+{
+	std::vector<std::pair<arnis::Block *, arnis::Block>> saved;
+
+public:
+	ScopedPoolTestBlocks()
+	{
+		using namespace arnis;
+		using namespace arnis::block_definitions;
+		std::vector<arnis::Block *> blocks{&AIR, &WATER, &SMOOTH_QUARTZ,
+				&LIGHT_BLUE_CONCRETE, &BLUE_CONCRETE, &GRASS_BLOCK, &DIRT, &COARSE_DIRT,
+				&PODZOL, &MUD, &SAND, &GRAVEL, &STONE_BRICKS, &GRASS, &OAK_PLANKS};
+		saved.reserve(blocks.size());
+		content_t id = CONTENT_MAX - 32;
+		for (auto *block : blocks) {
+			saved.emplace_back(block, *block);
+			*block = arnis::Block(block == &AIR ? CONTENT_AIR : id--);
+		}
+	}
+	~ScopedPoolTestBlocks()
+	{
+		for (auto &[block, previous] : saved)
+			*block = previous;
+	}
+};
+
 arnis::ProcessedWay rectangular_pool()
 {
 	arnis::ProcessedWay way{};
@@ -56,6 +87,7 @@ public:
 	const char *getName() override { return "TestFmArnisSwimmingPools"; }
 	void runTests(IGameDef *) override
 	{
+		const ScopedPoolTestBlocks block_ids;
 		TEST(testPoolIsLinedAndRimmed);
 		TEST(testPoolOnSlopeStaysLevelAndWallsItsLowEnd);
 		TEST(testPoolDepthSaturatesBeforeIntegerConversion);
@@ -166,10 +198,30 @@ public:
 		swimming_pools::generate(editor, way, Args{}, cache, footprints, roads);
 
 		UASSERT(contains(editor, 10, 1, 12, OAK_PLANKS));
-		UASSERT(contains(editor, 11, 1, 13, WATER));
+		UASSERT(!editor.block_exists_absolute(11, 1, 13));
 		UASSERT(contains(editor, 9, 0, 12, GRAVEL));
 		UASSERT(contains(editor, 9, -1, 12, swimming_pools::LINING));
 		UASSERT(contains(editor, 9, 0, 13, swimming_pools::COPING));
+
+		// At the low end of a sloped pool the water rises above local terrain and
+		// replaces surface plants, but preserves a deck occupying the same height.
+		Ground ground = Ground::new_flat(0);
+		ground.elevation_grid.assign(64, std::vector<float>(64));
+		for (auto &row : ground.elevation_grid)
+			for (std::size_t x = 0; x < row.size(); ++x)
+				row[x] = 4.0f + 0.25f * static_cast<float>(x);
+		ground.elevation_world_width = 64;
+		ground.elevation_world_height = 64;
+		ground.elevation_enabled = true;
+		WorldEditor sloped;
+		sloped.enable_standalone_storage();
+		sloped.ground = &ground;
+		const int low = sloped.get_ground_level(10, 12);
+		sloped.set_block_absolute(OAK_PLANKS, 10, low + 1, 12);
+		sloped.set_block_absolute(GRASS, 11, low + 1, 13);
+		swimming_pools::generate(sloped, way, Args{}, cache, footprints, roads);
+		UASSERT(contains(sloped, 10, low + 1, 12, OAK_PLANKS));
+		UASSERT(contains(sloped, 11, low + 1, 13, WATER));
 	}
 
 	void testIndoorPoolNeedsAFloor()
