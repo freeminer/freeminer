@@ -1332,6 +1332,11 @@ int MapgenEarth::generateTerrain()
 	const auto high_land = [&](pos_t height) {
 		return double(height) - double(water_level) > 1000.0 / std::abs(scale.Y);
 	};
+	const int water_pressure =
+			liquid_pressure > 0
+					? std::clamp(itemgroup_get(ndef->get(n_water).groups, "pressure"), 0,
+							  int(ndef->get(n_water).getMaxLevel(true)))
+					: 0;
 	bool need_procedural = false;
 	bool need_floatlands = false;
 	for (pos_t z = node_min.Z; z <= node_max.Z; ++z) {
@@ -1407,6 +1412,11 @@ int MapgenEarth::generateTerrain()
 						stone_surface_max_y = std::max(stone_surface_max_y, y);
 					} else {
 						vm->m_data[i] = y <= water_level ? n_water : n_air;
+						if (water_pressure && y <= 0 && y <= water_level) {
+							const int depth = static_cast<int>(std::min<double>(
+									water_pressure, double(water_level) - double(y)));
+							vm->m_data[i].addLevel(ndef, depth, true);
+						}
 					}
 				}
 				vm->m_area.add_y(em, i, 1);
@@ -1869,6 +1879,52 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 		return;
 	}
 
+	// Remember which cells belong to this generation, so pressure initialization
+	// does not alter water in already generated neighboring mapblocks.
+	const int water_pressure =
+			liquid_pressure > 0
+					? std::clamp(itemgroup_get(ndef->get(n_water).groups, "pressure"), 0,
+							  int(ndef->get(n_water).getMaxLevel(true)))
+					: 0;
+	std::vector<u8> new_cells;
+	if (water_pressure) {
+		new_cells.resize(vm->m_area.getVolume());
+		for (pos_t z = node_min.Z; z <= node_max.Z; ++z)
+			for (pos_t x = node_min.X; x <= node_max.X; ++x)
+				for (pos_t y = node_min.Y; y <= node_max.Y; ++y) {
+					const u32 i = vm->m_area.index(x, y, z);
+					new_cells[i] = !vm->m_data[i];
+				}
+	}
+	const auto initialize_authored_water_pressure = [&]() {
+		if (!water_pressure)
+			return;
+		for (pos_t z = node_min.Z; z <= node_max.Z; ++z)
+			for (pos_t x = node_min.X; x <= node_max.X; ++x)
+				for (pos_t y = node_min.Y; y <= node_max.Y; ++y) {
+					const u32 i = vm->m_area.index(x, y, z);
+					if (!new_cells[i] ||
+							vm->m_data[i].getContent() != n_water.getContent())
+						continue;
+					int depth = 0;
+					bool known_surface = false;
+					while (depth < water_pressure &&
+							double(y) + depth < full_node_max.Y) {
+						const auto above = vm->m_area.index(x, y + depth + 1, z);
+						const auto content = vm->m_data[above].getContent();
+						if (content != n_water.getContent()) {
+							known_surface = content != CONTENT_IGNORE;
+							break;
+						}
+						++depth;
+					}
+					// If the surface is outside the emerged area, retain any
+					// pressure already assigned by base terrain generation.
+					if (depth && (depth == water_pressure || known_surface))
+						vm->m_data[i].addLevel(ndef, depth, true);
+				}
+	};
+
 	// High chunks intersecting a floatland band must reach terrain generation.
 	bool floatland_chunk = false;
 	if (spflags & MGV7_FLOATLANDS) {
@@ -1922,6 +1978,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 		}
 
 		// A tall authored object may intersect this otherwise-air chunk.
+		initialize_authored_water_pressure();
 		updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
 		if (flags & MG_LIGHT)
 			calcLighting(node_min - v3pos_t(0, 1, 0), node_max + v3pos_t(0, 1, 0),
@@ -1993,6 +2050,7 @@ void MapgenEarth::makeChunk(BlockMakeData *data)
 		generateBuildings();
 
 	// Update liquids
+	initialize_authored_water_pressure();
 	updateLiquid(&data->transforming_liquid, full_node_min, full_node_max);
 
 	// Calculate lighting
