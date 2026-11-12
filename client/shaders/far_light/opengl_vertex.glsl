@@ -15,27 +15,26 @@ float hash13(vec3 p)
 void main(void)
 {
 	vec4 viewPosition = mWorldView * inVertexPosition;
-	vec3 worldPosition = (mWorld * inVertexPosition).xyz + cameraOffset;
+	// Hash node coordinates, wrapping the offset separately to retain precision
+	// far from the origin. Camera rebasing must not change a light's phase.
+	vec3 worldPosition = mod(floor((mWorld * inVertexPosition).xyz / 10.0 + 0.5) +
+			mod(cameraOffset / 10.0, 4096.0), 4096.0);
 	float distance = length(viewPosition.xyz);
 	float seed = hash13(worldPosition);
 	float distanceFactor = clamp((distance - 200.0) / 1800.0, 0.0, 1.0);
-	float variationAmount = mix(0.05, 0.15, distanceFactor);
-	vec3 colorVariation = vec3(
-			hash13(worldPosition + vec3(17.0, 0.0, 0.0)),
-			hash13(worldPosition + vec3(0.0, 37.0, 0.0)),
-			hash13(worldPosition + vec3(0.0, 0.0, 67.0)));
-	colorVariation = vec3(1.0) +
-			(colorVariation * 2.0 - vec3(1.0)) * variationAmount;
+	float flickerAmount = distanceFactor * mix(1.0 / 3.0, 1.0, distanceFactor);
 	float phase = seed * 6.2831853;
 	float wave = 0.5 + 0.5 * (
 			0.62 * sin(animationTimer * (124.0 + seed * 46.0) + phase) +
 			0.38 * sin(animationTimer * (314.0 + seed * 82.0) + phase * 2.17));
-	float flicker = 1.0 + (wave * 2.0 - 1.0) * variationAmount;
+	// Modulate opacity so bright channels cannot clip away the twinkle or
+	// change the hue. Nearby lights stay steady; distant lights scintillate.
+	float flicker = mix(1.0, 0.35 + 0.65 * wave, flickerAmount);
 
 	gl_Position = mWorldViewProj * inVertexPosition;
 	gl_PointSize = 1.0;
 
 	eyeVec = -viewPosition.xyz;
-	varColor = vec4(inVertexColor.rgb * colorVariation * flicker,
-			inVertexColor.a);
+	// Vertex RGB already contains the source intensity (including its alpha).
+	varColor = vec4(inVertexColor.rgb, flicker);
 }
