@@ -7,6 +7,24 @@
 #include <memory>
 #include <vector>
 
+namespace
+{
+struct FuelStationBlockFixture
+{
+	arnis::Block light_gray_concrete = arnis::block_definitions::LIGHT_GRAY_CONCRETE;
+
+	FuelStationBlockFixture()
+	{
+		arnis::block_definitions::LIGHT_GRAY_CONCRETE = arnis::Block(60001);
+	}
+
+	~FuelStationBlockFixture()
+	{
+		arnis::block_definitions::LIGHT_GRAY_CONCRETE = light_gray_concrete;
+	}
+};
+} // namespace
+
 class TestFmArnisFuelStations : public TestBase
 {
 public:
@@ -17,7 +35,9 @@ public:
 	void testForecourtKeepsCanopyBesideShop()
 	{
 		using namespace arnis;
+		FuelStationBlockFixture block_fixture;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bbox(0, 0, 79, 79);
 		ProcessedWay way{};
 		way.id = 1;
