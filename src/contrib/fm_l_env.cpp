@@ -646,13 +646,37 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 	auto incoming = blast_strength > blast_min_strength
 							? fm_blast_angular_seed(blast_strength)
 							: std::vector<FmBlastFootprint>{};
+	const bool resumable = getboolfield_default(L, 2, "resumable", false);
+	lua_getfield(L, 2, "continuation");
+	if (resumable && lua_istable(L, -1)) {
+		dr = getintfield_default(L, -1, "radius", 0);
+		total_strength = getfloatfield_default(L, -1, "strength", blast_strength);
+		incoming.clear();
+		lua_getfield(L, -1, "frontier");
+		for (int i = 1; i <= lua_objlen(L, -1); ++i) {
+			lua_rawgeti(L, -1, i);
+			double values[6];
+			for (int j = 0; j < 6; ++j) {
+				lua_rawgeti(L, -1, j + 1);
+				values[j] = luaL_checknumber(L, -1);
+				lua_pop(L, 1);
+			}
+			incoming.emplace_back(static_cast<int>(values[0]), values[1], values[2],
+					values[3], values[4], values[5]);
+			lua_pop(L, 1);
+		}
+		lua_pop(L, 1);
+	}
+	lua_pop(L, 1);
 	if (incoming.empty())
 		remaining_strength = 0.0;
+	bool advanced = false;
 	while (!incoming.empty()) {
-		if (timed_out()) {
+		if (timed_out() && (!resumable || advanced)) {
 			stopped_by_time = true;
 			break;
 		}
+		advanced = true;
 		++dr;
 		fm_blast_angular_coalesce(incoming);
 		auto layer = fm_blast_angular_project(incoming, dr);
@@ -664,7 +688,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		size_t visited = 0;
 		// Visit only projected hits. All processing updates the same energy record.
 		for (auto &[rel, hit] : layer) {
-			if ((visited++ & 255) == 0 && timed_out()) {
+			if ((visited++ & 255) == 0 && !resumable && timed_out()) {
 				stopped_by_time = true;
 				break;
 			}
@@ -701,7 +725,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				++last_blocked_rays;
 				continue;
 			}
-			if (stopped_by_time || timed_out()) {
+			if (!resumable && (stopped_by_time || timed_out())) {
 				stopped_by_time = true;
 				if (ignite_terminal_tnt(pos, hit.node))
 					chained_tnt.push_back(pos);
@@ -745,7 +769,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		if (!stopped_by_time) {
 			visited = 0;
 			for (auto &[rel, hit] : layer) {
-				if ((visited++ & 255) == 0 && timed_out()) {
+				if ((visited++ & 255) == 0 && !resumable && timed_out()) {
 					stopped_by_time = true;
 					break;
 				}
@@ -785,9 +809,10 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				 << " melted=" << melted << std::endl;
 
 	// ModApiEnv is a friend of ScriptApiBase; keep protected access here.
-	blast_objects(L, env, origin, effect_radius, [&](ServerActiveObject *object) {
-		env->getScriptIface()->objectrefGetOrCreate(L, object);
-	});
+	if (!resumable || !stopped_by_time)
+		blast_objects(L, env, origin, effect_radius, [&](ServerActiveObject *object) {
+			env->getScriptIface()->objectrefGetOrCreate(L, object);
+		});
 
 	lua_createtable(L, 0, 8);
 
@@ -804,6 +829,25 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 	push_pos_array(L, chained_tnt);
 	lua_setfield(L, -2, "chained_tnt");
 
+	if (resumable && stopped_by_time) {
+		lua_createtable(L, 0, 3);
+		set_lua_number_field(L, "radius", dr);
+		set_lua_number_field(L, "strength", total_strength);
+		lua_createtable(L, incoming.size(), 0);
+		int index = 0;
+		for (const auto &patch : incoming) {
+			lua_createtable(L, 6, 0);
+			const double values[] = {static_cast<double>(patch.face), patch.u0, patch.u1,
+					patch.v0, patch.v1, patch.density};
+			for (int j = 0; j < 6; ++j) {
+				lua_pushnumber(L, values[j]);
+				lua_rawseti(L, -2, j + 1);
+			}
+			lua_rawseti(L, -2, ++index);
+		}
+		lua_setfield(L, -2, "frontier");
+		lua_setfield(L, -2, "continuation");
+	}
 	set_lua_number_field(L, "radius", dr);
 	set_lua_number_field(L, "effect_radius", effect_radius);
 	set_lua_number_field(L, "strength", total_strength);
