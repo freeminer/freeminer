@@ -405,7 +405,7 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 			touching_ground, in_liquid || in_liquid_stable, is_climbing,
 			wind_ground_grip);
 	// ===
-	const v3f initial_position = position;
+	const auto initial_position = position;
 	const v3f initial_speed = m_speed;
 
 
