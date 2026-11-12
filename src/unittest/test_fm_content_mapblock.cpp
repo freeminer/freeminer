@@ -261,7 +261,8 @@ void TestFmContentMapblock::testFastFaceRectangles()
 				// UV density must match individual cells along both edges, including
 				// faces whose second merge direction is vertical.
 				UASSERT(std::abs(std::abs(a.TCoords.X - b.TCoords.X) -
-								 (a.Pos - b.Pos).getLength() / BS) < 0.0001f);
+								 (a.Pos - b.Pos).getLength() / (BS * data.fscale)) <
+						0.0001f);
 				UASSERT(std::abs(std::abs(a.TCoords.Y - d.TCoords.Y) -
 								 (a.Pos - d.Pos).getLength() / (BS * data.fscale)) <
 						0.0001f);

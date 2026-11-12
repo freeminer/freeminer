@@ -42,12 +42,13 @@ void TestFmNodeDef::testNodeChangeMessagePack()
 	{
 		MSGPACK_PACKET_INIT((int)TOCLIENT_REMOVENODE, 1);
 		PACK(TOCLIENT_REMOVENODE_POS, pos);
-		NetworkPacket packet;
-		packet.putRawPacket(
-				reinterpret_cast<const u8 *>(buffer.data()), buffer.size(), 1);
-		UASSERT(packet.packet_unpack());
-		UASSERTEQ(int, packet.getCommand(), TOCLIENT_REMOVENODE);
-		UASSERT(packet.packet->at(TOCLIENT_REMOVENODE_POS).as<v3pos_t>() == pos);
+		MsgpackPacket packet;
+		msgpack::unpacked unpacked;
+		int command = 0;
+		UASSERT(parse_msgpack_packet({buffer.data(), buffer.size()}, buffer.size(),
+				&packet, &command, unpacked));
+		UASSERTEQ(int, command, TOCLIENT_REMOVENODE);
+		UASSERT(packet.at(TOCLIENT_REMOVENODE_POS).as<v3pos_t>() == pos);
 	}
 
 	{
@@ -55,16 +56,17 @@ void TestFmNodeDef::testNodeChangeMessagePack()
 		PACK(TOCLIENT_ADDNODE_POS, pos);
 		PACK(TOCLIENT_ADDNODE_NODE, node);
 		PACK(TOCLIENT_ADDNODE_REMOVE_METADATA, true);
-		NetworkPacket packet;
-		packet.putRawPacket(
-				reinterpret_cast<const u8 *>(buffer.data()), buffer.size(), 1);
-		UASSERT(packet.packet_unpack());
-		UASSERTEQ(int, packet.getCommand(), TOCLIENT_ADDNODE);
-		UASSERT(packet.packet->at(TOCLIENT_ADDNODE_POS).as<v3pos_t>() == pos);
-		const MapNode decoded = packet.packet->at(TOCLIENT_ADDNODE_NODE).as<MapNode>();
+		MsgpackPacket packet;
+		msgpack::unpacked unpacked;
+		int command = 0;
+		UASSERT(parse_msgpack_packet({buffer.data(), buffer.size()}, buffer.size(),
+				&packet, &command, unpacked));
+		UASSERTEQ(int, command, TOCLIENT_ADDNODE);
+		UASSERT(packet.at(TOCLIENT_ADDNODE_POS).as<v3pos_t>() == pos);
+		const MapNode decoded = packet.at(TOCLIENT_ADDNODE_NODE).as<MapNode>();
 		UASSERT(decoded.param0 == node.param0);
 		UASSERT(decoded.param1 == node.param1);
 		UASSERT(decoded.param2 == node.param2);
-		UASSERT(packet.packet->at(TOCLIENT_ADDNODE_REMOVE_METADATA).as<bool>());
+		UASSERT(packet.at(TOCLIENT_ADDNODE_REMOVE_METADATA).as<bool>());
 	}
 }

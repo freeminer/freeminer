@@ -322,10 +322,25 @@ void ServerEnvironment::deactivateBlocksAndObjects()
 
 ServerEnvironment::~ServerEnvironment()
 {
-	m_script = nullptr;
 	assert(m_active_blocks.size() == 0); // deactivateBlocksAndObjects does this
 
 	removeRemovedObjects(50000);
+	// fm: Deferred removals retain objects that still need the environment and Lua.
+	if (m_script) {
+		for (;;) {
+			decltype(m_script->postponed)::full_type events;
+			{
+				const auto lock = m_script->postponed.lock_unique_rec();
+				std::swap(m_script->postponed, events);
+			}
+			if (events.empty())
+				break;
+			for (const auto &event : events)
+				event();
+		}
+	}
+	m_script = nullptr;
+	// ===
 
 	// Drop/delete map
 	m_map.reset();
