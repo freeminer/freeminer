@@ -357,7 +357,6 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 	content_t fire_content = read_content("fire_node", "fire:basic_flame");
 	content_t boom_content = read_content("boom_node", "tnt:boom");
-	content_t tnt_burning_content = read_content("tnt_burning_node", "tnt:tnt_burning");
 
 	std::unordered_set<content_t> tnt_contents;
 	const auto add_tnt_content = [&](const std::string &name) {
@@ -565,12 +564,15 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 	const auto ignite_terminal_tnt = [&](const v3pos_t &pos, MapNode node) {
 		const content_t content = node.getContent();
-		if (!tnt_contents.count(content) || content == tnt_burning_content ||
-				tnt_burning_content == CONTENT_IGNORE || terminal_tnt_ignited.count(pos))
+		if (!tnt_contents.count(content) || terminal_tnt_ignited.count(pos))
 			return false;
 		if (!ignore_protection && lua_is_node_protected(L, pos, owner))
 			return false;
-		if (!env->setNode(pos, MapNode(tnt_burning_content), 2))
+		content_t burning = CONTENT_IGNORE;
+		if (!ndef->getId(ndef->get(content).name + "_burning", burning) ||
+				burning == CONTENT_IGNORE)
+			return false;
+		if (!env->setNode(pos, MapNode(burning), 2))
 			return false;
 		terminal_tnt_ignited.emplace(pos);
 		++ignited_tnts;
@@ -690,7 +692,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 					!tnt_contents.contains(hit.node.getContent()))
 				continue;
 			const v3pos_t pos = origin + rel;
-			if (hit.protected_node || hit.node.getContent() == tnt_burning_content) {
+			if (hit.protected_node) {
 				hit.energy = 0.0;
 				++last_blocked_rays;
 				continue;
