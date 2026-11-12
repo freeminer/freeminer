@@ -336,9 +336,6 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			0.0, static_cast<double>(
 						 getfloatfield_default(L, 2, "blast_min_strength", 0.15f)));
 
-	const double blast_tnt_absorb_strength =
-			blast_multiplier(L, "blast_tnt_absorb_strength", 1.0);
-
 	const double blast_tnt_ray_fraction = fm_blast_fraction(
 			getfloatfield_default(L, 2, "blast_tnt_ray_fraction", 0.2), 0.2);
 	const double blast_core_radius =
@@ -579,6 +576,13 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		return true;
 	};
 
+	const auto is_blast_fuel = [&](content_t content) {
+		const auto &cf = ndef->get(content);
+		return tnt_contents.contains(content) ||
+			   itemgroup_get(cf.groups, "tnt_blast_tnt_strength") > 0 ||
+			   itemgroup_get(cf.groups, "flammable") > 0;
+	};
+
 	const auto process_hit = [&](const v3pos_t &pos, FmBlastAngularHit &hit) {
 		const content_t content = hit.node.getContent();
 		const auto &cf = ndef->get(content);
@@ -673,7 +677,8 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				continue;
 			}
 			hit.loaded = true;
-			if (!hit.can_travel(blast_min_strength)) {
+			if (!hit.can_travel(blast_min_strength) &&
+					!is_blast_fuel(hit.node.getContent())) {
 				ignite_terminal_tnt(pos, hit.node);
 				hit.energy = 0.0;
 				continue;
@@ -688,8 +693,7 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 
 		double shell_boost = 0.0;
 		for (auto &[rel, hit] : layer) {
-			if (!hit.loaded || hit.energy <= 0.0 ||
-					!tnt_contents.contains(hit.node.getContent()))
+			if (!hit.loaded || !is_blast_fuel(hit.node.getContent()))
 				continue;
 			const v3pos_t pos = origin + rel;
 			if (hit.protected_node) {
@@ -704,11 +708,6 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				hit.energy = 0.0;
 				continue;
 			}
-			if (hit.energy < blast_tnt_absorb_strength) {
-				ignite_terminal_tnt(pos, hit.node);
-				hit.energy = 0.0;
-				continue;
-			}
 			if (!remove_node(pos, 2)) {
 				hit.energy = 0.0;
 				++last_blocked_rays;
@@ -716,12 +715,22 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			}
 			hit.absorbed_tnt = true;
 			hit.outcome = FmBlastOutcome::Removed;
-			const double added = tnt_node_blast_strength(hit.node.getContent());
+			const auto &fuel = ndef->get(hit.node);
+			const bool explosive =
+					tnt_contents.contains(hit.node.getContent()) ||
+					itemgroup_get(fuel.groups, "tnt_blast_tnt_strength") > 0;
+			const double added =
+					explosive ? tnt_node_blast_strength(hit.node.getContent())
+							  : static_cast<double>(
+										itemgroup_get(fuel.groups, "flammable"));
 			const auto split = fm_blast_split(added, 1.0 - blast_tnt_ray_fraction);
 			hit.energy += split.ray;
 			shell_boost += split.shell;
 			total_strength += added;
-			++tnts;
+			if (explosive)
+				++tnts;
+			else
+				++destroyed;
 		}
 		if (shell_boost > 0.0) {
 			size_t count = 0;
