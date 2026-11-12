@@ -1160,6 +1160,21 @@ bool WorldEditor::block_at(int x, int y, int z) const
 std::optional<int> WorldEditor::highest_block_between(
 		int x, int z, int min_y, int max_y) const
 {
+	if (standalone_storage) {
+		min_y = std::max(min_y, world_editor::min_y());
+		max_y = std::min(max_y, world_editor::world_max_y());
+		if (min_y > max_y)
+			return std::nullopt;
+		std::optional<int> highest;
+		for (const auto &[cell, block] : standalone_blocks) {
+			const auto &[bx, by, bz] = cell;
+			if (bx == x && bz == z && by >= min_y && by <= max_y &&
+					block.id() != CONTENT_AIR && block.id() != CONTENT_IGNORE &&
+					(!generation_outline || generation_outline->contains(bx, bz)))
+				highest = std::max(highest.value_or(std::numeric_limits<int>::min()), by);
+		}
+		return highest;
+	}
 	if (!mg || !mg->vm)
 		return std::nullopt;
 	min_y = std::max(min_y, world_editor::min_y());

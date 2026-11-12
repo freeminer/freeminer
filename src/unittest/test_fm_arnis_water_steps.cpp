@@ -10,6 +10,33 @@
 #include <string>
 #include <vector>
 
+namespace
+{
+struct WaterStepBlockFixture
+{
+	arnis::Block stone = arnis::block_definitions::STONE;
+	arnis::Block water = arnis::block_definitions::WATER;
+	arnis::Block oak_log = arnis::block_definitions::OAK_LOG;
+	arnis::Block oak_leaves = arnis::block_definitions::OAK_LEAVES;
+
+	WaterStepBlockFixture()
+	{
+		arnis::block_definitions::STONE = arnis::Block(320);
+		arnis::block_definitions::WATER = arnis::Block(321);
+		arnis::block_definitions::OAK_LOG = arnis::Block(322);
+		arnis::block_definitions::OAK_LEAVES = arnis::Block(323);
+	}
+
+	~WaterStepBlockFixture()
+	{
+		arnis::block_definitions::STONE = stone;
+		arnis::block_definitions::WATER = water;
+		arnis::block_definitions::OAK_LOG = oak_log;
+		arnis::block_definitions::OAK_LEAVES = oak_leaves;
+	}
+};
+} // namespace
+
 class TestFmArnisWaterSteps : public TestBase
 {
 public:
@@ -26,7 +53,19 @@ public:
 	void testOneBlockWaterDropGetsVanillaRunUp()
 	{
 		using namespace arnis;
+		WaterStepBlockFixture block_fixture;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
+		// Keep a dry perimeter around the fixture so these columns are interior
+		// to the standalone area's bounds, just like the Rust water-step test.
+		for (int x = -1; x <= 41; ++x) {
+			editor.set_block_absolute(block_definitions::STONE, x, 0, -1);
+			editor.set_block_absolute(block_definitions::STONE, x, 0, 5);
+		}
+		for (int z = 0; z <= 4; ++z) {
+			editor.set_block_absolute(block_definitions::STONE, -1, 0, z);
+			editor.set_block_absolute(block_definitions::STONE, 41, 0, z);
+		}
 		for (int x = 0; x <= 40; ++x)
 			for (int z = 0; z <= 4; ++z) {
 				const bool upper = x < 20;
@@ -43,7 +82,7 @@ public:
 			const auto found = block->property_values().find("level");
 			return found == block->property_values().end() ? 0 : std::stoi(found->second);
 		};
-		UASSERT(level(19, 30) == 7);
+		UTEST(level(19, 30) == 7, "expected level 7, got %d", level(19, 30));
 		UASSERT(level(13, 30) == 1);
 		UASSERT(level(12, 30) == 0);
 		UASSERT(level(20, 29) == 0);
@@ -52,7 +91,9 @@ public:
 	void testBoundedTreeClearStopsAtItsColumns()
 	{
 		using namespace arnis;
+		WaterStepBlockFixture block_fixture;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		auto is_block = [&](int x, int y, const Block &expected) {
 			const auto block = editor.get_block_absolute(x, y, 5);
 			return block && block->id() == expected.id();
