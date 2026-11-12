@@ -3,6 +3,7 @@
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/building_suppression.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/buildings.h"
+#include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/relation_area.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/subprocessor/interior/index.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/waterfront.h"
@@ -465,6 +466,12 @@ public:
 	void testHousingPartRelationUsesHousingStoreyHeight()
 	{
 		using namespace arnis;
+		struct BrickBlockFixture
+		{
+			Block saved = block_definitions::BRICK;
+			BrickBlockFixture() { block_definitions::BRICK = Block(330); }
+			~BrickBlockFixture() { block_definitions::BRICK = saved; }
+		} block_fixture;
 		ProcessedWay outer;
 		outer.id = 7;
 		const int coordinates[5][2]{{20, 20}, {40, 20}, {40, 36}, {20, 36}, {20, 20}};
@@ -481,6 +488,7 @@ public:
 		relation.id = 9;
 		relation.tags.emplace("type", "multipolygon");
 		relation.tags.emplace("building:part", "yes");
+		relation.tags.emplace("building:material", "brick");
 		relation.tags.emplace("building:levels", "5");
 		relation.tags.emplace("roof:shape", "flat");
 		relation.members.emplace_back(outer, ProcessedMemberRole::Outer);
@@ -488,6 +496,7 @@ public:
 		const XZBBox bbox(0, 0, 79, 79);
 		const auto top = [&](const std::unordered_set<std::uint64_t> &housing_parts) {
 			WorldEditor editor;
+			editor.enable_standalone_storage();
 			Args args;
 			args.mode = GenerationMode::GeoOnly;
 			args.ground_level = 0;
@@ -500,8 +509,12 @@ public:
 
 		const std::unordered_set<std::uint64_t> ordinary_parts;
 		const std::unordered_set<std::uint64_t> housing_parts{relation.id};
-		UASSERT(top(ordinary_parts) == std::optional<int>(23));
-		UASSERT(top(housing_parts) == std::optional<int>(18));
+		const auto ordinary_top = top(ordinary_parts);
+		UTEST(ordinary_top == std::optional<int>(23), "ordinary relation top=%d",
+				ordinary_top.value_or(-999));
+		const auto housing_top = top(housing_parts);
+		UTEST(housing_top == std::optional<int>(18), "housing relation top=%d",
+				housing_top.value_or(-999));
 	}
 
 	void testStreamingXmlParserHandlesQuotedMarkupAndEntityOrder()

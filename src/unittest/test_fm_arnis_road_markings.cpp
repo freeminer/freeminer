@@ -217,7 +217,7 @@ public:
 		using arnis::decals::Canvas;
 		using arnis::decals::TextStyle;
 		using arnis::decals::TextStyleKind;
-		Canvas plate(128, 128);
+		Canvas plate = Canvas::with_size(128, 128);
 		plate.rounded_rect(0, 46, 128, 36, 3, arnis::decals::colors::WHITE);
 		plate.stroke_rounded_rect(0, 46, 128, 36, 3, 2, arnis::decals::colors::DARK_GRAY);
 		const auto blank_plate = plate.pixels();
@@ -232,7 +232,7 @@ public:
 	void testStopNameTextStaysOffPlateBorder()
 	{
 		using namespace arnis::decals;
-		Canvas baseline(128, 128);
+		Canvas baseline = Canvas::with_size(128, 128);
 		baseline.rounded_rect(0, 46, 128, 36, 3, colors::WHITE);
 		baseline.stroke_rounded_rect(0, 46, 128, 36, 3, 2, colors::DARK_GRAY);
 		std::vector<std::string> names{"Varian-Fry-Straße/Potsdamer Platz",
@@ -240,7 +240,7 @@ public:
 		for (int n = 1; n < 40; ++n)
 			names.push_back("J" + std::string(static_cast<std::size_t>(n), 'f'));
 		for (const auto &name : names) {
-			Canvas rendered(128, 128);
+			Canvas rendered = Canvas::with_size(128, 128);
 			arnis::decals::templates::text_sign(
 					rendered, TextStyle{TextStyleKind::StopName}, name);
 			for (const int x : {0, 1, 126, 127})
