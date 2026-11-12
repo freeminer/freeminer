@@ -42,7 +42,8 @@ void MapBlock::setNode(const v3pos_t &p, const MapNode &n, bool important)
 	modified_light light = modified_light_no;
 	if (f0.light_propagates != f1.light_propagates ||
 #if CHECK_CLIENT_BUILD() // TODO use on server
-			f0.visuals->solidness != f1.visuals->solidness ||
+			(f0.visuals ? f0.visuals->solidness : 0) !=
+					(f1.visuals ? f1.visuals->solidness : 0) ||
 #endif
 			f0.light_source != f1.light_source) /*|| f0.drawtype != f1.drawtype*/
 		light = modified_light_yes;

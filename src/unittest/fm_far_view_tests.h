@@ -93,7 +93,7 @@ private:
 		const auto count = [](const farmesh::View *view) {
 			size_t cells = 0;
 			farmesh::runFarAll(
-					v3bpos_t(0, 0, 0), 1, 256, 1, 1, false, 0,
+					v3bpos_t(0, 0, 0), 1, 1024, 1, 1, false, 0,
 					[&](const v3bpos_t &, const bpos_t &, const block_step_t &) {
 						++cells;
 						return false;
@@ -112,7 +112,7 @@ private:
 	{
 		Grid result;
 		farmesh::runFarAll(
-				player, cell_pow, 256, cell_pow, 0, false, 0,
+				player, cell_pow, 1024, cell_pow, 0, false, 0,
 				[&](const v3bpos_t &pos, const bpos_t &size, const block_step_t &step) {
 					result.emplace(pos, farmesh::tree_result_t{pos, size, step});
 					return false;
@@ -144,16 +144,16 @@ private:
 					for (const auto sample :
 							{pos, pos + v3bpos_t(width - 1, width - 1, width - 1)}) {
 						const auto selected = farmesh::getFarParams(
-								player, cell_pow, 256, cell_pow, sample, false, &view);
+								player, cell_pow, 1024, cell_pow, sample, false, &view);
 						UASSERT(selected);
 						UASSERT(selected->pos == pos);
 						UASSERTEQ(int, selected->step, cell.step);
 						const auto storage = farmesh::getFarParams(
-								player, cell_pow, 256, cell_pow, sample, true, &view);
+								player, cell_pow, 1024, cell_pow, sample, true, &view);
 						UASSERT(storage);
 						UASSERTEQ(int, storage->step, cell.step);
 						const auto base = farmesh::getFarParams(
-								player, cell_pow, 256, cell_pow, sample);
+								player, cell_pow, 1024, cell_pow, sample);
 						UASSERT(base);
 						UASSERT(cell.step <= base->step);
 						UASSERT(unsigned(base->step - cell.step) <= view.levels);
@@ -181,7 +181,7 @@ private:
 					Grid reached;
 					pos_t min_x = 0, min_z = 0, max_x = 0, max_z = 0;
 					farmesh::runFarAll(
-							player, cell_pow, 256, cell_pow, 1, false, 0,
+							player, cell_pow, 1024, cell_pow, 1, false, 0,
 							[&](const v3bpos_t &pos, const bpos_t &size,
 									const block_step_t &) {
 								const pos_t width = pos_t(size) << cell_pow;
@@ -190,7 +190,7 @@ private:
 								max_x = std::max<pos_t>(max_x, pos.X + width);
 								max_z = std::max<pos_t>(max_z, pos.Z + width);
 								const auto cell = farmesh::getFarParams(player, cell_pow,
-										256, cell_pow, v3bpos_t(pos.X, surface_y, pos.Z),
+										1024, cell_pow, v3bpos_t(pos.X, surface_y, pos.Z),
 										false, &view);
 								UASSERT(cell);
 								reached.insert_or_assign(cell->pos, *cell);
@@ -201,8 +201,9 @@ private:
 					// cannot test the actual height against the view frustum.
 					for (pos_t z = min_z; z < max_z; z += 1 << cell_pow)
 						for (pos_t x = min_x; x < max_x; x += 1 << cell_pow) {
-							const auto cell = farmesh::getFarParams(player, cell_pow, 256,
-									cell_pow, v3bpos_t(x, surface_y, z), false, &view);
+							const auto cell = farmesh::getFarParams(player, cell_pow,
+									1024, cell_pow, v3bpos_t(x, surface_y, z), false,
+									&view);
 							UASSERT(cell);
 							UASSERT(reached.contains(cell->pos));
 							UASSERTEQ(int, reached.at(cell->pos).step, cell->step);
@@ -231,7 +232,7 @@ private:
 				auto missing = normal.end();
 				for (auto it = normal.begin(); it != normal.end(); ++it) {
 					const auto fine = farmesh::getFarParams(
-							player, cell_pow, 256, cell_pow, it->first, false, &view);
+							player, cell_pow, 1024, cell_pow, it->first, false, &view);
 					if (fine && fine->step < it->second.step) {
 						missing = it;
 						break;
@@ -252,7 +253,7 @@ private:
 				farmesh::forEachMeshSource(missing->first, missing->second.step, cell_pow,
 						[&](const v3bpos_t &pos) {
 							const auto source = farmesh::getFarParams(
-									player, cell_pow, 256, cell_pow, pos, true);
+									player, cell_pow, 1024, cell_pow, pos, true);
 							UASSERT(source);
 							UASSERT(source->pos == pos);
 							UASSERTEQ(int, source->step, missing->second.step);
@@ -279,7 +280,7 @@ private:
 		const auto pending = grid(player, 1, &view);
 		auto missing = pending.begin();
 		for (auto it = pending.begin(); it != pending.end(); ++it) {
-			const auto base = farmesh::getFarParams(player, 1, 256, 1, it->first);
+			const auto base = farmesh::getFarParams(player, 1, 1024, 1, it->first);
 			if (base && it->second.step < base->step) {
 				missing = it;
 				break;
