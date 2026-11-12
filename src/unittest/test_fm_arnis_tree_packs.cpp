@@ -29,6 +29,35 @@
 #include <unordered_map>
 #include <vector>
 
+namespace
+{
+struct TreePlacementBlockFixture
+{
+	arnis::Block oak_log = arnis::OAK_LOG;
+	arnis::Block oak_leaves = arnis::OAK_LEAVES;
+	arnis::Block smooth_stone = arnis::SMOOTH_STONE;
+	arnis::Block water = arnis::WATER;
+
+	TreePlacementBlockFixture()
+	{
+		// These checks run without the host node registry, so give the blocks
+		// distinct non-air IDs just as the schematic tests above do.
+		arnis::OAK_LOG = arnis::Block(300);
+		arnis::OAK_LEAVES = arnis::Block(301);
+		arnis::SMOOTH_STONE = arnis::Block(302);
+		arnis::WATER = arnis::Block(303);
+	}
+
+	~TreePlacementBlockFixture()
+	{
+		arnis::OAK_LOG = oak_log;
+		arnis::OAK_LEAVES = oak_leaves;
+		arnis::SMOOTH_STONE = smooth_stone;
+		arnis::WATER = water;
+	}
+};
+} // namespace
+
 class TestFmArnisTreePacks : public TestBase
 {
 public:
@@ -426,17 +455,23 @@ public:
 	void testScatteredTreesRespectSealedSurface()
 	{
 		using namespace arnis;
+		TreePlacementBlockFixture block_fixture;
 		WorldEditor editor;
+		// These tests exercise placement without a mapgen VM. Route editor writes
+		// to the standalone block store so tree stamps are observable.
+		editor.enable_standalone_storage();
 		const XZBBox bounds(0, 0, 31, 31);
 		auto sealed = std::make_shared<CoordinateBitmap>(bounds);
 		sealed->set(16, 16);
 		editor.set_sealed_surface(sealed);
 
-		Tree::create(editor, Coord{16, 0, 16});
+		Tree::create_of_type(editor, Coord{16, 0, 16}, TreeType::Oak, nullptr, nullptr,
+				false, std::nullopt, false, false, false);
 		for (int y = 0; y < 40; ++y)
 			UASSERT(!editor.block_exists_absolute(16, y, 16));
 
-		Tree::create(editor, Coord{20, 0, 20});
+		Tree::create_of_type(editor, Coord{20, 0, 20}, TreeType::Oak, nullptr, nullptr,
+				false, std::nullopt, false, false, false);
 		bool planted = false;
 		for (int y = 0; y < 40; ++y)
 			planted = planted || editor.block_exists_absolute(20, y, 20);
@@ -446,7 +481,9 @@ public:
 	void testMappedTreesMayUseSealedSurface()
 	{
 		using namespace arnis;
+		TreePlacementBlockFixture block_fixture;
 		WorldEditor editor;
+		editor.enable_standalone_storage();
 		const XZBBox bounds(0, 0, 31, 31);
 		auto sealed = std::make_shared<CoordinateBitmap>(bounds);
 		sealed->set(16, 16);
@@ -463,6 +500,7 @@ public:
 	void testMappedTreesMayUsePavingButNeverWater()
 	{
 		using namespace arnis;
+		TreePlacementBlockFixture block_fixture;
 		auto place = [](WorldEditor &editor, bool allow_on_paved) {
 			Tree::create_of_type(editor, Coord{30, 1, 30}, TreeType::Oak, nullptr,
 					nullptr, allow_on_paved, std::nullopt, false, false, false);
@@ -473,16 +511,19 @@ public:
 		};
 
 		WorldEditor scattered;
+		scattered.enable_standalone_storage();
 		scattered.set_block_absolute(SMOOTH_STONE, 30, 0, 30);
 		place(scattered, false);
 		UASSERT(!has_trunk(scattered));
 
 		WorldEditor mapped;
+		mapped.enable_standalone_storage();
 		mapped.set_block_absolute(SMOOTH_STONE, 30, 0, 30);
 		place(mapped, true);
 		UASSERT(has_trunk(mapped));
 
 		WorldEditor underwater;
+		underwater.enable_standalone_storage();
 		underwater.set_block_absolute(WATER, 30, 0, 30);
 		place(underwater, true);
 		UASSERT(!has_trunk(underwater));
