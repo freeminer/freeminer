@@ -1,5 +1,6 @@
 #include "test.h"
 
+#include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/buildings.h"
 
 #include <cstddef>
@@ -9,6 +10,24 @@
 
 namespace
 {
+struct RoofBlockFixture
+{
+	arnis::Block slab = arnis::block_definitions::STONE_BRICK_SLAB;
+	arnis::Block cobblestone_wall = arnis::block_definitions::COBBLESTONE_WALL;
+
+	RoofBlockFixture()
+	{
+		arnis::block_definitions::STONE_BRICK_SLAB = arnis::Block(330);
+		arnis::block_definitions::COBBLESTONE_WALL = arnis::Block(331);
+	}
+
+	~RoofBlockFixture()
+	{
+		arnis::block_definitions::STONE_BRICK_SLAB = slab;
+		arnis::block_definitions::COBBLESTONE_WALL = cobblestone_wall;
+	}
+};
+
 arnis::ProcessedWay roof_way(
 		std::initializer_list<std::pair<const char *, const char *>> tags)
 {
@@ -30,6 +49,7 @@ arnis::ProcessedWay roof_way(
 std::optional<int> roof_top(const arnis::ProcessedWay &way)
 {
 	arnis::WorldEditor editor;
+	editor.enable_standalone_storage();
 	arnis::Args args;
 	args.mode = arnis::GenerationMode::GeoOnly;
 	args.ground_level = 0;
@@ -51,6 +71,7 @@ public:
 
 	void testLayerDoesNotLiftOrdinaryRoof()
 	{
+		RoofBlockFixture block_fixture;
 		const auto plain = roof_top(roof_way({{"building", "roof"}}));
 		const auto layered = roof_top(roof_way({{"building", "roof"}, {"layer", "1"}}));
 		UASSERT(plain.has_value());
@@ -59,6 +80,7 @@ public:
 
 	void testLayerStacksBuildingPartRoof()
 	{
+		RoofBlockFixture block_fixture;
 		const auto plain = roof_top(roof_way({{"building:part", "roof"}}));
 		const auto layered =
 				roof_top(roof_way({{"building:part", "roof"}, {"layer", "1"}}));
