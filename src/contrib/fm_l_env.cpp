@@ -719,6 +719,12 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 		for (auto &[rel, hit] : layer) {
 			if (!hit.loaded || !is_blast_fuel(hit.node.getContent()))
 				continue;
+			const auto &fuel = ndef->get(hit.node);
+			const bool explosive =
+					tnt_contents.contains(hit.node.getContent()) ||
+					itemgroup_get(fuel.groups, "tnt_blast_tnt_strength") > 0;
+			if (!explosive && hit.energy <= 0.0)
+				continue;
 			const v3pos_t pos = origin + rel;
 			if (hit.protected_node) {
 				hit.energy = 0.0;
@@ -739,14 +745,11 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 			}
 			hit.absorbed_tnt = true;
 			hit.outcome = FmBlastOutcome::Removed;
-			const auto &fuel = ndef->get(hit.node);
-			const bool explosive =
-					tnt_contents.contains(hit.node.getContent()) ||
-					itemgroup_get(fuel.groups, "tnt_blast_tnt_strength") > 0;
-			const double added =
-					explosive ? tnt_node_blast_strength(hit.node.getContent())
-							  : static_cast<double>(
-										itemgroup_get(fuel.groups, "flammable"));
+			const bool wood = itemgroup_get(fuel.groups, "tree") > 0 ||
+							  itemgroup_get(fuel.groups, "wood") > 0;
+			const double added = explosive
+										 ? tnt_node_blast_strength(hit.node.getContent())
+										 : (wood ? 0.1 : 0.01);
 			const auto split = fm_blast_split(added, 1.0 - blast_tnt_ray_fraction);
 			hit.energy += split.ray;
 			shell_boost += split.shell;
