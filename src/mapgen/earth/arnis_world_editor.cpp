@@ -460,6 +460,20 @@ bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, 
 	merge_top_states(worker.written_cells);
 	merge_block_properties(worker.tile_merged_written_cells);
 	merge_block_properties(worker.written_cells);
+	auto merge_nbt_properties = [&](const WrittenCellSet &written) {
+		for (const auto &cell : written) {
+			const auto &[x, y, z] = cell;
+			if (!worker.owns(x, z))
+				continue;
+			if (const auto found = worker.nbt_properties_by_cell.find(cell);
+					found != worker.nbt_properties_by_cell.end())
+				nbt_properties_by_cell.insert_or_assign(cell, found->second);
+			else
+				nbt_properties_by_cell.erase(cell);
+		}
+	};
+	merge_nbt_properties(worker.tile_merged_written_cells);
+	merge_nbt_properties(worker.written_cells);
 	flush_requested = flush_requested || worker.flush_requested;
 	save_requested = save_requested || worker.save_requested;
 	return true;
@@ -1015,6 +1029,7 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 		written_cells.insert(key);
 		full_top_state_cells.erase(key);
 		block_properties_by_cell.erase(key);
+		nbt_properties_by_cell.erase(key);
 		return true;
 	}
 
@@ -1060,6 +1075,7 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 	written_cells.insert(key);
 	full_top_state_cells.erase(key);
 	block_properties_by_cell.erase(key);
+	nbt_properties_by_cell.erase(key);
 	++mg->stat.set;
 	return true;
 }
@@ -1094,9 +1110,14 @@ bool WorldEditor::try_set_block_with_properties_absolute(const BlockWithProperti
 		block_properties_by_cell.erase(key);
 	else
 		block_properties_by_cell.insert_or_assign(key, bwp.properties);
+	if (bwp.nbt_properties)
+		nbt_properties_by_cell.insert_or_assign(key, bwp.nbt_properties);
+	else
+		nbt_properties_by_cell.erase(key);
 	// Block states are carried by the tile's block output, but this legacy
 	// side-channel is not part of TileOverlay and must only be emitted once.
-	if (block_properties_sink && owns(x, z) && !bwp.property_values().empty())
+	if (block_properties_sink && owns(x, z) &&
+			(!bwp.property_values().empty() || bwp.nbt_properties))
 		block_properties_sink(bwp, x, y, z);
 	const auto &properties = bwp.property_values();
 	const auto type = properties.find("type");
@@ -1606,8 +1627,15 @@ std::optional<BlockWithProperties> WorldEditor::get_block_with_properties_absolu
 	if (!block)
 		return std::nullopt;
 	if (const auto found = block_properties_by_cell.find({x, y, z});
-			found != block_properties_by_cell.end())
+			found != block_properties_by_cell.end()) {
+		if (const auto raw = nbt_properties_by_cell.find({x, y, z});
+				raw != nbt_properties_by_cell.end())
+			return BlockWithProperties{*block, found->second, raw->second};
 		return BlockWithProperties{*block, found->second};
+	}
+	if (const auto raw = nbt_properties_by_cell.find({x, y, z});
+			raw != nbt_properties_by_cell.end())
+		return BlockWithProperties::from_value(*block, *raw->second);
 	if (const auto properties = block->properties())
 		return BlockWithProperties{*block, *properties};
 	return BlockWithProperties{*block};

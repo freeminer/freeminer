@@ -3,11 +3,13 @@
 #include "mapgen/earth/arnis-cpp/src/args.h"
 #include "mapgen/earth/arnis-cpp/src/bedrock_addon/models.h"
 #include "mapgen/earth/arnis-cpp/src/coordinate_system/cartesian/xzbbox/xzbbox_enum.h"
+#include "mapgen/earth/arnis-cpp/src/fm_xz_bbox_shape.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/trains.h"
 
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
+#include <memory>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -26,6 +28,44 @@ public:
 		TEST(testBedrockDataMatchesScheduledRoutesAndRailHeights);
 		TEST(testBedrockMovingVehiclesPassValidation);
 		TEST(testMoonDefaultsPreserveBodyGravity);
+		TEST(testTrainRoutesSplitAtGapsBetweenSelectedAreas);
+	}
+
+	void testTrainRoutesSplitAtGapsBetweenSelectedAreas()
+	{
+		const arnis::cartesian::XZBBoxRect rect({0, 0}, {2000, 2000});
+		arnis::XZBBoxShape::Polygons polygons;
+		polygons.push_back({{{0.0, 0.0}, {700.0, 0.0}, {700.0, 2000.0}, {0.0, 2000.0}}});
+		polygons.push_back(
+				{{{1300.0, 0.0}, {2000.0, 0.0}, {2000.0, 2000.0}, {1300.0, 2000.0}}});
+		auto shape = arnis::XZBBoxShape::create(rect, std::move(polygons));
+		UASSERT(shape.has_value());
+		const auto bounds =
+				arnis::cartesian::XZBBox::rect_from_min_max(0, 0, 2000, 2000)
+						.with_outline(std::make_shared<const arnis::XZBBoxShape>(
+								std::move(*shape)));
+
+		arnis::ProcessedWay railway{};
+		railway.id = 10;
+		railway.tags.emplace("railway", "rail");
+		for (int x = 0; x <= 2000; x += 100) {
+			arnis::ProcessedNode node{};
+			node.id = 100 + static_cast<std::uint64_t>(x);
+			node.x = x;
+			node.z = 1000;
+			railway.nodes.push_back(std::move(node));
+		}
+		std::vector<arnis::ProcessedElement> elements;
+		elements.emplace_back(std::move(railway));
+		const auto network =
+				arnis::trains::TrainRouteNetwork::build(elements, 1.0, bounds);
+		UASSERT(network.routes().size() == 2);
+		for (const auto &route : network.routes()) {
+			UASSERT(route.shape == arnis::trains::Shape::Through);
+			for (const auto &point : route.points)
+				UASSERT(bounds.contains(arnis::cartesian::XZPoint{
+						static_cast<int>(point.x), static_cast<int>(point.z)}));
+		}
 	}
 
 	void testBedrockMovingVehiclesPassValidation()
