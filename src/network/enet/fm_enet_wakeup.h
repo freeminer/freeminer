@@ -19,12 +19,17 @@ public:
 		m_read = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
 		m_write = enet_socket_create(ENET_SOCKET_TYPE_DATAGRAM);
 #if defined(ENET_IPV6)
-		const char *loopback = "::1";
+		// Some Windows ENet builds have no IPv6 text parser. Construct ::1
+		// directly in network byte order instead.
+		reinterpret_cast<unsigned char *>(&m_address.host)[15] = 1;
 #else
-		const char *loopback = "127.0.0.1";
+		const bool invalid_address =
+				enet_address_set_host_ip(&m_address, "127.0.0.1") < 0;
 #endif
 		if (m_read == ENET_SOCKET_NULL || m_write == ENET_SOCKET_NULL ||
-				enet_address_set_host_ip(&m_address, loopback) < 0 ||
+#if !defined(ENET_IPV6)
+				invalid_address ||
+#endif
 				enet_socket_set_option(m_read, ENET_SOCKOPT_NONBLOCK, 1) < 0 ||
 				enet_socket_set_option(m_write, ENET_SOCKOPT_NONBLOCK, 1) < 0 ||
 				enet_socket_bind(m_read, &m_address) < 0 ||
