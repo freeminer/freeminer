@@ -249,9 +249,26 @@ bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
 	// Do not enlarge the step-0 core: only normal meshes can render step 0.
 	if (!refinements || child.size <= (2 << cell_size_pow))
 		return true;
-	const unsigned wanted = two_d ? view->columnRefinementLevels(child.pos, child.size,
-											column_min_y, column_max_y)
-								  : view->refinementLevels(child.pos, child.size);
+	unsigned wanted = two_d ? view->columnRefinementLevels(
+									  child.pos, child.size, column_min_y, column_max_y)
+							: view->refinementLevels(child.pos, child.size);
+	if (two_d) {
+		// A 3-D leaf may have started refining at a larger ancestor because
+		// its height is farther from the player. Include those ancestors so
+		// their refined children cannot fall between surface samples.
+		auto ancestor = child;
+		for (unsigned level = 0; level < view->levels; ++level) {
+			ancestor.size *= 2;
+			ancestor.pos.X = (ancestor.pos.X / ancestor.size -
+									 (ancestor.pos.X % ancestor.size < 0)) *
+							 ancestor.size;
+			ancestor.pos.Z = (ancestor.pos.Z / ancestor.size -
+									 (ancestor.pos.Z % ancestor.size < 0)) *
+							 ancestor.size;
+			wanted = std::max(wanted, view->columnRefinementLevels(ancestor.pos,
+											  ancestor.size, column_min_y, column_max_y));
+		}
+	}
 	const unsigned consumed = std::min(view->levels, View::max_levels) - refinements;
 	if (consumed >= wanted)
 		return true;

@@ -79,8 +79,10 @@ void TestSAO::runTests(IGameDef *gamedef)
 	ServerEnvironment env(std::move(map), &server, &mb);
 	env.loadMeta();
 
+	// fm: Removed objects are collected on a five-second interval.
 	m_step_interval = std::max(
-		g_settings->getFloat("active_block_mgmt_interval"), 0.5f) + 0.1f;
+		g_settings->getFloat("active_block_mgmt_interval"), 5.0f) + 0.1f;
+	// ===
 
 	TEST(testStaticSave, &env);
 	TEST(testNotSaved, &env);
@@ -122,6 +124,9 @@ void TestSAO::testStaticSave(ServerEnvironment *env)
 	const v3opos_t testpos(0, -66 * BS, 0);
 	const auto testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
 
+	// fm: The map no longer creates missing blocks when storing objects.
+	UASSERT(map.emergeBlock(testblockpos, true));
+	// ===
 	auto obj = add_entity(env, testpos, "test:static");
 	UASSERT(obj);
 	const u16 obj_id = obj->getId();
@@ -282,6 +287,9 @@ void TestSAO::testStaticToTrue(ServerEnvironment *env)
 	const v3opos_t testpos(123 * BS, 5 * BS, 0);
 	const auto testblockpos = getNodeBlockPos(floatToInt(testpos, BS));
 
+	// fm: Static data must be saved into an existing block.
+	UASSERT(map.emergeBlock(testblockpos, true));
+	// ===
 	auto obj = add_entity(env, testpos, "test:non_static");
 	UASSERT(obj);
 	const u16 obj_id = obj->getId();

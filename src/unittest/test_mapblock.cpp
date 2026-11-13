@@ -163,7 +163,11 @@ void TestMapBlock::testMonoblock(IGameDef *gamedef)
 
 void TestMapBlock::testSaveLoad(IGameDef *gamedef, const u8 version)
 {
-	// Use the bottom node ids for this test
+	// fm: Node allocation can start after the reserved IDs.
+	const content_t ids[] = {t_CONTENT_STONE, t_CONTENT_GRASS, t_CONTENT_TORCH,
+			t_CONTENT_WATER, t_CONTENT_LAVA, t_CONTENT_BRICK};
+	const content_t max = sizeof(ids) / sizeof(ids[0]);
+	/*
 	content_t max = 0;
 	{
 		auto *ndef = gamedef->getNodeDefManager();
@@ -173,19 +177,26 @@ void TestMapBlock::testSaveLoad(IGameDef *gamedef, const u8 version)
 	}
 	UASSERT(max >= 2);
 	UASSERT(max <= CONTENT_UNKNOWN);
+	*/
+	// ===
 
 	constexpr u64 seed = 0x207366616e3520ULL;
 	std::stringstream ss;
 	{
 		MapBlock block({}, gamedef);
+		// fm: Disk deserialization requires generated blocks.
+		block.setGenerated(true);
+		// ===
 		// Fill with data
 		PcgRandom r(seed);
 		for (s16 z=0; z < MAP_BLOCKSIZE; z++)
 		for (s16 y=0; y < MAP_BLOCKSIZE; y++)
 		for (s16 x=0; x < MAP_BLOCKSIZE; x++) {
 			u32 rval = r.next();
+			// fm: Use registered node IDs.
 			block.setNodeNoCheck(x, y, z,
-					MapNode(rval % max, (rval >> 16) & 0xff, (rval >> 24) & 0xff));
+					MapNode(ids[rval % max], (rval >> 16) & 0xff, (rval >> 24) & 0xff));
+			// ===
 		}
 
 		// Serialize
@@ -203,8 +214,10 @@ void TestMapBlock::testSaveLoad(IGameDef *gamedef, const u8 version)
 		for (s16 y=0; y < MAP_BLOCKSIZE; y++)
 		for (s16 x=0; x < MAP_BLOCKSIZE; x++) {
 			u32 rval = r.next();
+			// fm: Use registered node IDs.
 			auto expect =
-				MapNode(rval % max, (rval >> 16) & 0xff, (rval >> 24) & 0xff);
+				MapNode(ids[rval % max], (rval >> 16) & 0xff, (rval >> 24) & 0xff);
+			// ===
 			UASSERT(block.getNodeNoCheck(x, y, z) == expect);
 		}
 	}

@@ -15,16 +15,19 @@
 #include "content_cao.h"
 #include "hud_element.h"
 
-#include "log_types.h"
-
+// fm:
 namespace
 {
 constexpr float PLAYER_WIND_ACCEL_AIR = 0.35f;
 constexpr float PLAYER_WIND_ACCEL_GROUND = 0.08f;
 constexpr float PLAYER_MAX_WIND_ACCEL = 3.0f * BS;
 
+// Ground resistance to wind, scaled by the standing node's slipperiness.
+constexpr float PLAYER_WIND_GROUND_RESISTANCE = 0.2f * BS;
+
+// Pass the standing surface's grip to wind physics.
 v3f getPlayerWindAcceleration(Map *map, const v3pos_t &pos, const v3f &speed,
-		bool touching_ground, bool in_liquid, bool is_climbing)
+		bool touching_ground, bool in_liquid, bool is_climbing, float ground_grip)
 {
 	if (!map || in_liquid || is_climbing)
 		return {};
@@ -40,9 +43,18 @@ v3f getPlayerWindAcceleration(Map *map, const v3pos_t &pos, const v3f &speed,
 	if (accel_length > PLAYER_MAX_WIND_ACCEL && accel_length > 0.0001f)
 		accel *= PLAYER_MAX_WIND_ACCEL / accel_length;
 
+	// Ground friction opposes wind during the collision step itself.
+	if (touching_ground) {
+		const float length = accel.getLength();
+		const float resistance = PLAYER_WIND_GROUND_RESISTANCE * ground_grip;
+		if (length <= resistance)
+			return {};
+		accel *= (length - resistance) / length;
+	}
 	return accel;
 }
 }
+// ===
 
 /*
 	PlayerSettings
@@ -241,22 +253,32 @@ bool LocalPlayer::updateSneakNode(Map *map, const v3opos_t &position,
 void LocalPlayer::move(f32 dtime, Environment *env,
 		std::vector<CollisionInfo> *collision_info)
 {
+/*
 	// Node at feet position, update each ClientEnvironment::step()
 	if (!collision_info || collision_info->empty())
 		m_standing_node = floatToInt(m_position, BS);
 
+	// fm: The legacy path captures the standing node before resetting it itself.
+*/
 	// Temporary option for old move code
 	if (!physics_override.new_move) {
 		old_move(dtime, env, collision_info);
 		return;
 	}
 
+	// fm:
+	// Read the previous contact before resetting the standing node.
+	const float wind_ground_grip = touching_ground ? getSlipFactor(env, v3f(0.0f)) : 1.0f;
+
+	// Node at feet position, update each ClientEnvironment::step()
+	if (!collision_info || collision_info->empty())
+		m_standing_node = floatToInt(m_position, BS);
+    // ===
+
 	Map *map = &env->getMap();
 	const NodeDefManager *nodemgr = m_client->ndef();
 
 	auto position = getPosition();
-
-	//v3f old_speed = m_speed;
 
 	// Copy parent position if local player is attached
 	if (getParent()) {
@@ -378,9 +400,12 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 	const float sneak_stepheight = 0.6f * BS;
 
 	v3f accel_f(0, -gravity, 0);
+	// Use the same standing-node grip as the movement controls.
 	accel_f += getPlayerWindAcceleration(map, floatToInt(position, BS), m_speed,
-			touching_ground, in_liquid || in_liquid_stable, is_climbing);
-	const v3opos_t initial_position = position;
+			touching_ground, in_liquid || in_liquid_stable, is_climbing,
+			wind_ground_grip);
+	// ===
+	const auto initial_position = position;
 	const v3f initial_speed = m_speed;
 
 
@@ -908,6 +933,11 @@ void LocalPlayer::accelerate(const v3f &target_speed, const f32 max_increase_H,
 void LocalPlayer::old_move(f32 dtime, Environment *env,
 	std::vector<CollisionInfo> *collision_info)
 {
+	// fm: Read the previous contact before resetting the standing node.
+	const float wind_ground_grip = touching_ground ? getSlipFactor(env, v3f(0.0f)) : 1.0f;
+	if (!collision_info || collision_info->empty())
+		m_standing_node = floatToInt(m_position, BS);
+	// ===
 	Map *map = &env->getMap();
 	const NodeDefManager *nodemgr = m_client->ndef();
 
@@ -1044,8 +1074,11 @@ void LocalPlayer::old_move(f32 dtime, Environment *env,
 	// TODO: This shouldn't be hardcoded but decided by the server
 	float player_stepheight = touching_ground ? (BS * 0.6f) : (BS * 0.2f);
 
+	// fm: Use the same standing-node grip as the movement controls.
 	v3f accel_f = getPlayerWindAcceleration(map, floatToInt(position, BS), m_speed,
-			touching_ground, in_liquid || in_liquid_stable, is_climbing);
+			touching_ground, in_liquid || in_liquid_stable, is_climbing,
+			wind_ground_grip);
+	// ===
 	const v3opos_t initial_position = position;
 	const v3f initial_speed = m_speed;
 
