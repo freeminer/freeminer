@@ -1232,10 +1232,11 @@ bool Game::connectToServer(const GameStartData &start_data,
 		fallback_address = Address();
 	}
 
+// fm: Prefer another available local transport on Windows.
 #if USE_MULTI
 	if (start_data.isAnyServer()) { //simple_singleplayer_mode || start_data.local_server) {
 		u16 port = 0;
-#if USE_SCTP
+#if USE_SCTP && (!defined(_WIN32) || (!USE_ENET && !USE_WEBSOCKET && !MINETEST_TRANSPORT))
 		if (!g_settings->getU16NoEx("port_sctp", port)) {
 			port = connect_address.getPort() + con::sctp_port_diff;
 		
@@ -1258,6 +1259,7 @@ bool Game::connectToServer(const GameStartData &start_data,
 			connect_address.setPort(port);
 	}
 #endif
+	// ===
 
 	fallback_address.setPort(connect_address.getPort());
 	if (fallback_address.isValid()) {
