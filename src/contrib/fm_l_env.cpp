@@ -738,6 +738,34 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 				hit.energy = 0.0;
 				continue;
 			}
+			// Fuel near the origin feeds the blast; distant fuel is increasingly
+			// likely to burn instead, consuming the energy of this ray.
+			const double ignition_chance = std::clamp(
+					(static_cast<double>(dr) - radius) / std::max(1.0, radius), 0.0, 1.0);
+			const bool ignite =
+					ignition_chance > 0.0 &&
+					(ignition_chance >= 1.0 ||
+							myrand_range(1, 10000) <= ignition_chance * 10000.0);
+			if (ignite) {
+				bool ignited = false;
+				if (explosive) {
+					ignited = ignite_terminal_tnt(pos, hit.node);
+				} else if (fire_content != CONTENT_IGNORE) {
+					ignited = env->setNode(pos, MapNode(fire_content), 0);
+				}
+				if (ignited) {
+					hit.absorbed_tnt = true;
+					hit.outcome = FmBlastOutcome::Transformed;
+					hit.energy = std::max(0.0,
+							hit.energy - std::max(1.0,
+												 node_resistance(hit.node.getContent())));
+					++destroyed;
+				} else {
+					hit.energy = 0.0;
+					++last_blocked_rays;
+				}
+				continue;
+			}
 			if (!remove_node(pos, 2)) {
 				hit.energy = 0.0;
 				++last_blocked_rays;
