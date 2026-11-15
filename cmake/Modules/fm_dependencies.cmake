@@ -39,11 +39,11 @@ elseif(FETCH_DEPS)
         set(ENABLE_STATIC_LIB ON)
         FetchContent_Declare(
             BZip2
-            GIT_REPOSITORY "https://gitlab.com/bzip2/bzip2.git"
+            GIT_REPOSITORY "https://gitlab.com/bzip2/bzip2"
             GIT_TAG 66c46b8c9436613fd81bc5d03f63a61933a4dcc3
             ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
-            SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/bzip2"
-            BINARY_DIR "${CMAKE_BINARY_DIR}/src/external/bzip2"
+            SOURCE_DIR "${DEPS_SOURCE_ROOT}/bzip2"
+            BINARY_DIR "${DEPS_BINARY_ROOT}/bzip2"
             USES_TERMINAL_DOWNLOAD TRUE
             GIT_PROGRESS TRUE
             ${FM_FETCH_EXCLUDE_FROM_ALL}
@@ -95,8 +95,8 @@ elseif(FETCH_DEPS)
         GIT_TAG 4.1.0
         GIT_SUBMODULES_RECURSE OFF
         ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
-        SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/openssl"
-        BINARY_DIR "${CMAKE_BINARY_DIR}/src/external/openssl"
+        SOURCE_DIR "${DEPS_SOURCE_ROOT}/openssl"
+        BINARY_DIR "${DEPS_BINARY_ROOT}/openssl"
         USES_TERMINAL_DOWNLOAD TRUE
         GIT_PROGRESS TRUE
         ${FM_FETCH_EXCLUDE_FROM_ALL}
@@ -104,7 +104,7 @@ elseif(FETCH_DEPS)
     # FindOpenSSL leaves normal variables in this scope, shadowing the cache
     # values published by openssl-cmake (including SSL_EAY-NOTFOUND).
     foreach(_fm_openssl_var OPENSSL_FOUND OPENSSL_INCLUDE_DIR OPENSSL_CRYPTO_LIBRARY
-            OPENSSL_SSL_LIBRARY OPENSSL_LIBRARIES OPENSSL_VERSION)
+        OPENSSL_SSL_LIBRARY OPENSSL_LIBRARIES OPENSSL_VERSION)
         unset(${_fm_openssl_var})
     endforeach()
     FetchContent_MakeAvailable(openssl-cmake)
@@ -125,14 +125,14 @@ elseif(FETCH_DEPS)
 
         FetchContent_Declare(
             Boost
-            GIT_REPOSITORY https://github.com/boostorg/boost.git 
+            GIT_REPOSITORY https://github.com/boostorg/boost
             GIT_TAG boost-1.92.0
-            GIT_SHALLOW TRUE 
-            SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/boost"
-            BINARY_DIR "${CMAKE_BINARY_DIR}/src/external/boost"
-            ${FM_FETCH_OVERRIDE_FIND_PACKAGE} 
+            GIT_SHALLOW TRUE
+            SOURCE_DIR "${DEPS_SOURCE_ROOT}/boost"
+            BINARY_DIR "${DEPS_BINARY_ROOT}/boost"
+            ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
             USES_TERMINAL_DOWNLOAD TRUE
-            GIT_PROGRESS TRUE 
+            GIT_PROGRESS TRUE
             ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         # Boost 1.92 creates Boost::headers as a compatibility target itself.

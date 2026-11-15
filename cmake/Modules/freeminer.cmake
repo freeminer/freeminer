@@ -1,7 +1,7 @@
 # == freeminer:
 set(CMAKE_EXPORT_COMPILE_COMMANDS 1)
 
-if (STATIC_BUILD)
+if(STATIC_BUILD)
     list(REVERSE CMAKE_FIND_LIBRARY_SUFFIXES)
     message(STATUS "Using static libs if available ${CMAKE_FIND_LIBRARY_SUFFIXES}")
     link_libraries(m)
@@ -67,14 +67,9 @@ option(USE_STATIC_LIBRARIES "Set to FALSE to use shared libraries" ON)
 if(USE_STATIC_LIBRARIES)
     set(BUILD_SHARED_LIBS OFF)
 endif()
-# ===
 
-
-
-
-
-
-# === fm ===
+set(DEPS_SOURCE_ROOT "${CMAKE_SOURCE_DIR}/src/external/" CACHE STRING "")
+set(DEPS_BINARY_ROOT "${CMAKE_BINARY_DIR}/src/external/" CACHE STRING "")
 
 INCLUDE(CheckCXXSourceRuns)
 

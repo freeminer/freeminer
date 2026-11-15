@@ -56,11 +56,12 @@ else()
     if(CMAKE_TOOLCHAIN_FILE)
         list(APPEND ARROW_CMAKE_ARGS "-DCMAKE_TOOLCHAIN_FILE:FILEPATH=${CMAKE_TOOLCHAIN_FILE}")
     endif()
+
     ExternalProject_Add(
         fm_arrow
-        SOURCE_DIR "${CMAKE_SOURCE_DIR}/src/external/arrow/cpp"
-        PREFIX "${CMAKE_BINARY_DIR}/src/external/arrow"
-        BINARY_DIR "${CMAKE_BINARY_DIR}/src/external/arrow/build"
+        SOURCE_DIR "${DEPS_SOURCE_ROOT}/arrow/cpp"
+        PREFIX "${DEPS_BINARY_ROOT}/arrow"
+        BINARY_DIR "${DEPS_BINARY_ROOT}/arrow/build"
         INSTALL_DIR "${ARROW_INSTALL_DIR}"
         CMAKE_ARGS ${ARROW_CMAKE_ARGS}
         BUILD_ALWAYS TRUE
