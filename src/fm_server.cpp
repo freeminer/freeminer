@@ -33,7 +33,6 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "emerge.h"
 #include "filesys.h"
 #include "fm_porting.h"
-#include "fm_weather.h"
 #include "fm_weather_sync.h"
 #include "irrlichttypes.h"
 #include "network/connection.h"
@@ -47,6 +46,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "mapnode.h"
 #include "network/fm_networkprotocol.h"
+#include "network/fm_gravity_sync.h"
 #include "network/networkpacket.h"
 #include "profiler.h"
 #include "server.h"
@@ -558,7 +558,7 @@ KeyValueStorage &ServerEnvironment::getKeyValueStorage(std::string name)
 
 void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 {
-	MSGPACK_PACKET_INIT((int)TOCLIENT_FREEMINER_INIT, 4);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_FREEMINER_INIT, 6);
 
 	Settings params;
 	m_emerge->mgparams->MapgenParams::writeParams(&params);
@@ -568,6 +568,8 @@ void Server::SendFreeminerInit(session_t peer_id, u16 protocol_version)
 
 	PACK(TOCLIENT_INIT_PROTOCOL_VERSION_FM, SERVER_PROTOCOL_VERSION_FM);
 	PACK(TOCLIENT_INIT_WEATHER, g_settings->getBool("weather"));
+	fm_gravity_sync::packInit(
+			pk, m_env->getGravityConfiguration(), m_env->getGravityBackgroundStrength());
 
 	verbosestream << "Server: Sending freeminer init to id(" << peer_id
 				  << "): size=" << buffer.size() << std::endl;

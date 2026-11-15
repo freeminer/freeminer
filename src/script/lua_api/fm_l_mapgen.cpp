@@ -4,6 +4,7 @@
 #include "emerge.h"
 #include "lua_api/l_internal.h"
 #include "lua_api/l_mapgen.h"
+#include "mapblock.h"
 #include "mapgen/mapgen_earth.h"
 #include "mapgen/mg_biome.h"
 #include "mapgen/mg_decoration.h"
@@ -11,8 +12,18 @@
 #include "objdef.h"
 #include "server.h"
 #include "servermap.h"
+#include "serverenvironment.h"
 
 ObjDef *get_objdef(lua_State *L, int index, const ObjDefManager *objmgr);
+
+int ModApiMapgen::l_get_gravity(lua_State *L)
+{
+	NO_MAP_LOCK_REQUIRED;
+	const auto pos = read_v3pos(L, 1);
+	GET_ENV_PTR_NO_MAP_LOCK;
+	push_v3f(L, env->getFallingGravity(getNodeBlockPos(pos)) / BS);
+	return 1;
+}
 
 // Update the vertical bounds of an existing mapgen definition without
 // changing its handle or its position in the registration order.

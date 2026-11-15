@@ -2111,6 +2111,7 @@ void ModApiMapgen::Initialize(lua_State *L, int top)
 	API_FCT(earth_ll_to_pos);
 	API_FCT(set_mapgen_y_bounds);
 	API_FCT(get_wind);
+	API_FCT(get_gravity);
 // ===
 
 	API_FCT(get_biome_id);

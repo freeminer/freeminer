@@ -1865,7 +1865,12 @@ void Server::SendMovement(session_t peer_id)
 	pkt << g_settings->getFloat("movement_liquid_fluidity");
 	pkt << g_settings->getFloat("movement_liquid_fluidity_smooth");
 	pkt << g_settings->getFloat("movement_liquid_sink");
+/*
 	pkt << g_settings->getFloat("movement_gravity");
+*/
+	// fm: Send the same resolved background used by server-side gravity.
+	pkt << m_env->getGravityBackgroundStrength() / BS;
+	// ===
 
 	Send(&pkt);
 }

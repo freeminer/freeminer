@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
 #include "network/fm_networkprotocol.h"
+#include "network/fm_gravity_sync.h"
 #include "network/networkpacket.h"
 #include "profiler.h"
 #include "server.h"
@@ -149,6 +150,9 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 		return;
 
 	auto &packet = *(pkt->packet);
+	if (auto *player = m_env.getLocalPlayer())
+		fm_gravity_sync::applyInit(packet, player->gravity_field,
+				player->movement_gravity, player->gravity_background);
 
 	if (!m_world_path.empty() && packet.contains(TOCLIENT_INIT_GAMEID)) {
 		std::string gameid;

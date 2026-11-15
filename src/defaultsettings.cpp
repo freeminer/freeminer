@@ -319,6 +319,8 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("movement_speed_fast", "20.5");		// "20"
 	//settings->setDefault("movement_fall_aerodynamics", "110");
 
+	settings->setDefault("gravity_background", "9.81");
+
 	/*
 	settings->setDefault("animation_default_start", "0");
 	settings->setDefault("animation_default_stop", "79");
