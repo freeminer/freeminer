@@ -27,6 +27,7 @@ public:
 		TEST(testEarthProjectionDefaults);
 		TEST(testTorusGravityDefaults);
 		TEST(testEarthEnvironmentDefaults);
+		TEST(testGravityBackgroundPersistence);
 		TEST(testGravityInitPacket);
 	}
 
@@ -182,11 +183,12 @@ public:
 				else
 					g_settings->remove(name);
 			}
-		} restore_sources("fm_gravity_sources"), restore_background("gravity_background");
-		g_settings->remove("fm_gravity_sources");
+		} restore_sources("gravity_sources"), restore_background("gravity_background");
+		g_settings->remove("gravity_sources");
 		g_settings->set("gravity_background", "1.62");
 
-		const auto configuration = [&](const std::string &projection) {
+		const auto configuration = [&](const std::string &projection,
+										   bool world_override = false) {
 			MockServer server(getTestTempDirectory());
 			MetricsBackend metrics;
 			EmergeManager emerge(&server, &metrics);
@@ -194,11 +196,14 @@ public:
 					server.getWorldPath(), &server, &emerge, &metrics);
 			map->settings_mgr.setMapSetting("mg_name", "earth", true);
 			map->settings_mgr.setMapSetting("mg_earth", projection, true);
+			if (world_override)
+				map->settings_mgr.setMapSetting("gravity_background", "0", true);
 			ServerEnvironment env(std::move(map), &server, &metrics);
-			UASSERT(std::abs(env.getGravityBackgroundStrength() / BS - 1.62f) < 0.0001f);
+			UASSERT(std::abs(env.getGravityBackgroundStrength() / BS -
+							 (world_override ? 0.0f : 1.62f)) < 0.0001f);
 			if (env.getGravityConfiguration().empty())
 				UASSERT(std::abs(env.getFallingGravity(v3bpos_t(0, 0, 0)).Y / BS +
-								 1.62f) < 0.0001f);
+								 (world_override ? 0.0f : 1.62f)) < 0.0001f);
 			return env.getGravityConfiguration();
 		};
 		const std::string sphere = R"({"projection":"sphere"})";
@@ -207,14 +212,45 @@ public:
 						.find("mass=-5.9722e21") != std::string::npos);
 		UASSERT(configuration(R"({"projection":"flat"})").empty());
 		const std::string torus = R"({"projection":"torus"})";
-		const std::string torus_sources = configuration(torus);
+		const std::string torus_sources = configuration(torus, true);
 		UASSERT(std::count(torus_sources.begin(), torus_sources.end(), ';') == 7);
-		g_settings->set("fm_gravity_sources", "1,2,3,4,5");
+		g_settings->set("gravity_sources", "1,2,3,4,5");
 		UASSERT(configuration(sphere) == "1,2,3,4,5");
 		UASSERT(configuration(torus) == "1,2,3,4,5");
-		g_settings->set("fm_gravity_sources", "");
+		g_settings->set("gravity_sources", "");
 		UASSERT(configuration(sphere).empty());
 		UASSERT(configuration(torus).empty());
+	}
+
+	void testGravityBackgroundPersistence()
+	{
+		const std::string world = getTestTempDirectory();
+		UASSERT(fs::CreateAllDirs(world));
+		const std::string path = world + DIR_DELIM + "gravity_map_meta";
+		struct RestoreBackground
+		{
+			bool present = g_settings->existsLocal("gravity_background");
+			std::string value = present ? g_settings->get("gravity_background") : "";
+			~RestoreBackground()
+			{
+				if (present)
+					g_settings->set("gravity_background", value);
+				else
+					g_settings->remove("gravity_background");
+			}
+		} restore;
+		g_settings->set("gravity_background", "0");
+		{
+			MapSettingsManager settings(path);
+			UASSERT(settings.makeMapgenParams());
+			UASSERT(settings.saveMapMeta());
+		}
+		g_settings->set("gravity_background", "1.62");
+		MapSettingsManager reloaded(path);
+		UASSERT(reloaded.loadMapMeta());
+		std::string background;
+		UASSERT(reloaded.getMapSetting("gravity_background", &background));
+		UASSERT(background == "0");
 	}
 
 	void testGravityInitPacket()

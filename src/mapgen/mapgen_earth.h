@@ -59,10 +59,11 @@ inline std::ostream &operator<<(std::ostream &s, const ll &p)
 
 struct MapgenEarthParams : public MapgenV7Params
 {
-	MapgenEarthParams() {};
-	~MapgenEarthParams() {};
+	MapgenEarthParams(){};
+	~MapgenEarthParams(){};
 
 	Json::Value params;
+	s16 world_elevation_step = 11;
 
 	void readParams(const Settings *settings) override;
 	void writeParams(Settings *settings) const override;
@@ -109,7 +110,7 @@ struct maps_holder_t
 {
 	const std::string data_root{porting::path_cache + DIR_DELIM + "earth"};
 	hgts hgt_reader;
-	explicit maps_holder_t(int16_t world_elevation_step);
+	maps_holder_t();
 	using osm_ptr = std::shared_ptr<handler_i>;
 	// Parsed dense-city extracts are large; keep only the active neighbourhood.
 	lru_cache<std::string, osm_ptr, 4> osm_bbox;

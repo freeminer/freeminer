@@ -452,7 +452,7 @@ mg_math () string {"generator":"sphere"}
 #    world elevation raster first. Lower values use it at finer levels; 256
 #    disables it. Missing raster values fall back to detailed elevation data.
 #    Read when Earth map data is initialized.
-earth_world_elevation_step (Earth coarse elevation minimum step) int 11 0 256
+mg_earth_world_elevation_step (Earth coarse elevation minimum step) int 11 0 256
 
 # Player model animations (sent to client to be handled locally)
 # NOT USED!

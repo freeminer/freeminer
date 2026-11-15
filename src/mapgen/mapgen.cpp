@@ -1187,11 +1187,19 @@ void MapgenParams::readParams(const Settings *settings)
 			mgtype = MAPGEN_DEFAULT;
 	}
 
+	// fm: Persist the world background with the other mapgen parameters.
+	settings->getFloatNoEx("movement_gravity", gravity_background);
+	std::string gravity_background_setting;
+	if (settings->getNoEx("gravity_background", gravity_background_setting) &&
+			!FmGravityField::parseBackground(gravity_background_setting, gravity_background))
+		warningstream << "Invalid gravity_background; using movement_gravity" << std::endl;
+
+	settings->getS16NoEx("liquid_pressure", liquid_pressure);
+	// ===
+
 	settings->getPosNoEx("water_level", water_level);
 	settings->getPosNoEx("mapgen_limit", mapgen_limit);
 	settings->getFlagStrNoEx("mg_flags", flags, flagdesc_mapgen);
-
-	settings->getS16NoEx("liquid_pressure", liquid_pressure);
 	
 	std::string chunksize_str;
 	settings->getNoEx("chunksize", chunksize_str);
@@ -1226,13 +1234,15 @@ void MapgenParams::readParams(const Settings *settings)
 
 void MapgenParams::writeParams(Settings *settings) const
 {
+	// fm:
+	settings->setFloat("gravity_background", gravity_background);
+	settings->setS16("liquid_pressure", liquid_pressure);
+	// ===
 	settings->set("mg_name", Mapgen::getMapgenName(mgtype));
 	settings->setU64("seed", seed);
 	settings->setPos("water_level", water_level);
 	settings->setPos("mapgen_limit", mapgen_limit);
 	settings->setFlagStr("mg_flags", flags, flagdesc_mapgen);
-
-	settings->setS16("liquid_pressure", liquid_pressure);
 
 	// Write as number if cubic, for backwards-compatibility
 	if (chunksize.X == chunksize.Y && chunksize.Y == chunksize.Z) {

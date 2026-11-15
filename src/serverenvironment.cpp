@@ -206,13 +206,15 @@ ServerEnvironment::ServerEnvironment(std::unique_ptr<ServerMap> map,
 	// Initialize the falling-object gravity cache before the first step.
 	m_falling_gravity = v3f(0.0f, -g_settings->getFloat("movement_gravity") * BS, 0.0f);
 	float background = g_settings->getFloat("movement_gravity");
-	if (!FmGravityField::parseBackground(g_settings->get("gravity_background"), background))
+	std::string background_setting;
+	m_map->settings_mgr.getMapSetting("gravity_background", &background_setting);
+	if (!FmGravityField::parseBackground(background_setting, background))
 		warningstream << "Invalid gravity_background; using movement_gravity" << std::endl;
 	m_falling_gravity = v3f(0.0f, -background * BS, 0.0f);
 	m_gravity_background = background != 0.0f;
 	std::string gravity_sources;
 	const bool gravity_sources_configured =
-			g_settings->getNoEx("fm_gravity_sources", gravity_sources);
+			g_settings->getNoEx("gravity_sources", gravity_sources);
 	if (!gravity_sources_configured) {
 		std::unique_ptr<MapgenParams> params(m_map->settings_mgr.makeMapgenParamsCopy());
 		if (params && params->mgtype == MAPGEN_EARTH) {
@@ -222,7 +224,7 @@ ServerEnvironment::ServerEnvironment(std::unique_ptr<ServerMap> map,
 		}
 	}
 	if (!m_gravity_field.setSources(gravity_sources))
-		warningstream << "Invalid fm_gravity_sources; ignoring point sources" << std::endl;
+		warningstream << "Invalid gravity_sources; ignoring point sources" << std::endl;
 	m_use_weather = g_settings->getBool("weather");
 	m_use_weather_biome = g_settings->getBool("weather_biome");
 
