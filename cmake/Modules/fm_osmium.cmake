@@ -27,9 +27,14 @@ if(NOT OSMIUM_INCLUDE_DIR)
         set(OSMIUM_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/mapgen/earth/libosmium/include")
     elseif(FETCH_DEPS)
         FetchContent_Declare(
-            libosmium GIT_REPOSITORY https://github.com/osmcode/libosmium GIT_TAG v2.22.0
+            libosmium
+            GIT_REPOSITORY https://github.com/osmcode/libosmium
+            GIT_TAG v2.23.1
             GIT_SHALLOW TRUE # Header-only dependency; do not configure its tools or tests.
-            SOURCE_SUBDIR cmake ${FM_FETCH_EXCLUDE_FROM_ALL}
+            SOURCE_DIR "${DEPS_SOURCE_ROOT}/libosmium"
+            BINARY_DIR "${DEPS_BINARY_ROOT}/libosmium"
+            SOURCE_SUBDIR cmake
+            ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(libosmium)
         set(OSMIUM_INCLUDE_DIR "${libosmium_SOURCE_DIR}/include")
@@ -52,9 +57,17 @@ endif()
 
 if(FETCH_DEPS AND NOT LZ4_LIBRARIES)
     FetchContent_Declare(
-        lz4 URL https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz
-        URL_HASH SHA256=537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b
-        SOURCE_SUBDIR build/cmake ${FM_FETCH_SYSTEM} ${FM_FETCH_EXCLUDE_FROM_ALL}
+        lz4
+        #URL https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz
+        #URL_HASH SHA256=537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b
+        GIT_REPOSITORY https://github.com/lz4/lz4
+        GIT_TAG v1.11.1
+        GIT_SHALLOW TRUE
+        SOURCE_SUBDIR build/cmake
+        SOURCE_DIR "${DEPS_SOURCE_ROOT}/lz4"
+        BINARY_DIR "${DEPS_BINARY_ROOT}/lz4"
+        ${FM_FETCH_SYSTEM}
+        ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
     FetchContent_MakeAvailable(lz4)
     set(LZ4_LIBRARIES lz4_static)
@@ -62,8 +75,14 @@ endif()
 
 if(FETCH_DEPS AND NOT PROTOZERO_INCLUDE_DIR AND NOT TARGET Protozero::Protozero)
     FetchContent_Declare(
-        protozero GIT_REPOSITORY https://github.com/mapbox/protozero GIT_TAG v1.8.2 GIT_SHALLOW TRUE
-        SOURCE_SUBDIR cmake ${FM_FETCH_EXCLUDE_FROM_ALL}
+        protozero
+        GIT_REPOSITORY https://github.com/mapbox/protozero
+        GIT_TAG v1.8.2
+        GIT_SHALLOW TRUE
+        SOURCE_DIR "${DEPS_SOURCE_ROOT}/protozero"
+        BINARY_DIR "${DEPS_BINARY_ROOT}/protozero"
+        SOURCE_SUBDIR cmake
+        ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
     FetchContent_MakeAvailable(protozero)
     set(PROTOZERO_INCLUDE_DIR "${protozero_SOURCE_DIR}/include")
@@ -76,8 +95,14 @@ if(FETCH_DEPS AND NOT TARGET EXPAT::EXPAT)
         set(EXPAT_BUILD_EXAMPLES OFF)
         set(EXPAT_BUILD_TESTS OFF)
         FetchContent_Declare(
-            expat GIT_REPOSITORY https://github.com/libexpat/libexpat/ GIT_TAG R_2_8_5
-            GIT_SHALLOW TRUE SOURCE_SUBDIR expat ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
+            expat
+            GIT_REPOSITORY https://github.com/libexpat/libexpat/
+            GIT_TAG R_2_10_0
+            GIT_SHALLOW TRUE
+            SOURCE_DIR "${DEPS_SOURCE_ROOT}/expat"
+            BINARY_DIR "${DEPS_BINARY_ROOT}/expat"
+            SOURCE_SUBDIR expat
+            ${FM_FETCH_OVERRIDE_FIND_PACKAGE}
             ${FM_FETCH_EXCLUDE_FROM_ALL}
         )
         FetchContent_MakeAvailable(expat)

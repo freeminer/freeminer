@@ -24,8 +24,13 @@ function(fm_fetch_png)
     set(PNG_FRAMEWORK OFF)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
     FetchContent_Declare(
-        fm_libpng GIT_REPOSITORY https://github.com/pnggroup/libpng.git GIT_TAG v1.6.58
-        GIT_SHALLOW TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
+        fm_libpng
+        GIT_REPOSITORY https://github.com/pnggroup/libpng
+        GIT_TAG v1.6.59
+        GIT_SHALLOW TRUE
+        SOURCE_DIR "${DEPS_SOURCE_ROOT}/libpng"
+        BINARY_DIR "${DEPS_BINARY_ROOT}/libpng"
+        ${FM_FETCH_EXCLUDE_FROM_ALL}
     )
     FetchContent_MakeAvailable(fm_libpng)
     if(NOT TARGET PNG::PNG)

@@ -20,8 +20,13 @@ if(FM_TINYGLTF_SOURCE)
     set(FETCHCONTENT_SOURCE_DIR_TINYGLTF "${FM_TINYGLTF_SOURCE}")
 endif()
 FetchContent_Declare(
-    tinygltf GIT_REPOSITORY https://github.com/syoyo/tinygltf.git GIT_TAG v2.9.7
-    GIT_SHALLOW TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
+    tinygltf
+    GIT_REPOSITORY https://github.com/syoyo/tinygltf
+    GIT_TAG v3.1.0
+    GIT_SHALLOW TRUE
+    SOURCE_DIR "${DEPS_SOURCE_ROOT}/tinygltf"
+    BINARY_DIR "${DEPS_BINARY_ROOT}/tinygltf"
+    ${FM_FETCH_EXCLUDE_FROM_ALL}
 )
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF)
 set(TINYGLTF_INSTALL OFF)

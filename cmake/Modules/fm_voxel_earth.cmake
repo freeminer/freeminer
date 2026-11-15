@@ -33,8 +33,13 @@ if(FM_DRACO_SOURCE)
 endif()
 # This declaration also controls the native project's FetchContent call.
 FetchContent_Declare(
-    draco GIT_REPOSITORY https://github.com/google/draco.git GIT_TAG 1.5.7
-    GIT_SHALLOW TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
+    draco
+    GIT_REPOSITORY https://github.com/google/draco
+    GIT_TAG 1.5.9
+    GIT_SHALLOW TRUE
+    SOURCE_DIR "${DEPS_SOURCE_ROOT}/draco"
+    BINARY_DIR "${DEPS_BINARY_ROOT}/draco"
+    ${FM_FETCH_EXCLUDE_FROM_ALL}
 )
 include(fm_tinygltf)
 if(NOT TARGET fm_tinygltf)
