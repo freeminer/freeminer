@@ -573,30 +573,31 @@ bool parse_msgpack_packet(const std::string_view &data, u32 datasize, MsgpackPac
 }
 
 int NetworkPacket::packet_unpack() {
-	const auto datasize = getSize();
-
-	if(datasize < 2)
+	// fm: Freeminer packets in the Luanti protocol are length-prefixed.
+	auto payload = getRemainingNoCopy();
+#if MINETEST_PROTO
+	if (payload.size() < 4)
 		return 0;
+	const u32 length = readU32(reinterpret_cast<const u8 *>(payload.data()));
+	payload.remove_prefix(4);
+	if (length != payload.size())
+		return 0;
+#endif
+	if (payload.empty())
+		return 0;
+	// ===
 
 	int command {};
 	if (!packet)
 		packet = std::make_unique<MsgpackPacketSafe>();
 	if (!packet_unpacked)
 		packet_unpacked = std::make_unique<msgpack::unpacked>();
-	//if (!parse_msgpack_packet(getString(
-	if (!parse_msgpack_packet(getRemainingNoCopy().substr(
-	
-#if MINETEST_PROTO
-									  4
-#else
-									  0
-#endif
-									  ).data(),
-				datasize, packet.get(), &command, *packet_unpacked.get())) {
-		// verbosestream<<"Server: Ignoring broken packet from " <<addr_s<<"
-		// (peer_id="<<peer_id<<") size="<<datasize<<std::endl;
+	// fm:
+	if (!parse_msgpack_packet(payload, payload.size(), packet.get(), &command,
+			*packet_unpacked.get())) {
 		return 0;
 	}
+	// ===
 	m_command = command;
 	return 1;
 }

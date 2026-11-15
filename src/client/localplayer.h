@@ -4,6 +4,10 @@
 
 #pragma once
 
+// fm:
+#include "fm_gravity.h"
+// ===
+
 #include "irr_v3d.h"
 #include "player.h"
 #include "constants.h"
@@ -44,6 +48,12 @@ class LocalPlayer : public Player
 public:
 	// fm:
 	bool canPlaceNode(const v3pos_t& p, const MapNode& node);
+	FmGravityField gravity_field;
+	bool gravity_background = true;
+	bool zoom = false;
+	bool superspeed = false;
+	bool free_move = false;
+	//void addSpeed(v3f speed);
 	// ===
 
 	LocalPlayer(Client *client, const std::string &name);
@@ -114,15 +124,6 @@ public:
 		assert(!m_cao || !toset);
 		m_cao = toset;
 	}
-
-
-//freeminer:
-	bool zoom = false;
-	bool superspeed = false;
-	bool free_move = false;
-
-	//void addSpeed(v3f speed);
-//=========
 
 	u16 getBreath() { const auto lock = lock_shared(); return m_breath; }
 	void setBreath(u16 breath) { const auto lock = lock_unique_rec(); m_breath = breath; }

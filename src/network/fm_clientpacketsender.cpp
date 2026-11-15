@@ -28,6 +28,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "../util/auth.h"
 #include "client/camera.h"
 #include "client/client.h"
+#include "util/pointedthing.h"
 #include "client/clientmap.h"
 #include "client/localplayer.h"
 #include "clientdynamicinfo.h"

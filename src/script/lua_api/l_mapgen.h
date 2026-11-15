@@ -24,6 +24,7 @@ private:
 	// get_wind(pos)
 	// returns the wind at the position
 	static int l_get_wind(lua_State *L);
+	static int l_get_gravity(lua_State *L);
 
 	// get_ground_level(x = num, z = num)
 	static int l_get_ground_level(lua_State *L);

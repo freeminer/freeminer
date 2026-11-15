@@ -953,6 +953,13 @@ void ParticleManager::addNodeParticle(LocalPlayer *player, v3s16 pos, const MapN
 		-player->movement_gravity * player->physics_override.gravity / BS,
 		0.0f
 	);
+	// fm: Dig particles use the same field as the local player.
+	if (!player->gravity_field.empty() || !player->gravity_background)
+		p.acc = player->gravity_field.sampleWithBackground(getNodeBlockPos(
+				v3pos_t(pos.X, pos.Y, pos.Z)),
+				player->gravity_background ? player->movement_gravity : 0.0f) *
+				(player->physics_override.gravity / BS);
+	// ===
 	p.pos = v3f(
 		(f32)pos.X + myrand_range(0.f, .5f) - .25f,
 		(f32)pos.Y + myrand_range(0.f, .5f) - .25f,

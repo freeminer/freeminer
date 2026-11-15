@@ -296,7 +296,10 @@ void Server::handleCommand_Init2(NetworkPacket* pkt)
 	infostream << "Server: Sending content to " << getPlayerName(peer_id) <<
 		std::endl;
 
-	SendFreeminerInit(peer_id, protocol_version);
+	// fm: Only clients advertising the Freeminer protocol receive its init packet.
+	if (client->net_proto_version_fm)
+		SendFreeminerInit(peer_id, protocol_version);
+	// ===
 
 	// Send item definitions
 	SendItemDef(peer_id, m_itemdef, protocol_version);

@@ -400,6 +400,13 @@ void LocalPlayer::move(f32 dtime, Environment *env,
 	const float sneak_stepheight = 0.6f * BS;
 
 	v3f accel_f(0, -gravity, 0);
+	// fm: Preserve the existing liquid and climbing behavior.
+	if ((!gravity_field.empty() || !gravity_background) && !free_move &&
+			!in_liquid && !is_climbing)
+		accel_f = gravity_field.sampleWithBackground(getNodeBlockPos(
+				floatToInt(v3d(position.X, position.Y, position.Z), BS)),
+				gravity_background ? movement_gravity : 0.0f) *
+				(2.0f * physics_override.gravity);
 	// Use the same standing-node grip as the movement controls.
 	accel_f += getPlayerWindAcceleration(map, floatToInt(position, BS), m_speed,
 			touching_ground, in_liquid || in_liquid_stable, is_climbing,
@@ -971,7 +978,16 @@ void LocalPlayer::old_move(f32 dtime, Environment *env,
 	m_added_velocity = v3f(0.0f);
 
 	// Apply gravity (note: this is broken, but kept since this is *old* move code)
-	m_speed.Y -= gravity * dtime;
+	// fm:
+	if ((!gravity_field.empty() || !gravity_background) &&
+			!(player_settings.free_move && fly_allowed) && !in_liquid && !is_climbing)
+		m_speed += gravity_field.sampleWithBackground(getNodeBlockPos(
+				floatToInt(v3d(position.X, position.Y, position.Z), BS)),
+				gravity_background ? movement_gravity : 0.0f) *
+				(2.0f * physics_override.gravity * dtime);
+	else
+	// ===
+		m_speed.Y -= gravity * dtime;
 
 	/*
 		Collision detection
