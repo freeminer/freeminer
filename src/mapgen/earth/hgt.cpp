@@ -59,8 +59,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 // Thread-local container cache definition
 thread_local hgts::ThreadLocalContainerCache hgts::tl_container_cache;
 
-hgts::hgts(const std::string &folder, int16_t world_elevation_step) :
-		folder{folder}, world_elevation_step{world_elevation_step}
+hgts::hgts(const std::string &folder) : folder{folder}
 {
 	std::error_code ec;
 	std::filesystem::create_directories(folder, ec);
@@ -116,8 +115,8 @@ std::vector<hgts::Layer> hgts::get_layers(const height::ll_t lat, const height::
 	};
 }
 
-height::height_t hgts::get(
-		const height_hgt::ll_t lat, const height_hgt::ll_t lon, block_step_t step)
+height::height_t hgts::get(const height_hgt::ll_t lat, const height_hgt::ll_t lon,
+		block_step_t step, int16_t world_elevation_step)
 {
 
 	/*
@@ -1011,7 +1010,7 @@ height::height_t height::get(ll_t lat, ll_t lon)
 				//lat_seconds, lon_seconds,
 				seconds_per_px_x, seconds_per_px_y, lat, lon, lat_loaded, lon_loaded,
 				(lat - lat_loaded), pixel_per_deg_x, (lon - lon_loaded), pixel_per_deg_y);
-	//return height[2]; // debug not interpolated
+		//return height[2]; // debug not interpolated
 #endif
 
 	// ratio where X lays

@@ -119,7 +119,7 @@ skip HGT queries using the signed 16-bit raster elevation envelope. The flat
 terrain loop remains unchanged. Curved sampling is more expensive; eliminating
 dispatch does not eliminate trigonometry or additional raster samples.
 
-Set `earth_world_elevation_step` in the global configuration to select the
+Set `mg_earth_world_elevation_step` in the global configuration to select the
 minimum power-of-two step level at which Earth mapgen tries the coarse world
 elevation raster first. The default is 11; lower values use it at finer levels.
 If the raster has no value, sampling falls back to the detailed elevation layers.
