@@ -736,6 +736,20 @@ bool Map::isOccluded(const v3s16 pos_camera, const v3s16 pos_target,
 	const v3f pos_origin_f = intToFloat(pos_camera, BS);
 	u32 count = 0;
 	bool is_valid_position;
+	// fm: Reuse the last loaded block for consecutive samples of this ray.
+	MapBlockPtr occlusion_block;
+	v3bpos_t occlusion_blockpos;
+	const auto occlusion_node = [&](const v3pos_t &pos, bool *valid) {
+		const v3bpos_t blockpos = getNodeBlockPos(pos);
+		if (!occlusion_block || blockpos != occlusion_blockpos) {
+			occlusion_block = getBlock(blockpos);
+			occlusion_blockpos = blockpos;
+		}
+		*valid = static_cast<bool>(occlusion_block);
+		return occlusion_block ? occlusion_block->getNodeNoCheck(pos - blockpos * MAP_BLOCKSIZE)
+						   : MapNode(CONTENT_IGNORE);
+	};
+	// ===
 	/*
 	 * When the map is "dense" (when all visible blocks are loaded) we check
 	 * a few blocks close to the camera and then we can jump to a few
@@ -759,7 +773,12 @@ bool Map::isOccluded(const v3s16 pos_camera, const v3s16 pos_target,
 	// Phase 1: Preliminary search (standard sparse mode or until dense check distance)
 	for (; offset < (dense ? DENSE_CHECK_DISTANCE : distance); offset += step) {
 		const v3f pos_node_f = pos_origin_f + direction * offset;
+/*
 		MapNode node = getNode(floatToInt(pos_node_f, BS), &is_valid_position);
+*/
+		// fm: Use the ray-local block cache.
+		MapNode node = occlusion_node(floatToInt(pos_node_f, BS), &is_valid_position);
+		// ===
 
 		// treat unloaded blocks as transparent
 		// Cannot see through light-blocking nodes --> occluded
@@ -778,7 +797,12 @@ bool Map::isOccluded(const v3s16 pos_camera, const v3s16 pos_target,
 
 		for (; offset < distance; offset += step) {
 			const v3f pos_node_f = pos_origin_f + direction * offset;
+/*
 			MapNode node = getNode(floatToInt(pos_node_f, BS), &is_valid_position);
+*/			
+			// fm: Use the ray-local block cache.
+			MapNode node = occlusion_node(floatToInt(pos_node_f, BS), &is_valid_position);
+			// ===
 
 			// treat unloaded blocks as opaque
 			// Cannot see through non-existent blocks or light-blocking nodes --> occluded

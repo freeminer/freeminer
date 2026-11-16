@@ -5,6 +5,7 @@
 #include <array>
 #include <cmath>
 #include <cstdint>
+#include <limits>
 #include <span>
 #include <tuple>
 #include <unordered_map>
@@ -163,12 +164,16 @@ struct FmBlastPatchEntry
 	v3pos_t pos;
 	FmBlastFootprint patch;
 };
-inline FmBlastAngularHits fm_blast_pack(const std::vector<FmBlastPatchEntry> &entries)
+inline FmBlastAngularHits fm_blast_pack(
+		const std::vector<FmBlastPatchEntry> &entries, size_t hit_hint = 0)
 {
 	FmBlastAngularHits result;
-	result.hits.reserve(entries.size());
+	result.hits.reserve(hit_hint ? std::min(entries.size(), hit_hint) : entries.size());
+	std::vector<FmBlastAngularHit *> destinations;
+	destinations.reserve(entries.size());
 	for (const auto &entry : entries) {
 		auto &hit = result.hits[entry.pos];
+		destinations.push_back(&hit);
 		++hit.count;
 		hit.area += entry.patch.area();
 		hit.energy += entry.patch.density * entry.patch.area();
@@ -181,9 +186,9 @@ inline FmBlastAngularHits fm_blast_pack(const std::vector<FmBlastPatchEntry> &en
 		hit.projected_energy = hit.energy;
 	}
 	result.patches.resize(offset);
-	for (const auto &entry : entries) {
-		auto &hit = result.at(entry.pos);
-		result.patches[hit.first + hit.count++] = entry.patch;
+	for (size_t i = 0; i < entries.size(); ++i) {
+		auto &hit = *destinations[i];
+		result.patches[hit.first + hit.count++] = entries[i].patch;
 	}
 	return result;
 }
@@ -220,11 +225,20 @@ inline FmBlastAngularHits fm_blast_angular_project(
 				entries.push_back({v3pos_t(p[0], p[1], p[2]), child});
 			}
 	}
-	return fm_blast_pack(entries);
+	const size_t r = static_cast<size_t>(shell);
+	const size_t hint = r <= (std::numeric_limits<size_t>::max() - 2) / 24 / r
+								? 24 * r * r + 2
+								: entries.size();
+	return fm_blast_pack(entries, hint);
 }
 
 inline void fm_blast_angular_coalesce(std::vector<FmBlastFootprint> &patches)
 {
+	// Under heavy fragmentation merge adjacent rectangles even when their
+	// densities differ. Their area-weighted mean preserves energy and never
+	// fills angular gaps; fine intensity differences within a merged region
+	// are smoothed. Keep normal-sized fronts exact.
+	const bool compact = patches.size() > 65536;
 	bool changed;
 	do {
 		const auto old_size = patches.size();
@@ -248,7 +262,8 @@ inline void fm_blast_angular_coalesce(std::vector<FmBlastFootprint> &patches)
 							1e-12 *
 							std::max({1.0, std::abs(last.density), std::abs(p.density)});
 					if (last.face == p.face && adjacent &&
-							std::abs(last.density - p.density) <= tolerance) {
+							(compact ||
+									std::abs(last.density - p.density) <= tolerance)) {
 						const double area = last.area() + p.area();
 						last.density =
 								(last.area() * last.density + p.area() * p.density) /
