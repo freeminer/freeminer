@@ -67,6 +67,7 @@ public:
 			const v3bpos_t &blockpos, block_step_t step, const bool low_priority = false);
 	size_t makeFarBlocks(const v3bpos_t &blockpos, block_step_t step);
 	void commitFarGrid();
+	void sourceReceived(const v3bpos_t &pos, block_step_t step);
 
 	bool enqueueFarMeshForBlock(const v3bpos_t &blockpos, const block_step_t step,
 			const MapBlockPtr &block, const double timestamp,
@@ -165,6 +166,14 @@ private:
 	std::mutex m_queue_mutex;
 	farmesh::MeshJobs m_mesh_jobs;
 	bool m_queue_paused{};
+	struct SourceWait
+	{
+		std::weak_ptr<MapBlock> owner;
+		double next_retry{};
+		double delay{60};
+	};
+	std::unordered_map<MapBlock *, SourceWait> m_source_wait;
+	bool sourcesReady(const MapBlockPtr &block);
 	bool queueFarBlock(const MapBlockPtr &block, bool low_priority = false);
 
 	std::thread farmesh_thread;
