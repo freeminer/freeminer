@@ -697,7 +697,7 @@ void Server::handleCommand_GetBlocks(NetworkPacket *pkt)
 			if (iteration != client->far_blocks_requested_iteration)
 				continue;
 
-			client->far_blocks_requested[step].insert_or_assign(
+			client->far_blocks_requested[step].try_emplace(
 					bpos, RemoteClient::FarBlockRequest{
 								  .iteration{iteration},
 								  .retry_after{},

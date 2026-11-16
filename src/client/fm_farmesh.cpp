@@ -82,34 +82,9 @@ bool FarMesh::makeFarBlock(
 	const bool first_in_grid = block->far_iteration.exchange(iteration) != iteration;
 	m_pending_far_blocks.insert_or_assign(blockpos, block);
 
-	const bool request_sources =
-			block->far_status < MapBlock::far_status_e::s2_requested ||
-			(first_in_grid && !meshReady(block));
-	if (first_in_grid || request_sources) {
-		// A mesh owns cell_size^3 source blocks, even when only its origin has
-		// a mesh/status entry. Rebuilding after zoom must request and retain
-		// the entire footprint, not assume that the old origin's status means
-		// all of its source blocks are still resident.
-		auto &storage = client_map.far_blocks_storage[step];
-		farmesh::forEachMeshSource(blockpos, step, m_control->cell_size_pow,
-				[&](const v3bpos_t &source_pos) {
-					{
-						const auto lock = storage.lock_unique_rec();
-						const auto it = storage.find(source_pos);
-						if (it != storage.end() && it->second.block) {
-							it->second.far_last_used = m_client->m_uptime;
-							it->second.block->far_iteration = iteration;
-						}
-					}
-					if (request_sources)
-						client_map.m_far_blocks_ask.insert_or_assign(
-								source_pos, std::make_pair(step, iteration));
-				});
-	}
-	if (request_sources) {
+	if (first_in_grid || block->far_status < MapBlock::far_status_e::s2_requested) {
 		block->far_make_mesh_timestamp =
 				m_client->m_uptime + (m_fast_move ? 0 : farmesh_wait_server);
-		// Do not turn an already dispatched job back into an enqueueable one.
 		auto status = block->far_status.load();
 		while (status < MapBlock::far_status_e::s4_mesh_enqueued &&
 				!block->far_status.compare_exchange_weak(
@@ -120,8 +95,88 @@ bool FarMesh::makeFarBlock(
 	return queueFarBlock(block, low_priority);
 }
 
+// Arrival invalidates the owner before any asynchronous persistence work. Use
+// the received LOD, rather than a camera lookup which may already select another LOD.
+void FarMesh::sourceReceived(const v3bpos_t &pos, block_step_t step)
+{
+	if (!step || step >= FARMESH_STEP_MAX)
+		return;
+	const auto pow = step + m_control->cell_size_pow;
+	const v3bpos_t origin(
+			(pos.X >> pow) << pow, (pos.Y >> pow) << pow, (pos.Z >> pow) << pow);
+	auto &storage = m_client->getEnv().getClientMap().far_blocks_storage[step];
+	MapBlockPtr owner;
+	{
+		const auto lock = storage.lock_shared_rec();
+		const auto it = storage.find(origin);
+		if (it != storage.end())
+			owner = it->second.block;
+	}
+	if (!owner)
+		return;
+	const std::lock_guard lock(m_queue_mutex);
+	// A queued job will see this data. A running job needs one follow-up;
+	// createFarMesh's completion CAS preserves this invalidation.
+	const auto status = owner->far_status.load();
+	if (status != MapBlock::far_status_e::s4_mesh_enqueued &&
+			status != MapBlock::far_status_e::s3_recieved) {
+		// Batch arrivals for this large mesh, without postponing it on every packet.
+		owner->far_make_mesh_timestamp = m_client->m_uptime + 1.0;
+		owner->far_status = MapBlock::far_status_e::s3_recieved;
+	}
+}
+
+bool FarMesh::sourcesReady(const MapBlockPtr &block)
+{
+	const std::lock_guard lock(m_queue_mutex);
+	const double now = m_client->m_uptime;
+	auto &wait = m_source_wait[block.get()];
+	if (wait.owner.lock() != block) {
+		wait = {};
+		wait.owner = block;
+	}
+	const bool retry = now >= wait.next_retry;
+	if (!retry)
+		return false;
+	bool complete = true;
+	auto &map = m_client->getEnv().getClientMap();
+	auto &storage = map.far_blocks_storage[block->far_step];
+	farmesh::forEachMeshSource(block->getPos(), block->far_step, m_control->cell_size_pow,
+			[&](const v3bpos_t &pos) {
+				bool generated = false;
+				{
+					const auto lock = storage.lock_unique_rec();
+					const auto it = storage.find(pos);
+					if (it != storage.end() && it->second.block) {
+						it->second.far_last_used = now;
+						it->second.block->far_iteration = block->far_iteration.load();
+						const auto data_lock = it->second.block->lock_shared_rec();
+						generated = it->second.block->isGenerated();
+					}
+				}
+				if (!generated) {
+					complete = false;
+					if (retry)
+						map.m_far_blocks_ask.insert_or_assign(
+								pos, std::make_pair(block->far_step,
+											 block->far_iteration.load()));
+				}
+			});
+	if (retry) {
+		wait.next_retry = now + wait.delay;
+		// The server retains missing requests and retries them itself. Avoid
+		// refilling the client queue faster than it can send new sources.
+		wait.delay = std::min(120.0, wait.delay * 2);
+	}
+	// Merged far databases are sparse: missing blocks may never exist. Build
+	// with available data and keep retrying missing sources for later updates.
+	return complete;
+}
+
 bool FarMesh::queueFarBlock(const MapBlockPtr &block, bool low_priority)
 {
+	// Source availability controls retries, not whether a partial mesh can draw.
+	sourcesReady(block);
 	const auto status = block->far_status.load();
 	if (status != MapBlock::far_status_e::s2_requested &&
 			status != MapBlock::far_status_e::s3_recieved)
@@ -766,41 +821,51 @@ void FarMesh::processFarmeshQueue()
 				break;
 
 			if (!farmesh_thread_stop && !m_queue_paused) {
-				// Smaller steps cover terrain nearer the player. Submit each step's
-				// surface and surrounding cells before submitting more distant steps,
-				// so nearby replacement groups can become drawable sooner.
-				for (size_t step = 1; step < FARMESH_STEP_MAX && !m_mesh_jobs.full();
-						++step) {
-					for (size_t priority = 0; priority < 2 && !m_mesh_jobs.full();
-							++priority) {
-						auto &queue =
-								farmesh_make_queue[step + priority * FARMESH_STEP_MAX];
-						for (auto it = queue.begin();
-								it != queue.end() && !m_mesh_jobs.full();) {
-							auto block = it->second.block;
-							bool expected = false;
-							if (!block->creating_far_mesh.compare_exchange_strong(
-										expected, true)) {
-								++it;
-								continue;
-							}
-							m_mesh_jobs.add(m_client->mesh_thread_pool.enqueue_block(
-									[this, block]() mutable {
-										try {
-											m_client->createFarMesh(block);
-										} catch (...) {
-											block->far_status =
-													MapBlock::far_status_e::s2_requested;
-											block->far_make_mesh_timestamp =
-													m_client->m_uptime;
+				// Rotate per submission so continuously changing near meshes cannot
+				// starve distant LODs when only one worker slot becomes free.
+				static size_t next_step = 1;
+				while (!m_mesh_jobs.full()) {
+					bool submitted = false;
+					for (size_t offset = 0; offset < FARMESH_STEP_MAX - 1 && !submitted;
+							++offset) {
+						const size_t step =
+								1 + (next_step - 1 + offset) % (FARMESH_STEP_MAX - 1);
+						for (size_t priority = 0; priority < 2 && !submitted;
+								++priority) {
+							auto &queue = farmesh_make_queue[step +
+															 priority * FARMESH_STEP_MAX];
+							for (auto it = queue.begin();
+									it != queue.end() && !m_mesh_jobs.full();) {
+								auto block = it->second.block;
+								bool expected = false;
+								if (!block->creating_far_mesh.compare_exchange_strong(
+											expected, true)) {
+									++it;
+									continue;
+								}
+								m_mesh_jobs.add(m_client->mesh_thread_pool.enqueue_block(
+										[this, block]() mutable {
+											try {
+												m_client->createFarMesh(block);
+											} catch (...) {
+												block->far_status = MapBlock::
+														far_status_e::s2_requested;
+												block->far_make_mesh_timestamp =
+														m_client->m_uptime;
+												block->creating_far_mesh = false;
+												throw;
+											}
 											block->creating_far_mesh = false;
-											throw;
-										}
-										block->creating_far_mesh = false;
-									}));
-							it = queue.erase(it);
+										}));
+								queue.erase(it);
+								submitted = true;
+								next_step = step % (FARMESH_STEP_MAX - 1) + 1;
+								break;
+							}
 						}
 					}
+					if (!submitted)
+						break;
 				}
 			}
 			farmesh_make_queue_complete =
@@ -948,12 +1013,26 @@ uint8_t FarMesh::update(v3opos_t camera_pos, v3pos_t camera_offset, int render_r
 				}
 			}
 		}
+		// Periodic rescans must not cancel the server's still-pending sources.
+		// Only a changed footprint starts a new request generation.
+		const bool footprint_changed = !m_grid_started ||
+									   m_camera_pos_aligned != camera_pos_aligned ||
+									   accept_view || last_distance_max != distance_max;
 		m_camera_pos_aligned = camera_pos_aligned;
 		client_map.far_cam_pos_grid = client_map.far_cam_pos_mesh = camera_pos_aligned;
-		client_map.far_iteration_grid = client_map.far_iteration_mesh =
-				++far_iteration_pos;
+		if (footprint_changed)
+			++far_iteration_pos;
+		client_map.far_iteration_grid = client_map.far_iteration_mesh = far_iteration_pos;
 		last_distance_max = distance_max;
 		m_pending_far_blocks.clear();
+		{
+			const std::lock_guard lock(m_queue_mutex);
+			if (footprint_changed)
+				m_source_wait.clear();
+			else
+				std::erase_if(m_source_wait,
+						[](const auto &entry) { return entry.second.owner.expired(); });
+		}
 		plane_processed.fill({});
 		direction_caches.fill({});
 		m_grid_started = true;

@@ -281,7 +281,7 @@ void fm_set_default_settings(Settings *settings)
 #if !MINETEST_PROTO
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50"); // "10"
 #endif
-	settings->setDefault("max_block_send_distance", "30");			 // "9"
+	settings->setDefault("max_block_send_distance", "40");			 // "9"
 	settings->setDefault("server_unload_unused_data_timeout", "65"); // "29"
 	settings->setDefault("max_objects_per_block", "100");			 // "49"
 	settings->setDefault("server_occlusion", "true");

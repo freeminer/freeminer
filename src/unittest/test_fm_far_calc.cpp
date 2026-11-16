@@ -37,6 +37,7 @@ public:
 	void testInFarGrid();
 	void testCellRange();
 	void testFarMeshNearRange();
+	void testLargeFarMeshSources();
 	void testRunFarAllVerification();
 	void testRunFarAllCoverage();
 	void testRunFarAll2DCoverage();
@@ -61,6 +62,7 @@ void TestFmFarCalc::runTests(IGameDef *gamedef)
 	TEST(testInFarGrid);
 	TEST(testCellRange);
 	TEST(testFarMeshNearRange);
+	TEST(testLargeFarMeshSources);
 	TEST(testRunFarAllVerification);
 	TEST(testRunFarAllCoverage);
 	TEST(testRunFarAll2DCoverage);
@@ -230,6 +232,25 @@ void TestFmFarCalc::testCellRange()
 	UASSERTEQ(
 			uint64_t, farmesh::cellMaxDistance(v3pos_t(-13, -2, -2), 4, camera_pos), 13);
 	UASSERTEQ(uint64_t, farmesh::cellMaxDistance(v3pos_t(8, -4, 2), 8, camera_pos), 15);
+}
+
+void TestFmFarCalc::testLargeFarMeshSources()
+{
+	// A size-8 owner needs 512 distinct sources, including generated air.
+	// Exercise negative origins and several LODs; all source arrivals must
+	// resolve to the same owner without consulting the moving camera.
+	for (block_step_t step = 1; step < 5; ++step) {
+		const uint8_t pow = step + 3;
+		const v3bpos_t origin(-(pos_t(1) << pow), 0, pos_t(1) << pow);
+		std::unordered_set<v3bpos_t> sources;
+		farmesh::forEachMeshSource(origin, step, 3, [&](const v3bpos_t &pos) {
+			const v3bpos_t owner(
+					(pos.X >> pow) << pow, (pos.Y >> pow) << pow, (pos.Z >> pow) << pow);
+			UASSERT(owner == origin);
+			UASSERT(sources.insert(pos).second);
+		});
+		UASSERTEQ(size_t, sources.size(), 512);
+	}
 }
 
 void TestFmFarCalc::testFarMeshNearRange()

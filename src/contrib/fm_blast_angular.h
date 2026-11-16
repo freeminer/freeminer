@@ -117,7 +117,39 @@ struct FmBlastAngularHits
 			if (hit.energy <= 0.0 || hit.projected_energy <= 0.0)
 				continue;
 			const double scale = hit.energy / hit.projected_energy;
+			// Compact heavily fragmented, fully covered rectangles per face.
+			// Area-weighted density conserves energy; incomplete regions remain
+			// exact so blocked angular gaps cannot be filled by compaction.
+			std::array<bool, 6> compacted{};
+			if (hit.count > 64) {
+				for (int face = 0; face < 6; ++face) {
+					size_t count = 0;
+					double u0 = 1, u1 = -1, v0 = 1, v1 = -1, area = 0, energy = 0;
+					for (const auto &patch : regions(hit)) {
+						if (patch.face != face)
+							continue;
+						++count;
+						u0 = std::min(u0, patch.u0);
+						u1 = std::max(u1, patch.u1);
+						v0 = std::min(v0, patch.v0);
+						v1 = std::max(v1, patch.v1);
+						area += patch.area();
+						energy += patch.area() * patch.density * scale;
+					}
+					if (count <= 64)
+						continue;
+					FmBlastFootprint merged(face, u0, u1, v0, v1, 0);
+					if (merged.area() > 0 &&
+							std::abs(area - merged.area()) <= merged.area() * 1e-10) {
+						merged.density = energy / merged.area();
+						out.push_back(merged);
+						compacted[face] = true;
+					}
+				}
+			}
 			for (auto patch : regions(hit)) {
+				if (compacted[patch.face])
+					continue;
 				patch.density *= scale;
 				if (patch.density > 0.0)
 					out.push_back(patch);
