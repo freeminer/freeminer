@@ -10,6 +10,7 @@ public:
 	const char *getName() override { return "TestFmBlastShell"; }
 	void runTests(IGameDef *) override
 	{
+		TEST(testAngularDenseCoalescing);
 		TEST(testAngularUniformAir);
 		TEST(testAngularMaterialShadow);
 		TEST(testAngularSeparateContributions);
@@ -24,6 +25,31 @@ public:
 		TEST(testUsefulAirRange);
 		TEST(testFixedNodeLoss);
 	}
+	void testAngularDenseCoalescing()
+	{
+		// Varying intensities separated by one missing strip must collapse
+		// without filling the shadow or changing total transmitted energy.
+		constexpr int count = 66000, gap = count / 2;
+		std::vector<FmBlastFootprint> patches;
+		patches.reserve(count);
+		double before = 0.0;
+		for (int i = 0; i < count; ++i) {
+			if (i == gap)
+				continue;
+			const double u0 = -1.0 + 2.0 * i / count;
+			const double u1 = -1.0 + 2.0 * (i + 1) / count;
+			patches.emplace_back(0, u0, u1, -0.1, 0.1, i % 2 ? 2.0 : 1.0);
+			before += patches.back().area() * patches.back().density;
+		}
+		fm_blast_angular_coalesce(patches);
+		UASSERT(patches.size() == 2);
+		double after = 0.0;
+		for (const auto &patch : patches)
+			after += patch.area() * patch.density;
+		UASSERT(std::abs(after - before) < 1e-9);
+		UASSERT(patches[0].u1 < patches[1].u0);
+	}
+
 	void testAngularUniformAir()
 	{
 		// Check projection alone; fixed per-node absorption changes the densities.
