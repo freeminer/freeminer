@@ -22,6 +22,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <new>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -49,6 +50,20 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 
 namespace
 {
+
+struct FmBlastContinuation
+{
+	std::vector<FmBlastFootprint> frontier;
+	int radius;
+	double strength;
+	bool consumed = false;
+};
+
+static int gc_blast_continuation(lua_State *L)
+{
+	static_cast<FmBlastContinuation *>(lua_touserdata(L, 1))->~FmBlastContinuation();
+	return 0;
+}
 
 struct TntBlastEvent
 {
@@ -648,7 +663,16 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 							: std::vector<FmBlastFootprint>{};
 	const bool resumable = getboolfield_default(L, 2, "resumable", false);
 	lua_getfield(L, 2, "continuation");
-	if (resumable && lua_istable(L, -1)) {
+	if (resumable && lua_isuserdata(L, -1)) {
+		auto *state = static_cast<FmBlastContinuation *>(
+				luaL_checkudata(L, -1, "freeminer.blast_continuation"));
+		if (state->consumed)
+			return luaL_error(L, "blast continuation already consumed");
+		dr = state->radius;
+		total_strength = state->strength;
+		incoming = std::move(state->frontier);
+		state->consumed = true;
+	} else if (resumable && lua_istable(L, -1)) {
 		dr = getintfield_default(L, -1, "radius", 0);
 		total_strength = getfloatfield_default(L, -1, "strength", blast_strength);
 		incoming.clear();
@@ -861,22 +885,13 @@ int ModApiEnv::l_tnt_explode(lua_State *L)
 	lua_setfield(L, -2, "chained_tnt");
 
 	if (resumable && stopped_by_time) {
-		lua_createtable(L, 0, 3);
-		set_lua_number_field(L, "radius", dr);
-		set_lua_number_field(L, "strength", total_strength);
-		lua_createtable(L, incoming.size(), 0);
-		int index = 0;
-		for (const auto &patch : incoming) {
-			lua_createtable(L, 6, 0);
-			const double values[] = {static_cast<double>(patch.face), patch.u0, patch.u1,
-					patch.v0, patch.v1, patch.density};
-			for (int j = 0; j < 6; ++j) {
-				lua_pushnumber(L, values[j]);
-				lua_rawseti(L, -2, j + 1);
-			}
-			lua_rawseti(L, -2, ++index);
+		void *storage = lua_newuserdata(L, sizeof(FmBlastContinuation));
+		new (storage) FmBlastContinuation{std::move(incoming), dr, total_strength};
+		if (luaL_newmetatable(L, "freeminer.blast_continuation")) {
+			lua_pushcfunction(L, gc_blast_continuation);
+			lua_setfield(L, -2, "__gc");
 		}
-		lua_setfield(L, -2, "frontier");
+		lua_setmetatable(L, -2);
 		lua_setfield(L, -2, "continuation");
 	}
 	set_lua_number_field(L, "radius", dr);
