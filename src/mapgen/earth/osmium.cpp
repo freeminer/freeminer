@@ -46,6 +46,7 @@
 #endif
 
 #include "arnis-cpp/src/data_processing.h"
+#include "arnis-cpp/src/net.h"
 // fm: Share complete bridge geometry between streamed chunks.
 #include "arnis-cpp/src/element_processing/fm_bridge_context.h"
 // ===
@@ -61,6 +62,8 @@
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/overture.h"
 #include "arnis-cpp/src/element_processing/way_segments.h"
+#include "arnis-cpp/src/element_processing/road_detail.h"
+#include "arnis-cpp/src/water_detail.h"
 #include "arnis-cpp/src/models_3d/wikidata/prescan.h"
 
 #if 0
@@ -705,8 +708,6 @@ arnis::Args earth_arnis_args()
 	arnis.building_facades = true;
 	arnis.facade_detail = ::arnis::FacadeDetail::High;
 	arnis.caves = true;
-	arnis.cave_biomes =
-			"lush=100,dripstone=100,deepdark=100,mushroom=100,ice=100,amethyst=100,volcanic=100,coral=100";
 	// Match Rust's default. The shared canopy cache keeps this single raster
 	// available across chunk-generation threads without per-thread downloads.
 	arnis.canopy_height = true;
@@ -743,6 +744,46 @@ arnis::Args earth_arnis_args()
 				parsed >= std::numeric_limits<int>::min() &&
 				parsed <= std::numeric_limits<int>::max())
 			value = static_cast<int>(parsed);
+	};
+	const auto read_optional_u64 = [&](const char *name,
+										   std::optional<std::uint64_t> &value) {
+		std::string raw;
+		if (!get_setting(name, raw))
+			return;
+		const auto first = raw.find_first_not_of(" \t\n\r\f\v");
+		if (first == std::string::npos || raw[first] == '-')
+			return;
+		char *end = nullptr;
+		errno = 0;
+		const auto parsed = std::strtoull(raw.c_str(), &end, 10);
+		while (end && std::isspace(static_cast<unsigned char>(*end)))
+			++end;
+		if (errno != ERANGE && end != raw.c_str() && end && *end == '\0')
+			value = static_cast<std::uint64_t>(parsed);
+	};
+	// fm: Expose the native Arnis tile-pipeline resource hints as settings.
+	const auto read_optional_u32 = [&](const char *name,
+										   std::optional<std::uint32_t> &value) {
+		std::optional<std::uint64_t> parsed;
+		read_optional_u64(name, parsed);
+		if (parsed && *parsed > 0 && *parsed <= std::numeric_limits<std::uint32_t>::max())
+			value = static_cast<std::uint32_t>(*parsed);
+	};
+	// ===
+	const auto read_optional_i32 = [&](const char *name,
+										   std::optional<std::int32_t> &value) {
+		std::string raw;
+		if (!get_setting(name, raw))
+			return;
+		char *end = nullptr;
+		errno = 0;
+		const long long parsed = std::strtoll(raw.c_str(), &end, 10);
+		while (end && std::isspace(static_cast<unsigned char>(*end)))
+			++end;
+		if (errno != ERANGE && end != raw.c_str() && end && *end == '\0' &&
+				parsed >= std::numeric_limits<std::int32_t>::min() &&
+				parsed <= std::numeric_limits<std::int32_t>::max())
+			value = static_cast<std::int32_t>(parsed);
 	};
 	const auto read_double = [&](const char *name, double &value) {
 		std::string raw;
@@ -797,9 +838,16 @@ arnis::Args earth_arnis_args()
 	read_optional_string("save_json_file", arnis.save_json_file);
 	read_optional_string("path", arnis.path);
 	read_optional_string("world_name", arnis.world_name);
+	read_optional_u64("seed", arnis.seed);
+	// fm: Match Rust's resource-budget options for embedded generation calls.
+	read_optional_u32("threads", arnis.threads);
+	read_optional_u64("ram_budget_mb", arnis.ram_budget_mb);
+	// ===
 	read_bool("bedrock", arnis.bedrock);
 	read_bool("luanti", arnis.luanti);
 	read_bool("vanilla_height", arnis.vanilla_height);
+	read_optional_i32("min_y", arnis.min_y);
+	read_optional_i32("max_y", arnis.max_y);
 
 	// Core generation and terrain settings.
 	read_double("scale", arnis.scale);
@@ -808,7 +856,26 @@ arnis::Args earth_arnis_args()
 	read_int("ground_level", arnis.ground_level);
 	read_double("rotation", arnis.rotation);
 	read_bool("use_3d", arnis.use_3d);
+	{
+		std::string prop_spec;
+		if (get_setting("props", prop_spec)) {
+			arnis::structures::PropSet props = arnis::structures::PropSet::none();
+			std::string error;
+			if (arnis::structures::PropSet::parse(prop_spec, props, &error))
+				arnis.props = props;
+			else
+				warningstream << "Earth: ignoring invalid arnis.props setting: " << error
+							  << '\n';
+		}
+	}
+	read_optional_double("props_min_scale", arnis.props_min_scale);
 	read_bool("interior", arnis.interior);
+	{
+		std::optional<std::string> loot_table;
+		read_optional_string("loot_table", loot_table);
+		if (loot_table && !loot_table->empty())
+			arnis.loot_table = std::filesystem::path(*loot_table);
+	}
 	read_bool("roof", arnis.roof);
 	read_bool("fillground", arnis.fillground);
 	read_bool("disable_height_limit", arnis.disable_height_limit);
@@ -819,6 +886,35 @@ arnis::Args earth_arnis_args()
 	read_bool("aws_only_elevation", arnis.aws_only_elevation);
 	read_bool("city_boundaries", arnis.city_boundaries);
 	read_bool("caves", arnis.caves);
+	{
+		std::string style;
+		if (get_setting("cave_style", style)) {
+			if (style == "vanilla")
+				arnis.cave_style = ::arnis::CaveStyle::Vanilla;
+			else if (style == "more-vanilla" || style == "more_vanilla")
+				arnis.cave_style = ::arnis::CaveStyle::MoreVanilla;
+			else if (style == "more-mix" || style == "more_mix")
+				arnis.cave_style = ::arnis::CaveStyle::MoreMix;
+			else if (style == "all-mix" || style == "all_mix")
+				arnis.cave_style = ::arnis::CaveStyle::AllMix;
+			else
+				warningstream
+						<< "Earth: ignoring unknown arnis.cave_style '" << style
+						<< "' (expected vanilla, more-vanilla, all-mix or more-mix)\n";
+		}
+		std::string ores;
+		if (get_setting("cave_ores", ores)) {
+			if (ores == "normal")
+				arnis.cave_ores = ::arnis::CaveOres::Normal;
+			else if (ores == "more")
+				arnis.cave_ores = ::arnis::CaveOres::More;
+			else
+				warningstream << "Earth: ignoring unknown arnis.cave_ores '" << ores
+							  << "' (expected normal or more)\n";
+		}
+	}
+	read_optional_u64("cave_seed", arnis.cave_seed);
+	read_optional_i32("cave_datum_y", arnis.cave_datum_y);
 	read_bool("disasters", arnis.disasters);
 	read_bool("winter", arnis.winter);
 	read_bool("post_apocalyptic", arnis.post_apocalyptic);
@@ -830,6 +926,28 @@ arnis::Args earth_arnis_args()
 	read_bool("moving_vehicles", arnis.moving_vehicles);
 	read_bool("moving_cars", arnis.moving_cars);
 	read_bool("pedestrians", arnis.pedestrians);
+	read_bool("rocks", arnis.scatter.rocks);
+	read_double("rock_density", arnis.scatter.rock_density);
+	read_bool("bushes", arnis.scatter.bushes);
+	read_double("bush_density", arnis.scatter.bush_density);
+	{
+		std::string detail;
+		if (get_setting("road_detail", detail))
+			arnis.road_detail = ::arnis::road_detail::from_string(detail);
+		std::string water_detail;
+		if (get_setting("water_detail", water_detail) && water_detail == "scaled")
+			arnis.water_detail = ::arnis::WaterDetail::Scaled;
+		std::string river_bed;
+		if (get_setting("river_bed", river_bed)) {
+			if (river_bed == "v1")
+				arnis.river_bed = ::arnis::RiverBed::V1;
+			else if (river_bed == "off")
+				arnis.river_bed = ::arnis::RiverBed::Off;
+			else
+				warningstream << "Earth: ignoring unknown arnis.river_bed '" << river_bed
+							  << "' (expected off or v1)\n";
+		}
+	}
 	read_bool("benchmark", arnis.benchmark);
 	read_bool("debug", arnis.debug);
 	if (arnis.vanilla_height) {
@@ -869,9 +987,65 @@ arnis::Args earth_arnis_args()
 			arnis.max_tree_size = ::arnis::trees::tree_size_from_string(size);
 	}
 	{
+		std::string weights;
+		if (get_setting("tree_size_weights", weights)) {
+			std::string error;
+			arnis.tree_size_weights = ::arnis::trees::SizeWeights::parse(weights, &error);
+			if (!arnis.tree_size_weights)
+				warningstream << "Earth: ignoring invalid arnis.tree_size_weights: "
+							  << error << '\n';
+		}
+	}
+	{
+		std::string realm;
+		if (get_setting("tree_realm", realm) && !realm.empty()) {
+			std::transform(realm.begin(), realm.end(), realm.begin(),
+					[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			static const std::unordered_set<std::string> valid_realms{"auto", "afr",
+					"asn", "aus", "ena", "eur", "fl", "ind", "sam", "wna",
+					"vanilla-plus"};
+			if (valid_realms.contains(realm))
+				arnis.tree_realm = std::move(realm);
+			else
+				warningstream << "Earth: ignoring unknown arnis.tree_realm '" << realm
+							  << "'\n";
+		}
+	}
+	{
+		std::string directory;
+		if (get_setting("tree_pack_dir", directory) && !directory.empty())
+			arnis.tree_pack_dir = std::filesystem::path(std::move(directory));
+	}
+	{
+		std::string mode;
+		if (get_setting("tree_pack_mode", mode)) {
+			std::transform(mode.begin(), mode.end(), mode.begin(),
+					[](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+			if (mode == "add")
+				arnis.tree_pack_mode = ::arnis::trees::TreePackMode::Add;
+			else if (mode == "replace")
+				arnis.tree_pack_mode = ::arnis::trees::TreePackMode::Replace;
+			else
+				warningstream << "Earth: ignoring unknown arnis.tree_pack_mode '" << mode
+							  << "' (expected add or replace)\n";
+		}
+	}
+	{
 		std::string fields;
 		if (get_setting("fields", fields))
 			arnis.fields = ::arnis::field_texture::field_preset_from_string(fields);
+	}
+	{
+		std::string climate_mode;
+		if (get_setting("climate_mode", climate_mode)) {
+			if (climate_mode == "per-position" || climate_mode == "per_position")
+				arnis.climate_mode = ::arnis::climate::ClimateMode::PerPosition;
+			else if (climate_mode == "origin")
+				arnis.climate_mode = ::arnis::climate::ClimateMode::Origin;
+			else
+				warningstream << "Earth: ignoring unknown arnis.climate_mode '"
+							  << climate_mode << "' (expected origin or per-position)\n";
+		}
 	}
 
 	// Facade, Mapillary, signage, and Overture options.
@@ -924,6 +1098,7 @@ arnis::Args earth_arnis_args()
 	read_optional_string("cave_biomes", arnis.cave_biomes);
 	read_optional_string("cave_asset_pack", arnis.cave_asset_pack);
 	read_string("downloader", arnis.downloader);
+	read_optional_u64("max_downloads", arnis.max_downloads);
 	read_string("osm_tiles_url", arnis.osm_tiles_url);
 	read_bool("no_tile_archive", arnis.no_tile_archive);
 	read_bool("bake_lighting", arnis.bake_lighting);
@@ -984,6 +1159,12 @@ arnis::Args earth_arnis_args()
 	arnis.apply_body_defaults();
 	arnis.apply_mode_defaults();
 	arnis.apply_feature_needs();
+	arnis.apply_y_bounds();
+	::arnis::net::set_max_requests(
+			arnis.max_downloads ? static_cast<std::size_t>(std::min<std::uint64_t>(
+										  *arnis.max_downloads,
+										  std::numeric_limits<std::size_t>::max()))
+								: ::arnis::net::MAX_CONCURRENT_REQUESTS);
 	// A malformed or mutually incompatible optional setting must not disable
 	// the entire Freeminer mapgen. Keep the host's known-good defaults and let
 	// generation proceed; valid settings continue to override them normally.

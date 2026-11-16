@@ -77,7 +77,7 @@ std::string serializeParticle(const ParticleParameters &p, u16 protocol_version)
 
 void Server::SendMovement(session_t peer_id)
 {
-	MSGPACK_PACKET_INIT((int)TOCLIENT_MOVEMENT, 13);
+	MSGPACK_PACKET_INIT((int)TOCLIENT_MOVEMENT, 15);
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_DEFAULT,
 			g_settings->getFloat("movement_acceleration_default") * BS);
 	PACK(TOCLIENT_MOVEMENT_ACCELERATION_AIR,
@@ -97,9 +97,11 @@ void Server::SendMovement(session_t peer_id)
 			g_settings->getFloat("movement_liquid_fluidity_smooth") * BS);
 	PACK(TOCLIENT_MOVEMENT_LIQUID_SINK,
 			g_settings->getFloat("movement_liquid_sink") * BS);
-	PACK(TOCLIENT_MOVEMENT_GRAVITY, g_settings->getFloat("movement_gravity") * BS);
+	PACK(TOCLIENT_MOVEMENT_GRAVITY, m_env->getGravityBackgroundStrength());
 	PACK(TOCLIENT_MOVEMENT_FALL_AERODYNAMICS,
 			g_settings->getFloat("movement_fall_aerodynamics") * BS);
+	PACK(TOCLIENT_MOVEMENT_GRAVITY_SOURCES, m_env->getGravityConfiguration());
+	PACK(TOCLIENT_MOVEMENT_GRAVITY_BACKGROUND, m_env->getGravityBackground());
 	m_clients.send(peer_id, 0, buffer, true);
 }
 

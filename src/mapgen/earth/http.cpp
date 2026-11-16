@@ -4,6 +4,7 @@
 #include <limits>
 #include <thread>
 #include <fstream>
+#include <utility>
 #include "debug/dump.h"
 #include "filesys.h"
 #include "httpfetch.h"
@@ -128,6 +129,15 @@ std::string http_get_range(
 std::string http_get_range(const std::string &url, std::uint64_t offset,
 		std::uint64_t length, int timeout_seconds)
 {
+	const auto response = http_get_range_response(url, offset, length, timeout_seconds);
+	if (!response.succeeded || response.response_code != 206 || response.data.empty())
+		return {};
+	return response.data;
+}
+
+HTTPRangeResponse http_get_range_response(const std::string &url, std::uint64_t offset,
+		std::uint64_t length, int timeout_seconds)
+{
 	if (length == 0 || offset > std::numeric_limits<std::uint64_t>::max() - (length - 1))
 		return {};
 #if USE_OSMIUM
@@ -144,11 +154,7 @@ std::string http_get_range(const std::string &url, std::uint64_t offset,
 	req.quiet = true;
 	HTTPFetchResult res;
 	httpfetch_sync(req, res);
-	// A 200 response means Range was ignored. Do not return it: callers use
-	// this primitive specifically to avoid materialising whole COGs in memory.
-	if (!res.succeeded || res.response_code != 206 || res.data.empty())
-		return {};
-	return res.data;
+	return {std::move(res.data), res.response_code, res.succeeded};
 }
 
 size_t multi_http_to_file(const std::vector<std::string> &links, const std::string &path)

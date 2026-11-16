@@ -3,10 +3,12 @@
 #include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis-cpp/src/land_cover/land_cover.h"
 #include "mapgen/earth/arnis-cpp/src/water_depth.h"
+#include "mapgen/earth/arnis-cpp/src/water_detail.h"
 #include "mapgen/earth/arnis-cpp/src/water_steps.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
 #include <cstdint>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -48,6 +50,21 @@ public:
 		TEST(testBoundedTreeClearStopsAtItsColumns);
 		TEST(testCarveDepthEstimateHandlesNoWater);
 		TEST(testCarveDepthEstimateCapsLargeWaterBodies);
+		TEST(testBoreCrossingsReserveConfiguredCarveDepth);
+		TEST(testScaledWaterCrossingParsesLayerLikeRust);
+	}
+
+	void testScaledWaterCrossingParsesLayerLikeRust()
+	{
+		using namespace arnis;
+		tags_t tags;
+		tags.emplace("layer", " 0 ");
+		UASSERT(water_detail::drowns_crossing(WaterDetail::Scaled, 0.5, tags));
+		tags["layer"] = "1";
+		UASSERT(!water_detail::drowns_crossing(WaterDetail::Scaled, 0.5, tags));
+		tags.clear();
+		UASSERT(!water_detail::drowns_crossing(
+				WaterDetail::Scaled, std::numeric_limits<double>::quiet_NaN(), tags));
 	}
 
 	void testOneBlockWaterDropGetsVanillaRunUp()
@@ -129,6 +146,34 @@ public:
 		const std::vector<std::vector<std::uint8_t>> grid(
 				32, std::vector<std::uint8_t>(32, arnis::land_cover::LC_WATER));
 		UASSERT(arnis::water_depth::estimate_max_carve_depth(grid, 32, 32) == 6);
+	}
+
+	void testBoreCrossingsReserveConfiguredCarveDepth()
+	{
+		using namespace arnis;
+		struct ResetCrossingCarve
+		{
+			~ResetCrossingCarve()
+			{
+				water_depth::set_crossing_carve({0, WaterDetail::Default, 1.0});
+			}
+		} reset;
+		std::vector<std::vector<std::uint8_t>> grid(
+				3, std::vector<std::uint8_t>(3, land_cover::LC_GRASSLAND));
+		grid[1][1] = land_cover::LC_WATER;
+		const std::vector<std::pair<std::size_t, std::size_t>> cells{{1, 1}};
+		const auto height = [](std::size_t, std::size_t) { return 0.0; };
+
+		water_depth::set_crossing_carve({0, WaterDetail::Default, 1.0});
+		auto crossings = water_depth::bore_crossings(grid, 3, 3, cells, height);
+		UASSERT(crossings.size() == 1);
+		UASSERT(crossings.front().depth == 0);
+
+		water_depth::set_crossing_carve(
+				{water_depth::MAX_WATER_DEPTH, WaterDetail::Default, 1.0});
+		crossings = water_depth::bore_crossings(grid, 3, 3, cells, height);
+		UASSERT(crossings.size() == 1);
+		UASSERT(crossings.front().depth == water_depth::MAX_WATER_DEPTH);
 	}
 };
 

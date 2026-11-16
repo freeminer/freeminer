@@ -281,7 +281,7 @@ void fm_set_default_settings(Settings *settings)
 #if !MINETEST_PROTO
 	settings->setDefault("max_simultaneous_block_sends_per_client", "50"); // "10"
 #endif
-	settings->setDefault("max_block_send_distance", "30");			 // "9"
+	settings->setDefault("max_block_send_distance", "40");			 // "9"
 	settings->setDefault("server_unload_unused_data_timeout", "65"); // "29"
 	settings->setDefault("max_objects_per_block", "100");			 // "49"
 	settings->setDefault("server_occlusion", "true");
@@ -318,6 +318,8 @@ void fm_set_default_settings(Settings *settings)
 	settings->setDefault("movement_speed_crouch", "2");			// "1.35"
 	settings->setDefault("movement_speed_fast", "20.5");		// "20"
 	//settings->setDefault("movement_fall_aerodynamics", "110");
+
+	settings->setDefault("gravity_background", "9.81");
 
 	/*
 	settings->setDefault("animation_default_start", "0");

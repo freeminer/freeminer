@@ -360,6 +360,12 @@ void Client::handleCommand_Movement(NetworkPacket *pkt)
 	packet[TOCLIENT_MOVEMENT_GRAVITY].convert(player->movement_gravity);
 	packet_convert_safe(packet, TOCLIENT_MOVEMENT_FALL_AERODYNAMICS,
 			player->movement_fall_aerodynamics);
+	std::string gravity_sources;
+	packet_convert_safe(packet, TOCLIENT_MOVEMENT_GRAVITY_SOURCES, gravity_sources);
+	player->gravity_field.setSources(gravity_sources);
+	player->gravity_background = true;
+	packet_convert_safe(
+			packet, TOCLIENT_MOVEMENT_GRAVITY_BACKGROUND, player->gravity_background);
 }
 
 void Client::handleCommand_HP(NetworkPacket *pkt)

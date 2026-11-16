@@ -207,7 +207,8 @@ double MapgenEarth::projectedElevation(const fm_earth::Sample &sample, block_ste
 	float lon = static_cast<float>(fm_earth::wrap(sample.lon));
 	if (lon >= 180.0f)
 		lon = -180.0f;
-	const double height = maps_holder->hgt_reader.get(lat, lon, step);
+	const double height =
+			maps_holder->hgt_reader.get(lat, lon, step, mg_params->world_elevation_step);
 	return std::ceil(std::clamp(std::isfinite(height) ? height : 0.0, earth_min_elevation,
 							 earth_max_elevation) /
 					 scale.Y) -
@@ -489,11 +490,13 @@ void MapgenEarthParams::readParams(const Settings *settings)
 	auto mg_earth = settings->getJson("mg_earth");
 	if (!mg_earth.isNull())
 		params = mg_earth;
+	settings->getS16NoEx("mg_earth_world_elevation_step", world_elevation_step);
 }
 
 void MapgenEarthParams::writeParams(Settings *settings) const
 {
 	settings->setJson("mg_earth", params);
+	settings->setS16("mg_earth_world_elevation_step", world_elevation_step);
 	try {
 		MapgenV7Params::writeParams(settings);
 	} catch (...) {
@@ -618,9 +621,7 @@ MapgenEarth::MapgenEarth(MapgenEarthParams *params_, EmergeParams *emerge) :
 */
 
 	if (!maps_holder) {
-		s16 world_elevation_step = 11;
-		g_settings->getS16NoEx("earth_world_elevation_step", world_elevation_step);
-		maps_holder = std::make_unique<maps_holder_t>(world_elevation_step);
+		maps_holder = std::make_unique<maps_holder_t>();
 	}
 
 	// Optional global climate rasters use the same encoding and alpha mask as
@@ -1230,7 +1231,8 @@ pos_t MapgenEarth::get_height(pos_t x, pos_t z, block_step_t step)
 	if (projection.curved)
 		return projectedGroundLevel({x, z}, step);
 	const auto tc = pos_to_ll(x, z);
-	const auto y = maps_holder->hgt_reader.get(tc.lat, tc.lon, step);
+	const auto y = maps_holder->hgt_reader.get(
+			tc.lat, tc.lon, step, mg_params->world_elevation_step);
 	return ceil(y / scale.Y) - center.Y;
 }
 
@@ -1821,8 +1823,7 @@ bool MapgenEarth::calcBlockWind(const v3pos_t &p, uint64_t seed, float timeofday
 	return true;
 }
 
-maps_holder_t::maps_holder_t(int16_t world_elevation_step) :
-		hgt_reader{data_root, world_elevation_step}
+maps_holder_t::maps_holder_t() : hgt_reader{data_root}
 {
 }
 

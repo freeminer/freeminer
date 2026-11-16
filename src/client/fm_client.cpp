@@ -41,6 +41,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "mapblock.h"
 #include "mapgen/mapgen.h"
 #include "network/fm_networkprotocol.h"
+#include "network/fm_gravity_sync.h"
 #include "network/networkpacket.h"
 #include "profiler.h"
 #include "server.h"
@@ -120,7 +121,32 @@ void Client::sendGetBlocks()
 	ServerMap::far_blocks_ask_t far_blocks;
 	{
 		const auto lock = m_env.getClientMap().m_far_blocks_ask.lock_unique_rec();
-		std::swap(far_blocks, m_env.getClientMap().m_far_blocks_ask);
+		auto &pending = m_env.getClientMap().m_far_blocks_ask;
+		const auto camera = getNodeBlockPos(m_env.getClientMap().far_cam_pos_mesh);
+		std::vector<v3bpos_t> positions;
+		positions.reserve(pending.size());
+		const auto iteration = m_env.getClientMap().far_iteration_grid;
+		for (auto it = pending.begin(); it != pending.end();) {
+			// The server rejects requests from older grid generations.
+			if (it->second.second != iteration) {
+				it = pending.erase(it);
+				continue;
+			}
+			positions.push_back(it->first);
+			++it;
+		}
+		const auto distance = [&](const v3bpos_t &pos) {
+			const auto delta = v3opos_t::from(pos) - v3opos_t::from(camera);
+			return delta.getLengthSQ();
+		};
+		const auto count = std::min<size_t>(512, positions.size());
+		std::partial_sort(positions.begin(), positions.begin() + count, positions.end(),
+				[&](const auto &a, const auto &b) { return distance(a) < distance(b); });
+		for (size_t i = 0; i < count; ++i) {
+			const auto it = pending.find(positions[i]);
+			far_blocks.emplace(*it);
+			pending.erase(it);
+		}
 	}
 
 	if (far_blocks.empty()) {
@@ -149,6 +175,9 @@ void Client::handleCommand_FreeminerInit(NetworkPacket *pkt)
 		return;
 
 	auto &packet = *(pkt->packet);
+	if (auto *player = m_env.getLocalPlayer())
+		fm_gravity_sync::applyInit(packet, player->gravity_field,
+				player->movement_gravity, player->gravity_background);
 
 	if (!m_world_path.empty() && packet.contains(TOCLIENT_INIT_GAMEID)) {
 		std::string gameid;
@@ -401,6 +430,10 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 	// Database work below is asynchronous and must not delay render freshness.
 	if (!step)
 		updateMeshTimestampWithEdge(bpos);
+	else if (farmesh) {
+		farmesh->sourceReceived(bpos, step);
+		++m_new_farmeshes;
+	}
 
 	mesh_thread_pool.enqueue([this, block, bpos, step]() {
 		if (m_localdb && !m_simple_singleplayer_mode) {
@@ -411,90 +444,6 @@ void Client::processSingleBlockData(MsgpackPacketSafe &packet)
 					merger->add_changed(bpos);
 				}
 			}
-		}
-
-		if (step) {
-			static thread_local const auto settings_farmesh_server =
-					g_settings->getU16("farmesh_server");
-			static thread_local const auto settings_farmesh =
-					g_settings->getU16("farmesh");
-			if (!settings_farmesh_server || !settings_farmesh || !farmesh) {
-				return;
-			}
-
-			const auto block_status = [this](const MapBlockPtr &block, const auto &step) {
-				constexpr auto update_farmesh = true;
-				const auto far_make_mesh_timestamp = m_uptime + 1 + step / 4;
-				if (block->far_make_mesh_timestamp <= 0 ||
-						block->far_make_mesh_timestamp == -1 ||
-						(update_farmesh && block->far_make_mesh_timestamp <
-												   far_make_mesh_timestamp)) {
-					block->far_make_mesh_timestamp = far_make_mesh_timestamp;
-				}
-				block->far_status = MapBlock::far_status_e::s3_recieved;
-			};
-
-			block_status(block, step);
-
-			++m_new_farmeshes;
-
-			{
-				auto &client_map = getEnv().getClientMap();
-				const auto &control = client_map.getControl();
-				auto blockpos = block->getPos();
-				//const auto blockpos_original = blockpos;
-				//const auto step_original = step;
-
-				const auto tree_result = farmesh::getFarParams(
-						control, getNodeBlockPos(client_map.far_cam_pos_mesh), blockpos);
-				if (!tree_result)
-					return;
-				bool other_draw_block = false;
-				if (tree_result->pos != blockpos || tree_result->step != step) {
-					other_draw_block = true;
-					auto &step = tree_result->step;
-					blockpos = tree_result->pos;
-					auto &storage = client_map.far_blocks_storage[step];
-					const auto lock = storage.lock_shared_rec();
-					if (const auto it = storage.find(blockpos);
-							it != storage.end() && it->second.block) {
-						auto &block = it->second.block;
-						block_status(block, step);
-						/*
-						if (block->far_make_mesh_timestamp <= 0 ||
-								(update_farmesh && block->far_make_mesh_timestamp <
-														   far_make_mesh_timestamp)) {
-							block->far_make_mesh_timestamp = far_make_mesh_timestamp;
-						}
-						block->far_status = MapBlock::far_status_e::s3_recieved;
-*/
-					} else {
-						return;
-					}
-				}
-
-				// if (other_draw_block) {
-				// 	return;
-				// }
-
-				// farmesh->enqueueFarMeshForBlock(blockpos, step, block, m_uptime, other_draw_block);
-
-#if 0
-				if (0) {
-					const auto lock = far_blocks.lock_unique_rec();
-					if (const auto &it = far_blocks.find(blockpos);
-							it != far_blocks.end()) {
-						if (it->second->far_step != block->far_step) {
-							return;
-						}
-						block->far_iteration = it->second->far_iteration.load(
-								std::memory_order::relaxed);
-
-						far_blocks.at(blockpos) = block;
-					}
-				}
-#endif
-			} //();
 		}
 	});
 

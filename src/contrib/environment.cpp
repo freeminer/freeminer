@@ -73,8 +73,7 @@ void ServerEnvironment::contrib_player_globalstep(RemotePlayer* player, float dt
 
 void ServerEnvironment::contrib_globalstep(const float dtime)
 {
-	// One settings lookup per server step instead of one per falling object.
-	m_falling_gravity = v3f(0.0f, -g_settings->getFloat("movement_gravity") * BS, 0.0f);
+	// Gravity is initialized from gravity_background at server startup.
 
 #if 0
 	// Map autogenerator & updater

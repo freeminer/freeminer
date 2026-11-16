@@ -345,6 +345,7 @@ struct WorldEditor
 	bool bake_lighting = false;
 	bool start_with_map = false;
 	bool place_schematics_enabled = true;
+	structures::PropSet enabled_props = structures::PropSet::all();
 	bool schematic_tree_pack_available = false;
 	bool map_decals = true;
 	int first_decal_map_id = decals::DecalRegistry::FIRST_ID;
@@ -512,6 +513,9 @@ struct WorldEditor
 	int ground_cache_min_x = 0, ground_cache_min_z = 0;
 	std::size_t ground_cache_width = 0, ground_cache_height = 0;
 	std::optional<std::tuple<int, int, int, int>> strict_bounds;
+	// Piece ownership is wider in scope than a streamed tile's strict bounds:
+	// pieces may plan with halos but only write inside their leased rectangle.
+	std::optional<std::tuple<int, int, int, int>> write_bounds;
 	int ground_origin_x = 0, ground_origin_z = 0;
 	bool ground_origin_set = false;
 	void set_generation_format(int f) { generation_format = f; }
@@ -520,6 +524,8 @@ struct WorldEditor
 	void set_bake_lighting(bool v) { bake_lighting = v; }
 	void set_place_schematics(bool v) { place_schematics_enabled = v; }
 	bool place_schematics() const { return place_schematics_enabled; }
+	void set_props(structures::PropSet props) { enabled_props = props; }
+	bool place_prop(structures::Prop prop) const { return enabled_props.has(prop); }
 	void set_tree_slot_spacing(int spacing)
 	{
 		tree_slot_spacing_blocks = std::max(1, spacing);
@@ -732,6 +738,21 @@ struct WorldEditor
 		strict_bounds = std::tuple{min_x, min_z, max_x, max_z};
 	}
 	void clear_strict_bounds() { strict_bounds.reset(); }
+	void set_write_bounds(std::optional<std::tuple<int, int, int, int>> bounds)
+	{
+		write_bounds = std::move(bounds);
+	}
+	std::optional<std::tuple<int, int, int, int>> get_write_bounds() const
+	{
+		return write_bounds;
+	}
+	bool in_write_bounds(int x, int z) const
+	{
+		if (!write_bounds)
+			return true;
+		const auto &[min_x, min_z, max_x, max_z] = *write_bounds;
+		return x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+	}
 	bool owns(int x, int z) const;
 	// Tile editors use their own clipped halo bbox, matching Rust's editor bounds;
 	// otherwise use the full generation rectangle rather than the active mapgen
@@ -1084,6 +1105,8 @@ struct WorldEditor
 	}
 	std::optional<int> carved_bed(int x, int z) const;
 	std::optional<int> lowest_carved_bed(int x, int z, int radius) const;
+	std::optional<int> lowest_water_beside(int x, int z) const;
+	bool water_stands_over_neighbour(int x, int z, int water_y) const;
 	std::optional<double> terrain_level_exact(int x, int z) const;
 	void register_road_surface_y(int x, int z, int y);
 	void set_station_surface_levels(std::shared_ptr<const RoadSurfaceOverrides> levels)
@@ -1105,6 +1128,7 @@ struct WorldEditor
 	void release_road_surface_overrides();
 	bool water_source_is_enclosed(int x, int z) const;
 	biome::Climate climate() const;
+	std::optional<biome::Climate> local_climate(int x, int z) const;
 	int get_water_level(int x, int z) const;
 	bool is_lc_water(int x, int z) const;
 	bool is_steep_land(int x, int z) const;

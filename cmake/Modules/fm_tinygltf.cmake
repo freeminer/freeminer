@@ -6,22 +6,31 @@ if(TARGET fm_tinygltf)
 endif()
 option(FETCH_EARTH_DEPS "Download missing Earth mapgen dependencies" ${FETCH_DEPS})
 
-if(FETCHCONTENT_SOURCE_DIR_TINYGLTF)
+if(FETCHCONTENT_SOURCE_DIR_TINYGLTF
+    AND EXISTS "${FETCHCONTENT_SOURCE_DIR_TINYGLTF}/tiny_gltf.h"
+)
     set(FM_TINYGLTF_SOURCE "${FETCHCONTENT_SOURCE_DIR_TINYGLTF}")
-elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/tinygltf/CMakeLists.txt")
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/tinygltf/tiny_gltf.h")
     set(FM_TINYGLTF_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/external/tinygltf")
-elseif(EXISTS "${FETCHCONTENT_BASE_DIR}/tinygltf-src/CMakeLists.txt")
+elseif(EXISTS "${FETCHCONTENT_BASE_DIR}/tinygltf-src/tiny_gltf.h")
     set(FM_TINYGLTF_SOURCE "${FETCHCONTENT_BASE_DIR}/tinygltf-src")
+elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/external/draco/third_party/tinygltf/tiny_gltf.h")
+    set(FM_TINYGLTF_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/external/draco/third_party/tinygltf")
 elseif(NOT FETCH_EARTH_DEPS)
-    message(STATUS "TinyGLTF missing; set FETCH_EARTH_DEPS=ON to download")
+    message(STATUS "TinyGLTF C++ headers missing; set FETCH_EARTH_DEPS=ON to download")
     return()
 endif()
 if(FM_TINYGLTF_SOURCE)
     set(FETCHCONTENT_SOURCE_DIR_TINYGLTF "${FM_TINYGLTF_SOURCE}")
 endif()
 FetchContent_Declare(
-    tinygltf GIT_REPOSITORY https://github.com/syoyo/tinygltf.git GIT_TAG v2.9.7
-    GIT_SHALLOW TRUE ${FM_FETCH_EXCLUDE_FROM_ALL}
+    tinygltf
+    GIT_REPOSITORY https://github.com/syoyo/tinygltf
+    GIT_TAG v2.9.7
+    GIT_SHALLOW TRUE
+    SOURCE_DIR "${DEPS_SOURCE_ROOT}/tinygltf"
+    BINARY_DIR "${DEPS_BINARY_ROOT}/tinygltf"
+    ${FM_FETCH_EXCLUDE_FROM_ALL}
 )
 set(TINYGLTF_BUILD_LOADER_EXAMPLE OFF)
 set(TINYGLTF_INSTALL OFF)

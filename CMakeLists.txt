@@ -64,6 +64,7 @@ endif()
 if((WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR APPLE)
 	set(DEFAULT_ENABLE_LTO FALSE)
 endif()
+	set(DEFAULT_ENABLE_LTO FALSE)
 set(ENABLE_LTO ${DEFAULT_ENABLE_LTO} CACHE BOOL "Use Link Time Optimization")
 
 set(BUILD_WITH_TRACY FALSE CACHE BOOL
@@ -427,6 +428,8 @@ if(BUILD_WITH_TRACY)
 		GIT_REPOSITORY https://github.com/wolfpld/tracy.git
 		GIT_TAG ${FETCH_TRACY_GIT_TAG}
 		GIT_SHALLOW TRUE
+        SOURCE_DIR "${DEPS_SOURCE_ROOT}/tracy"
+        BINARY_DIR "${DEPS_BINARY_ROOT}/tracy"
 		GIT_PROGRESS TRUE
 	)
 	FetchContent_MakeAvailable(tracy)

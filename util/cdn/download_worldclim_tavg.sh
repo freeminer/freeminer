@@ -87,9 +87,13 @@ if command -v gdal_calc.py >/dev/null 2>&1; then
 		--calc="(A+B+C+D+E+F+G+H+I+J+K+L)/12.0" \
 		--outfile="$annual_tif"
 
-	gdal_translate -q -of PNG -ot Byte -scale -60 60 0 255 \
-		"$annual_tif" "$cdn_earth_dir/earth_tavg.png"
-	echo "  $cdn_earth_dir/earth_tavg.png"
+	# Preserve the annual GeoTIFF nodata mask as PNG alpha; byte value zero
+	# is a valid climate value and must remain distinguishable from no data.
+	masked_tif="$work_dir/earth_tavg_annual_masked.tif"
+	gdalwarp -q -overwrite -dstalpha "$annual_tif" "$masked_tif"
+	gdal_translate -q -of PNG -ot Byte -scale_1 -60 60 0 255 \
+		"$masked_tif" "$cdn_earth_dir/earth_tavg_v2.png"
+	echo "  $cdn_earth_dir/earth_tavg_v2.png"
 else
 	echo
 	echo "gdal_calc.py not found; annual earth_tavg.png was not created."

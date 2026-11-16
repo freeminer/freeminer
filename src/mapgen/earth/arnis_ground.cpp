@@ -16,6 +16,7 @@
 #include "arnis-cpp/src/osm_parser.h"
 #include "arnis-cpp/src/elevation/peaks.h"
 #include "arnis-cpp/src/water_depth.h"
+#include "arnis-cpp/src/water_detail.h"
 #include "arnis-cpp/src/world_editor/floor_state.h"
 #include "arnis-cpp/src/world_utils.h"
 
@@ -97,7 +98,8 @@ elevation::TerrainHints terrain_hints_for(const Args &args,
 			args.use_3d && !args.skip_objects(), wants_structures,
 			args.overture && wants_structures, collect_graded,
 			collect_graded && !args.skip_objects());
-	if (args.use_3d && !args.skip_objects()) {
+	if (args.resolved_props().has(arnis::structures::Prop::Landmark) && args.buildings &&
+			!args.skip_objects()) {
 		auto landmark_models = elevation::landmark_tall_models_in(osm, bbox);
 		hints.tall_models.insert(
 				hints.tall_models.end(), landmark_models.begin(), landmark_models.end());
@@ -359,6 +361,31 @@ biome::Climate GroundFrame::climate(const geographic::LLBBox &bbox) const
 			bbox.min().lat(), bbox.min().lng(), bbox.max().lat(), bbox.max().lng());
 }
 
+std::pair<climate::GeoFunction, std::pair<int, int>> GroundFrame::geography(
+		const geographic::LLBBox &bbox, std::size_t world_width,
+		std::size_t world_height) const
+{
+	if (mercator) {
+		const auto [x0, z0] = origin_for(bbox);
+		const auto projection = *mercator;
+		return {[projection, x0, z0](double gx, double gz) {
+					return std::pair<double, double>{
+							projection.lat_for_z(z0 + gz), projection.lon_for_x(x0 + gx)};
+				},
+				{x0, z0}};
+	}
+	const double top = bbox.max().lat(), left = bbox.min().lng();
+	const double dlat = top - bbox.min().lat();
+	const double dlon = bbox.max().lng() - left;
+	const double w = static_cast<double>(std::max<std::size_t>(world_width, 1));
+	const double h = static_cast<double>(std::max<std::size_t>(world_height, 1));
+	return {[top, left, dlat, dlon, w, h](double gx, double gz) {
+				return std::pair<double, double>{
+						top - gz / h * dlat, left + gx / w * dlon};
+			},
+			{0, 0}};
+}
+
 std::shared_ptr<const ecoregion::EcoMap> GroundFrame::ecoregions(
 		const geographic::LLBBox &bbox, std::size_t world_width,
 		std::size_t world_height) const
@@ -442,11 +469,14 @@ GroundFetchPlan GroundFrame::fetch_plan(
 	return {bbox, dims, 0, {world_width, world_height}, std::nullopt, std::nullopt};
 }
 
-Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
+Ground generate_ground_data(const Args &args_, const geographic::LLBBox &bbox,
 		const GroundFrame &frame, const std::filesystem::path &cache_base,
 		elevation::TerrainHints terrain_hints,
 		const std::function<std::vector<elevation::TallModel>()> &late_overture)
 {
+	Args effective_args = args_;
+	effective_args.apply_y_bounds();
+	const Args &args = effective_args;
 	if (!args.valid())
 		throw std::invalid_argument("invalid Arnis ground-generation options");
 	// Rust's CLI establishes the active dimension range before elevation is
@@ -458,7 +488,7 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 	// that policy here too, including callers that supply TerrainHints directly
 	// instead of going through generate_ground_data_from_osm(). Natural peaks
 	// remain active independently of the model-placement toggle.
-	if (!args.use_3d)
+	if (!args.use_3d && !args.resolved_props().has(arnis::structures::Prop::Landmark))
 		std::vector<elevation::TallModel>().swap(terrain_hints.tall_models);
 	// Keep the fallback decision separately: the hint lists themselves are moved
 	// into elevation processing and tall structures are released after band pick.
@@ -519,15 +549,23 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 	std::optional<int> elevation_lowest_y;
 	if (args.terrain_enabled()) {
 		try {
-			const int max_carve_depth =
-					cover ? water_depth::estimate_max_carve_depth(
-									cover->grid, world_width, world_height)
+			water_depth::set_crossing_carve(
+					{args.river_bed == RiverBed::Off ? 0 : water_depth::MAX_WATER_DEPTH,
+							args.water_detail, args.scale});
+			int max_carve_depth =
+					cover ? water_detail::max_carve_depth(args.water_detail,
+									water_depth::estimate_max_carve_depth(
+											cover->grid, world_width, world_height),
+									args.scale)
 						  : 0;
+			if (args.river_bed != RiverBed::Off)
+				max_carve_depth = std::max(max_carve_depth, water_depth::MAX_WATER_DEPTH);
 			const int current_min_y = args.disable_height_limit
 											  ? extended_min_y_for(args)
 											  : world_editor::DEFAULT_MIN_Y;
-			const int carve_floor =
-					cover ? current_min_y + max_carve_depth + 2 : current_min_y;
+			const int carve_floor = (cover || args.river_bed != RiverBed::Off)
+											? current_min_y + max_carve_depth + 2
+											: current_min_y;
 			const int water_floor = std::max(args.ground_level, carve_floor);
 			const int sink_floor = std::min(
 					std::max(min_ground_level_for(args), carve_floor), water_floor);
@@ -543,7 +581,9 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 				const int taller_min_y =
 						args.bedrock ? world_editor::DEFAULT_MIN_Y : -2032;
 				const int taller_carve_floor =
-						cover ? taller_min_y + max_carve_depth + 2 : taller_min_y;
+						(cover || args.river_bed != RiverBed::Off)
+								? taller_min_y + max_carve_depth + 2
+								: taller_min_y;
 				const int taller_water_floor =
 						std::max(args.ground_level, taller_carve_floor);
 				const int taller_sink_floor =
@@ -675,6 +715,11 @@ Ground generate_ground_data(const Args &args, const geographic::LLBBox &bbox,
 	if (earth)
 		if (auto map = frame.ecoregions(bbox, final_width, final_height))
 			ground.set_ecoregion_map(std::move(map));
+	if (args.climate_mode == climate::ClimateMode::PerPosition && earth) {
+		auto [geo, align] = frame.geography(bbox, final_width, final_height);
+		ground.climate_field = std::make_shared<const climate::ClimateField>(
+				geo, align, final_width, final_height);
+	}
 	int base = ground.base_level(args.ground_level);
 	if (args.one_world_run && args.disable_height_limit && ground.elevation_enabled) {
 		// Rust's area_floor_for follows the actual lowest block in this

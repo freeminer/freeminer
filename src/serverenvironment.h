@@ -4,14 +4,15 @@
 
 #pragma once
 
+// fm:
 #include "server/fm_key_value_cached.h"
+#include "fm_gravity.h"
+#include <tuple>
 #include "threading/concurrent_set.h"
+// ===
 
 #include <memory> // std::unique_ptr
 #include <set>
-// fm: Falling update queue keys
-#include <tuple>
-// ===
 #include <unordered_map>
 #include <utility> // std::function
 #include <vector>
@@ -309,7 +310,7 @@ public:
 	static bool migrateAuthDatabase(const GameParams &game_params,
 			const Settings &cmd_args);
 
-// freeminer
+    // fm:
 public:
 	KeyValueStorage &getKeyValueStorage(std::string name = "key_value_storage");
 	KeyValueStorage &getPlayerStorage() { return getKeyValueStorage("players"); };
@@ -330,16 +331,24 @@ private:
 	IntervalLimiter m_abm_random_interval;
 	std::list<v3pos_t> m_abm_random_blocks;
 	v3f m_falling_gravity = v3f(0.0f, 0.0f, 0.0f);
+	FmGravityField m_gravity_field;
+	bool m_gravity_background = true;
 public:
 	size_t blockStep(MapBlockPtr block, float dtime = 0, uint8_t activate = 0);
 	int analyzeBlocks(float dtime, unsigned int max_cycle_ms);
 	u32 m_game_time_start = 0;
 	size_t nodeUpdate(const v3pos_t &pos, u8 recursion_limit = 5, u8 fast = 2, bool destroy = false);
-	// fm: Gravity is refreshed once per server step for falling objects.
+	// Gravity is refreshed once per server step for falling objects.
 	v3f getFallingGravity(const v3bpos_t &block_pos) const
 	{
-		(void)block_pos; // Reserved for a spatially varying gravity field.
-		return m_falling_gravity;
+		return m_gravity_field.sample(block_pos) +
+				(m_gravity_background ? m_falling_gravity : v3f());
+	}
+	bool getGravityBackground() const { return m_gravity_background; }
+	float getGravityBackgroundStrength() const { return -m_falling_gravity.Y; }
+	const std::string &getGravityConfiguration() const
+	{
+		return m_gravity_field.configuration();
 	}
 	// ===
 

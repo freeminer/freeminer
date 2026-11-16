@@ -19,6 +19,7 @@
 #include "arnis-cpp/src/args.h"
 #include "mapgen/mapgen_earth.h"
 #include "arnis-cpp/src/biome.h"
+#include "arnis-cpp/src/climate.h"
 #include "arnis-cpp/src/canopy/canopy.h"
 #include "arnis-cpp/src/land_cover/land_cover.h"
 #include "arnis-cpp/src/ecoregion.h"
@@ -82,6 +83,7 @@ struct Ground
 	std::pair<int, int> origin{0, 0};
 	std::optional<RotationMask> rotation_mask;
 	biome::Climate climate_state = biome::Climate::Temperate;
+	std::shared_ptr<const climate::ClimateField> climate_field;
 	bool winter_state = false;
 	// Shared immutable grid, matching Rust's Arc<EcoMap> and avoiding a full
 	// raster copy when Ground is copied for generation/transformation stages.
@@ -237,6 +239,14 @@ struct Ground
 	bool is_in_rotated_bounds(int x, int z) const { return inside_rotation_mask(x, z); }
 	biome::Climate climate() const { return climate_state; }
 	void set_climate(biome::Climate value) { climate_state = value; }
+	biome::Climate climate_at(const XZPoint &coord) const
+	{
+		return climate_field ? climate_field->climate(coord.x, coord.z) : climate_state;
+	}
+	double latitude_at(const XZPoint &coord, double fallback) const
+	{
+		return climate_field ? climate_field->latitude(coord.x, coord.z) : fallback;
+	}
 	bool winter() const { return winter_state; }
 	void set_winter(bool value) { winter_state = value; }
 	void set_ecoregion_map(std::shared_ptr<const ecoregion::EcoMap> map)
@@ -317,6 +327,9 @@ struct GroundFrame
 	GroundFetchPlan fetch_plan(const geographic::LLBBox &, double scale) const;
 	std::pair<int, int> origin_for(const geographic::LLBBox &) const;
 	biome::Climate climate(const geographic::LLBBox &) const;
+	std::pair<climate::GeoFunction, std::pair<int, int>> geography(
+			const geographic::LLBBox &, std::size_t world_width,
+			std::size_t world_height) const;
 	double anchor_lat(const geographic::LLBBox &) const;
 	std::shared_ptr<const ecoregion::EcoMap> ecoregions(const geographic::LLBBox &,
 			std::size_t world_width, std::size_t world_height) const;

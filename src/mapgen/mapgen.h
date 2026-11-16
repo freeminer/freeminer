@@ -134,7 +134,11 @@ struct MapgenParams {
 	v3bpos_t chunksize = v3bpos_t(5);
 	u64 seed = 0;
 	pos_t water_level = 1;
+	// fm:
 	s16 liquid_pressure = 0;
+	// World-specific uniform gravity in nodes/s^2.
+	float gravity_background = 9.81f;
+	// ===
 	pos_t mapgen_limit = MAX_MAP_GENERATION_LIMIT;
 	// Flags set in readParams
 	u32 flags = 0;

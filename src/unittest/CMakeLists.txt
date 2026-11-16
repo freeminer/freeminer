@@ -1,6 +1,6 @@
 file(GLOB unittest_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
-# fm: Multi-transport dispatch, wakeup and fairness regressions.
+# fm:
 list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_multi.cpp)
 
 # ENet payload ownership and worker wakeup regressions.
@@ -13,6 +13,7 @@ if(USE_SCTP)
 	list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_sctp.cpp)
 endif()
 
+# fm: 
 #  Arnis tests include its adapter, which requires Osmium headers.
 if(USE_OSMIUM)
 	list(APPEND unittest_SRCS
@@ -28,19 +29,16 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_deferred_placement.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_disaster_surface.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_floodfill.cpp
-		# fm: Rust fuel-station forecourt placement regression.
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_fuel_stations.cpp
-		# ===
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mapillary_atlas.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_mode_filter.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_natural.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_naturalize.cpp
-		# fm: Rust osm_land_override shoreline, channel, pool and over-water parity cases.
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_osm_land_override.cpp
-		# ===
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_peaks.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_planes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_railways.cpp
+		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_river_bed.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_range_fetch.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_relation_holes.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_road_markings.cpp
@@ -49,9 +47,7 @@ if(USE_OSMIUM)
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_shoreline.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_swimming_pools.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_terrain_surface.cpp
-		# fm: C++ regression for the Rust area-wide traffic-signal index.
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_traffic_lights.cpp
-		# ===
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_train_speed.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_tree_packs.cpp
 		${CMAKE_CURRENT_SOURCE_DIR}/test_fm_arnis_water_steps.cpp
@@ -61,6 +57,7 @@ if(USE_OSMIUM)
 endif()
 
 list(APPEND unittest_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_gravity.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_weather.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_indev.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_blast_shell.cpp

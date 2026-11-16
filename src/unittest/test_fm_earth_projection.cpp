@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include "test.h"
 #include "mapgen/fm_earth_projection.h"
+#include "mapgen/mapgen_earth.h"
 #include "client/fm_projected_surface.h"
+#include "settings.h"
 
 class TestFmEarthProjection : public TestBase
 {
@@ -17,6 +19,7 @@ public:
 		TEST(testVerticalRays);
 		TEST(testFarSurface);
 		TEST(testFarCubeEdge);
+		TEST(testElevationStepSettings);
 	}
 	void testFlat();
 	void testRoundTrips();
@@ -25,9 +28,26 @@ public:
 	void testVerticalRays();
 	void testFarSurface();
 	void testFarCubeEdge();
+	void testElevationStepSettings();
 };
 
 static TestFmEarthProjection g_test_instance;
+
+void TestFmEarthProjection::testElevationStepSettings()
+{
+	Settings input;
+	MapgenEarthParams original;
+	original.readParams(&input);
+	UASSERT(original.world_elevation_step == 11);
+	input.setS16("mg_earth_world_elevation_step", 0);
+	original.readParams(&input);
+	Settings saved;
+	original.writeParams(&saved);
+	UASSERT(saved.getS16("mg_earth_world_elevation_step") == 0);
+	MapgenEarthParams restored;
+	restored.readParams(&saved);
+	UASSERT(restored.world_elevation_step == 0);
+}
 
 void TestFmEarthProjection::testFarCubeEdge()
 {

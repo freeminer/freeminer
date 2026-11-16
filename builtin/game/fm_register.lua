@@ -39,3 +39,20 @@ local function update_node(name, groups, fields, del_fields)
         core.override_item_if_exists(name, fields or {}, del_fields)
     end
 end
+
+function core.apply_gravity(object, other_acceleration)
+    if object:is_player() or not object:get_luaentity() then
+        return false
+    end
+
+    local pos = object:get_pos()
+    if not pos then
+        return false
+    end
+
+    local gravity = core.get_gravity(pos)
+    object:set_acceleration(vector.add(
+        gravity, other_acceleration or vector.new(0, 0, 0)
+    ))
+    return true
+end

@@ -2,17 +2,25 @@
 
 #include "mapgen/earth/arnis-cpp/src/clipping.h"
 #include "mapgen/earth/arnis-cpp/src/args.h"
+#include "mapgen/earth/arnis-cpp/src/coordinate_system/geographic/llbbox.h"
 #include "mapgen/earth/arnis-cpp/src/data_processing.h"
 #include "mapgen/earth/arnis-cpp/src/decals/render.h"
 #include "mapgen/earth/arnis-cpp/src/fm_ll_shapes.h"
 #include "mapgen/earth/arnis-cpp/src/fm_xz_bbox_shape.h"
+#include "mapgen/earth/arnis-cpp/src/osm_pbf.h"
+#include "mapgen/earth/arnis-cpp/src/osm_pbf_cache.h"
+#include "mapgen/earth/arnis-cpp/src/cache_root.h"
 #include "mapgen/earth/arnis-cpp/src/map_transformation/rotate/rotator.h"
 #include "mapgen/earth/arnis-cpp/src/world_editor/floor_state.h"
 #include "mapgen/earth/arnis_world_editor.h"
 
+#include <nlohmann/json.hpp>
 #include <algorithm>
 #include <array>
+#include <chrono>
+#include <filesystem>
 #include <memory>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include <vector>
@@ -25,6 +33,9 @@ public:
 	void runTests(IGameDef *) override
 	{
 		TEST(testGeoJsonShapesPreserveHoles);
+		TEST(testStrictLlbboxParsing);
+		TEST(testGeofabrikSelectionUsesSmallestContainingPolygon);
+		TEST(testPbfAreaBakeIsCachedAndReusable);
 		TEST(testOutlineRasterSupportsCoverageAndHoles);
 		TEST(testRustRasterizationEdgeCases);
 		TEST(testOutlineRasterRejectsOutsideSpans);
@@ -39,6 +50,89 @@ public:
 		TEST(testRotatingWorldAlsoRotatesOutline);
 		TEST(testWorldEditorRejectsWritesOutsideOutline);
 		TEST(testTransparentPreviewPixelsStayClearOnLocalMaps);
+	}
+
+	void testStrictLlbboxParsing()
+	{
+		const auto bbox = arnis::geographic::LLBBox::from_str("9.9, 54.6, 10.1, 54.8");
+		UASSERT(bbox.min().lat() == 9.9 && bbox.min().lng() == 54.6);
+		UASSERT(bbox.max().lat() == 10.1 && bbox.max().lng() == 54.8);
+		for (const auto *bad : {"", "1,2,3", "1,2,3,4,5", "1,nan,3,4", "1,2junk,3,4"}) {
+			bool rejected = false;
+			try {
+				(void)arnis::geographic::LLBBox::from_str(bad);
+			} catch (const std::invalid_argument &) {
+				rejected = true;
+			}
+			UASSERT(rejected);
+		}
+	}
+
+	void testGeofabrikSelectionUsesSmallestContainingPolygon()
+	{
+		const auto bbox = arnis::geographic::LLBBox(-1.0, -1.0, 1.0, 1.0);
+		const auto index = nlohmann::json::parse(R"({"features":[
+			{"type":"Feature","properties":{"name":"large","urls":{"pbf":"https://x/large.pbf"}},
+			 "geometry":{"type":"Polygon","coordinates":[[[-10,-10],[10,-10],[10,10],[-10,10],[-10,-10]]]}},
+			{"type":"Feature","properties":{"name":"small","urls":{"pbf":"https://x/small.pbf"}},
+			 "geometry":{"type":"Polygon","coordinates":[[[-2,-2],[2,-2],[2,2],[-2,2],[-2,-2]]]}}
+		]})");
+		std::string error;
+		const auto selected =
+				arnis::osm_pbf::select_geofabrik_extract(index, bbox, &error);
+		UASSERT(selected.has_value());
+		UASSERT(selected->name == "small");
+		UASSERT(selected->url == "https://x/small.pbf");
+		UASSERT(error.empty());
+
+		const auto gap_index = nlohmann::json::parse(R"({"features":[
+			{"type":"Feature","properties":{"name":"concave","urls":{"pbf":"https://x/concave.pbf"}},
+			 "geometry":{"type":"Polygon","coordinates":[
+			  [[-4,-4],[4,-4],[4,4],[-4,4],[-4,-4]],
+			  [[-2,-2],[2,-2],[2,2],[-2,2],[-2,-2]]
+			 ]}}
+		]})");
+		const auto gap =
+				arnis::osm_pbf::select_geofabrik_extract(gap_index, bbox, &error);
+		UASSERT(!gap.has_value());
+		UASSERT(error.find("no single Geofabrik extract") != std::string::npos);
+	}
+
+	void testPbfAreaBakeIsCachedAndReusable()
+	{
+		const auto fixture = std::filesystem::path(__FILE__).parent_path().parent_path() /
+							 "mapgen/earth/arnis-cpp/tests/fixtures/osmpbf-test.osm.pbf";
+		UASSERT(std::filesystem::is_regular_file(fixture));
+		const auto original_root = arnis::cache::base_directory();
+		const auto test_root =
+				std::filesystem::temp_directory_path() /
+				("fm-arnis-pbf-cache-" + std::to_string(std::chrono::steady_clock::now()
+																.time_since_epoch()
+																.count()));
+		struct CacheRootReset
+		{
+			std::filesystem::path root;
+			std::filesystem::path previous;
+			~CacheRootReset()
+			{
+				arnis::cache::set_base_directory(previous);
+				std::error_code ec;
+				std::filesystem::remove_all(root, ec);
+			}
+		} reset{test_root, original_root};
+		arnis::cache::set_base_directory(test_root);
+		const arnis::geographic::LLBBox bbox(52.11, 11.62, 52.13, 11.64);
+		const auto first = arnis::osm_pbf::cached_cut_extract(fixture, bbox, 0.0);
+		const auto second = arnis::osm_pbf::cached_cut_extract(fixture, bbox, 0.0);
+		UASSERT(first.nodes.size() == 3 && second.nodes.size() == 3);
+		UASSERT(first.ways.size() == 1 && second.ways.size() == 1);
+		UASSERT(first.ways.front().id == 107 && second.ways.front().id == 107);
+		UASSERT(first.ways.front().node_refs == second.ways.front().node_refs);
+		std::size_t baked_files = 0;
+		for (const auto &entry : std::filesystem::recursive_directory_iterator(test_root))
+			if (entry.is_regular_file() && entry.path().extension() == ".zst")
+				++baked_files;
+		UASSERT(baked_files == 1);
 	}
 
 	void testGeoJsonShapesPreserveHoles()
