@@ -207,15 +207,15 @@ ServerEnvironment::ServerEnvironment(std::unique_ptr<ServerMap> map,
 	m_falling_gravity = v3f(0.0f, -g_settings->getFloat("movement_gravity") * BS, 0.0f);
 	float background = g_settings->getFloat("movement_gravity");
 	std::string background_setting;
-	m_map->settings_mgr.getMapSetting("gravity_background", &background_setting);
-	if (!FmGravityField::parseBackground(background_setting, background))
+	if (m_map && m_map->settings_mgr.getMapSetting("gravity_background", &background_setting) &&
+			!FmGravityField::parseBackground(background_setting, background))
 		warningstream << "Invalid gravity_background; using movement_gravity" << std::endl;
 	m_falling_gravity = v3f(0.0f, -background * BS, 0.0f);
 	m_gravity_background = background != 0.0f;
 	std::string gravity_sources;
 	const bool gravity_sources_configured =
 			g_settings->getNoEx("gravity_sources", gravity_sources);
-	if (!gravity_sources_configured) {
+	if (!gravity_sources_configured && m_map) {
 		std::unique_ptr<MapgenParams> params(m_map->settings_mgr.makeMapgenParamsCopy());
 		if (params && params->mgtype == MAPGEN_EARTH) {
 			const auto *earth = static_cast<const MapgenEarthParams *>(params.get());

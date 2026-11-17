@@ -125,23 +125,7 @@ void TestAreaStore::testSerialization()
 	store.serialize(os);
 	std::string str = os.str();
 
-#if USE_POS32
-	std::string str_wanted("\x00"  // Version
-			"\x00\x02"  // Count
-			"\x00\x00\xFF\xFF\x00\x00\x00\x00\x00\x00\x00\x01"  // Area A min edge
-			"\x00\x00\x00\x00\x00\x00\x00\x01\x00\x00\x00\x02"  // Area A max edge
-			"\x00\x07"  // Area A data length
-			"Area AA"   // Area A data
-			"\x00\x00\x00\x7B\x00\x00\x00\x64\x00\x00\x00\x0A"  // Area B min edge (last two swapped with max edge for sorting)
-			"\x00\x00\x7D\x00\x00\x00\x01\xC8\x00\x00\x03\x15"  // Area B max edge (^)
-			"\x00\x07"  // Area B data length
-			"Area BB"   // Area B data
-			"\x00\x00\x00\x00"  // ID A = 0
-			"\x00\x00\x00\x01", // ID B = 1
-			1 + 2 +
-			(12 + 12 + 2 + 7) * 2 + // min/max edge, length, data
-			2 * 4); // Area IDs
-#else
+// fm: AreaStore uses the legacy 16-bit position format.
 	std::string str_wanted("\x00"  // Version
 			"\x00\x02"  // Count
 			"\xFF\xFF\x00\x00\x00\x01"  // Area A min edge
@@ -157,9 +141,19 @@ void TestAreaStore::testSerialization()
 			1 + 2 +
 			(6 + 6 + 2 + 7) * 2 + // min/max edge, length, data
 			2 * 4); // Area IDs
-#endif
+// ===
 
 	UASSERTEQ(const std::string &, str, str_wanted);
+	// fm: Verify that the legacy fixture can be read into a fresh store.
+	std::istringstream fresh_stream(str, std::ios_base::binary);
+	VectorAreaStore restored;
+	restored.deserialize(fresh_stream);
+	const Area *restored_a = restored.getArea(0);
+	const Area *restored_b = restored.getArea(1);
+	UASSERT(restored_a && restored_b);
+	UASSERT(restored_a->minedge == v3pos_t(-1, 0, 1));
+	UASSERT(restored_b->maxedge == v3pos_t(32000, 456, 789));
+	// ===
 
 	std::istringstream is(str, std::ios_base::binary);
 	store.deserialize(is);
