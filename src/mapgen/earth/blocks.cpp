@@ -41,6 +41,7 @@ Block BLACKSTONE_WALL;
 Block BLUE_ICE;
 Block BLUE_FLOWER;
 Block BLUE_TERRACOTTA;
+Block BARRIER;
 Block BRICK;
 Block CAULDRON;
 Block CHISELED_STONE_BRICKS;
@@ -898,6 +899,7 @@ void init(MapgenEarth *mg)
 
 	ACACIA_PLANKS = g("acacia_planks", {"default:acacia_wood", "default:wood"});
 	AIR = CONTENT_AIR;
+	BARRIER = optional_g("barrier", AIR, {"mcl_core:barrier"});
 	ANDESITE = g("andesite", "default:stone");
 	BIRCH_LEAVES = g("birch_leaves", {"default:aspen_leaves", "default:leaves"});
 	BIRCH_LOG = g("birch_log", {"default:aspen_tree", "default:tree"});
