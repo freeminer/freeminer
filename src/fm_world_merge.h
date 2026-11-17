@@ -71,6 +71,9 @@ public:
 	std::function<uint32_t(void)> throttle_func;
 	std::function<uint32_t(void)> get_time_func;
 	std::function<void(const MapBlockPtr &, block_step_t)> far_block_ready_func;
+	// Return false only when the block may be merged after repeated repair failures.
+	std::function<bool(const v3bpos_t &, bool)> request_lighting_func;
+	std::function<void(const v3bpos_t &)> finish_lighting_func;
 
 	uint32_t world_merge_throttle{};
 	uint32_t world_merge_max_clients{};

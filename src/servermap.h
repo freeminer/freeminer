@@ -4,10 +4,13 @@
 
 #pragma once
 
+// fm:
+#include <deque>
 #include "fm_weather.h"
 #include "irr_v3d.h"
 #include "mapblock.h"
 #include "threading/concurrent_set.h"
+// ===
 
 #include <vector>
 #include <memory>
@@ -50,7 +53,7 @@ struct MapDatabaseAccessor {
 class ServerMap : public Map
 {
 public:
-	// freeminer:
+	// fm:
 	virtual weather::heat_t updateBlockHeat(ServerEnvironment *env, const v3pos_t &p,
 			MapBlock *block = nullptr,
 			unordered_map_v3bpos<weather::heat_t> *cache = nullptr,
@@ -91,6 +94,14 @@ public:
 	std::map<v3bpos_t, int> m_lighting_modified_blocks;
 	std::map<unsigned int, lighting_map_t> m_lighting_modified_blocks_range;
 	void lighting_modified_add(const v3bpos_t &pos, int range = 5);
+	// Bounded disk-backed lighting repairs requested by world merge.
+	std::unordered_map<v3bpos_t, unsigned> m_lighting_merge_pending;
+	std::deque<v3bpos_t> m_lighting_merge_order;
+	std::unordered_set<v3bpos_t> m_lighting_merge_active;
+	std::unordered_set<v3bpos_t> m_lighting_merge_fallback;
+	bool lighting_merge_add(const v3bpos_t &pos, bool needs_repair = true);
+	void lighting_merge_done(const v3bpos_t &pos);
+	unsigned int updateLightingMergeQueue(unsigned int max_cycle_ms, int &loopcount);
 
 	void unspreadLight(enum LightBank bank, std::map<v3pos_t, u8> &from_nodes,
 			std::set<v3pos_t> &light_sources,
@@ -128,7 +139,7 @@ public:
 	size_t m_weather_update_offset{};
 	size_t m_weather_bucket_count{};
 
-	// === end of freeminer
+	// ===
 
 	/*
 		savedir: directory to which map data should be saved

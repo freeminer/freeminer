@@ -14,6 +14,7 @@ program = r'''
 #include <unordered_map>
 #include <iostream>
 #include <cassert>
+#include <atomic>
 using u32 = uint32_t;
 using session_t = unsigned;
 using socklen_t = unsigned;
@@ -29,6 +30,9 @@ auto &warningstream = std::cerr;
 void logPaths(session_t, void *, const char *) {}
 struct Connection {
  u32 m_peer_timeout_ms = 30000, m_last_timeout_check = 0, m_last_recieved = 0;
+ std::atomic<bool> m_startup_phase{false};
+ bool m_was_starting = false;
+ u32 m_startup_finished_at = 0;
  std::unordered_map<session_t, std::pair<u32, u32>> m_peer_activity;
  std::vector<session_t> deleted;
  void *getPeer(session_t) { return this; }
@@ -45,6 +49,20 @@ int main() {
   ++sequence; client.checkPeerTimeouts();
  }
  assert(client.deleted == std::vector<session_t>{1});
+ // Content loading may be slow, but control liveness must still be checked.
+ Connection startup; startup.m_startup_phase = true;
+ startup.m_peer_activity[1] = {sequence, clock_ms};
+ for (unsigned i = 0; i < 60; ++i) {
+  clock_ms += 1000; ++sequence; startup.checkPeerTimeouts();
+ }
+ assert(startup.deleted.empty());
+ startup.m_startup_phase = false;
+ for (unsigned i = 0; i < 30; ++i) {
+  clock_ms += 1000; ++sequence; startup.checkPeerTimeouts();
+ }
+ assert(startup.deleted.empty());
+ clock_ms += 1000; ++sequence; startup.checkPeerTimeouts();
+ assert(startup.deleted == std::vector<session_t>{1});
  // Periodic game data keeps the client healthy beyond the deadline.
  Connection healthy; healthy.m_peer_activity[1] = {sequence, clock_ms};
  healthy.m_last_recieved = clock_ms;
