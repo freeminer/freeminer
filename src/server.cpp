@@ -444,13 +444,13 @@ Server::~Server()
 		infostream << "Server: Saving environment metadata" << std::endl;
 		m_env->saveMeta();
 
-		// Delete classes that depend on the environment
-		m_inventory_mgr.reset();
-		m_script.reset();
-
+		// fm: Deferred environment callbacks still use the script and inventory manager.
 		// Note that this also deletes and saves the map.
 		delete m_env;
 		m_env = nullptr;
+		m_inventory_mgr.reset();
+		m_script.reset();
+		// ===
 	}
 
 	// Write any changes before deletion.
