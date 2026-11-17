@@ -69,6 +69,10 @@ BuiltBridges structuresOver(
 
 	arnis::WorldEditor editor;
 	editor.ground = &ground;
+	// These tests cover modular decks, whose schematics are no longer in the
+	// upstream production asset set. Use the original modules as fixtures.
+	editor.set_schematic_asset_root(
+			std::filesystem::path(__FILE__).parent_path() / "data" / "fm_bridge_modules");
 	std::vector<arnis::ProcessedElement> elements;
 	elements.reserve(ways.size());
 	for (const auto &way : ways)

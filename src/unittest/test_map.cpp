@@ -15,6 +15,12 @@ You should have received a copy of the GNU Lesser General Public License along
 with this program; if not, see <https://www.gnu.org/licenses/>.
 */
 
+// fm:
+#include <cmath>
+#include <limits>
+// ===
+
+#include "irr_v3d.h"
 #include "test.h"
 
 #include <cstdio>
@@ -51,21 +57,17 @@ void TestMap::runTests(IGameDef *gamedef)
 
 void TestMap::testMaxMapgenLimit()
 {
-	// limit must end on a mapblock boundary
+	// fm: Wide map limits need representable floating point boundary checks.
+#if !USE_POS32
 	UASSERTEQ(int, MAX_MAP_GENERATION_LIMIT % MAP_BLOCKSIZE, MAP_BLOCKSIZE - 1);
-
-	// objectpos_over_limit should do exactly this except the last node
-	// actually spans from LIMIT-0.5 to LIMIT+0.5
-	float limit_times_bs = MAX_MAP_GENERATION_LIMIT * BS;
-	UASSERT(objectpos_over_limit(v3f(limit_times_bs-BS/2)) == false);
-	UASSERT(objectpos_over_limit(v3f(limit_times_bs)) == false);
-	UASSERT(objectpos_over_limit(v3f(limit_times_bs+BS/2)) == false);
-	UASSERT(objectpos_over_limit(v3f(limit_times_bs+BS)) == true);
-
-	UASSERT(objectpos_over_limit(v3f(-limit_times_bs+BS/2)) == false);
-	UASSERT(objectpos_over_limit(v3f(-limit_times_bs)) == false);
-	UASSERT(objectpos_over_limit(v3f(-limit_times_bs-BS/2)) == false);
-	UASSERT(objectpos_over_limit(v3f(-limit_times_bs-BS)) == true);
+#endif
+	const float limit = (MAX_MAP_GENERATION_LIMITF + 0.5f) * BS;
+	const float outside = std::nextafter(limit, std::numeric_limits<float>::infinity());
+	UASSERT(!objectpos_over_limit(v3f(limit)));
+	UASSERT(objectpos_over_limit(v3f(outside)));
+	UASSERT(!objectpos_over_limit(v3f(-limit)));
+	UASSERT(objectpos_over_limit(v3f(-outside)));
+	// ===
 
 	// blockpos_over_max_limit
 	s16 limit_block = MAX_MAP_GENERATION_LIMIT / MAP_BLOCKSIZE;

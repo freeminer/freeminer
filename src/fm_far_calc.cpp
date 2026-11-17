@@ -226,7 +226,7 @@ bool contains(const child_t &child, const v3tpos_t &pos)
 bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
 		block_step_t cell_size_pow, block_step_t farmesh_quality_pow, bool two_d,
 		const View *view, int &refinements, double column_min_y = 0,
-		double column_max_y = 0)
+		double column_max_y = 0, v3tpos_t root_pos = {}, tpos_t root_size = 0)
 {
 	if (child.size <= (1 << cell_size_pow))
 		return true;
@@ -249,6 +249,7 @@ bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
 	// Do not enlarge the step-0 core: only normal meshes can render step 0.
 	if (!refinements || child.size <= (2 << cell_size_pow))
 		return true;
+	const unsigned consumed = std::min(view->levels, View::max_levels) - refinements;
 	unsigned wanted = two_d ? view->columnRefinementLevels(
 									  child.pos, child.size, column_min_y, column_max_y)
 							: view->refinementLevels(child.pos, child.size);
@@ -257,19 +258,43 @@ bool is_tree_cell(const child_t &child, const v3tpos_t &player_pos,
 		// its height is farther from the player. Include those ancestors so
 		// their refined children cannot fall between surface samples.
 		auto ancestor = child;
-		for (unsigned level = 0; level < view->levels; ++level) {
+		for (unsigned level = 0; level < view->levels && ancestor.size < root_size;
+				++level) {
 			ancestor.size *= 2;
-			ancestor.pos.X = (ancestor.pos.X / ancestor.size -
-									 (ancestor.pos.X % ancestor.size < 0)) *
-							 ancestor.size;
-			ancestor.pos.Z = (ancestor.pos.Z / ancestor.size -
-									 (ancestor.pos.Z % ancestor.size < 0)) *
-							 ancestor.size;
-			wanted = std::max(wanted, view->columnRefinementLevels(ancestor.pos,
-											  ancestor.size, column_min_y, column_max_y));
+			ancestor.pos.X = root_pos.X +
+							 ((child.pos.X - root_pos.X) / ancestor.size) * ancestor.size;
+			ancestor.pos.Z = root_pos.Z +
+							 ((child.pos.Z - root_pos.Z) / ancestor.size) * ancestor.size;
+			// Only 3-D cells which can be ordinary leaves at this size can
+			// start refinement here. Otherwise a large ancestor containing the
+			// camera makes every column appear to intersect the view.
+			const auto half = ancestor.size / 2;
+			const auto quality_shift =
+					1 + std::max(farmesh_quality_pow, cell_size_pow) - cell_size_pow;
+			const double limit = double(ancestor.size) * (1u << quality_shift);
+			const double horizontal = std::max(
+					std::abs(double(player_pos.X) - (double(ancestor.pos.X) + half)),
+					std::abs(double(player_pos.Z) - (double(ancestor.pos.Z) + half)));
+			unsigned levels = 0;
+			const auto check = [&](double low, double high) {
+				if (low <= high)
+					levels = std::max(levels, view->columnRefinementLevels(ancestor.pos,
+													  ancestor.size, low, high));
+			};
+			if (horizontal >= limit) {
+				check(column_min_y, column_max_y);
+			} else {
+				// A qualifying cell's centre must be at least limit away;
+				// include its full height when testing the camera frustum.
+				check(column_min_y,
+						std::min(column_max_y, double(player_pos.Y) - limit + half));
+				check(std::max(column_min_y, double(player_pos.Y) + limit - half),
+						column_max_y);
+			}
+			if (levels > level + 1)
+				wanted = std::max(wanted, consumed + levels - level - 1);
 		}
 	}
-	const unsigned consumed = std::min(view->levels, View::max_levels) - refinements;
 	if (consumed >= wanted)
 		return true;
 	--refinements;
@@ -476,6 +501,8 @@ struct each_param_t
 	const View *view{};
 	const double column_min_y{};
 	const double column_max_y{};
+	const v3tpos_t root_pos{};
+	const tpos_t root_size{};
 };
 
 bool emit_tree_cell(const each_param_t &param, const child_t &mesh_child)
@@ -508,7 +535,7 @@ bool each(const each_param_t &param, const child_t &child, int refinements = -1)
 	// fm: Ignore vertical distance while building a conservative surface grid.
 	if (is_tree_cell(child, param.player_pos, param.cell_size_pow,
 				param.farmesh_quality_pow, param.two_d, param.view, refinements,
-				param.column_min_y, param.column_max_y))
+				param.column_min_y, param.column_max_y, param.root_pos, param.root_size))
 		return emit_tree_cell(param, child);
 	// ===
 
@@ -554,6 +581,8 @@ void runFarAll(const v3bpos_t &player_block_pos, uint8_t cell_size_pow, int farm
 					.view{view},
 					.column_min_y{double(volume.pos.Y)},
 					.column_max_y{double(volume.pos.Y) + volume.size},
+					.root_pos{volume.pos},
+					.root_size{volume.size},
 			},
 			start);
 }
