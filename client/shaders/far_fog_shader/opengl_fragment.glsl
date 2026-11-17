@@ -15,6 +15,17 @@ VARYING_ highp vec4 fogClipPos;
 #ifndef FM_FOG_DENSITY_TARGET
 #define FM_FOG_DENSITY_TARGET 0
 #endif
+#if FM_FOG_DENSITY_TARGET
+#if defined(GL_ES) && __VERSION__ >= 300
+// The engine maps gl_FragColor to output location 0 on GLES3.
+layout(location = 1) out highp vec4 fmFogOpticalDepth;
+#define FM_FOG_COLOR_OUTPUT gl_FragColor
+#define FM_FOG_DEPTH_OUTPUT fmFogOpticalDepth
+#else
+#define FM_FOG_COLOR_OUTPUT gl_FragData[0]
+#define FM_FOG_DEPTH_OUTPUT gl_FragData[1]
+#endif
+#endif
 
 VARYING_ lowp vec4 varColor;
 VARYING_ mediump vec2 varTexCoord;
@@ -169,12 +180,12 @@ void main(void)
 		forward_light * fmFogLight.a * 0.22 * distance_mix);
 
 #if FM_FOG_DENSITY_TARGET
-	gl_FragData[0] = vec4(color, alpha);
+	FM_FOG_COLOR_OUTPUT = vec4(color, alpha);
 	// Independently of puff order, this contributes
 	// -log(1 - alpha) * underside_weight after source-alpha blending.
 	float underside_weight = cloud_layer * (1.0 - puff_height);
 	float output_optical_depth = -log(max(1.0 - alpha, 0.0001));
-	gl_FragData[1] = vec4(output_optical_depth * underside_weight / alpha, 0.0, 0.0, 0.0);
+	FM_FOG_DEPTH_OUTPUT = vec4(output_optical_depth * underside_weight / alpha, 0.0, 0.0, 0.0);
 #else
 	gl_FragColor = vec4(color, alpha);
 #endif
