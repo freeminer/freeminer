@@ -4,6 +4,7 @@
 #include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/tree.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
+#include "mapgen/earth/arnis-cpp/src/ground_decoration.h"
 #include "mapgen/earth/arnis-cpp/src/trees/region.h"
 #include "mapgen/earth/arnis-cpp/src/trees/mapped.h"
 #include "mapgen/earth/arnis-cpp/src/trees/schematic.h"
@@ -21,6 +22,7 @@
 #include <fstream>
 #include <initializer_list>
 #include <limits>
+#include <map>
 #include <nlohmann/json.hpp>
 #include <memory>
 #include <optional>
@@ -56,6 +58,24 @@ struct TreePlacementBlockFixture
 		arnis::WATER = water;
 	}
 };
+
+bool shows_wood_from_above(const arnis::trees::Schematic &schematic)
+{
+	if (!arnis::trees::has_leaves(schematic))
+		return false;
+	using Column = std::pair<std::int16_t, std::int16_t>;
+	std::map<Column, std::pair<std::int16_t, arnis::Block>> tops;
+	for (const auto &voxel : schematic.voxels) {
+		auto [it, inserted] = tops.try_emplace(
+				Column{voxel.x, voxel.z}, std::pair{voxel.y, voxel.block});
+		if (!inserted && voxel.y > it->second.first)
+			it->second = {voxel.y, voxel.block};
+	}
+	const auto &wood = arnis::ground_decoration::wood_blocks();
+	return std::any_of(tops.begin(), tops.end(), [&](const auto &column) {
+		return std::find(wood.begin(), wood.end(), column.second.second) != wood.end();
+	});
+}
 } // namespace
 
 class TestFmArnisTreePacks : public TestBase
@@ -577,6 +597,9 @@ public:
 								UTEST(false, "Invalid tree schematic %s: %s",
 										file.string().c_str(), e.what());
 							}
+							UTEST(!shows_wood_from_above(schematic),
+									"Tree schematic exposes a log from above: %s",
+									file.string().c_str());
 							if (relative_to_root.find("/contrib/") != std::string::npos) {
 								UTEST(arnis::trees::has_leaves(schematic),
 										"Contributed schematic has no leaves: %s",

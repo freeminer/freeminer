@@ -9,6 +9,7 @@
 #include <string>
 #include <array>
 #include <cstdint>
+#include <utility>
 
 class TestFmArnisBlockMapping : public TestBase
 {
@@ -46,6 +47,7 @@ public:
 			}
 		} palette;
 		TEST(testNewRustBlocksHaveLuantiMappings);
+		TEST(testLuantiDirectionalBlockStates);
 		TEST(testPottedPlantBedrockMapping);
 		TEST(testWaterloggedBedrockState);
 		TEST(testGenericBedrockNameMapping);
@@ -63,6 +65,29 @@ public:
 		UASSERT(std::string(to_luanti_node(RAW_GOLD_BLOCK).name) ==
 				"mcl_raw_ores:raw_gold_block");
 		UASSERT(std::string(to_luanti_node(LAPIS_BLOCK).name) == "mcl_core:lapisblock");
+	}
+
+	void testLuantiDirectionalBlockStates()
+	{
+		using namespace arnis;
+		const auto state = [](std::uint16_t id,
+								   BlockWithProperties::Properties properties) {
+			return to_luanti_node(BlockWithProperties{Block(id), std::move(properties)});
+		};
+		const auto ladder = state(260, {{"facing", "north"}});
+		UASSERT(std::string(ladder.name) == "mcl_core:ladder");
+		UASSERT(ladder.param2 == 5);
+		const auto east_ladder = state(260, {{"facing", "east"}});
+		UASSERT(east_ladder.param2 == 3);
+		const auto along_x = state(36, {{"east", "true"}, {"west", "true"}});
+		UASSERT(std::string(along_x.name) == "mcl_panes:bar_flat");
+		UASSERT(along_x.param2 == 0);
+		const auto along_z = state(36, {{"north", "true"}, {"south", "true"}});
+		UASSERT(along_z.param2 == 1);
+		const auto corner = state(192, {{"north", "true"}, {"east", "true"}});
+		UASSERT(std::string(corner.name) == "mcl_panes:pane_grey_flat");
+		UASSERT(corner.param2 == 0);
+		UASSERT(std::string(to_luanti_node(Block(527)).name) == "air");
 	}
 
 	void testPottedPlantBedrockMapping()
