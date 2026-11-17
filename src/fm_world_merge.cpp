@@ -354,10 +354,14 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 							continue;
 						}
 					}
-					if (require_lighting_complete && !step &&
-							nblock->getLightingComplete() != 0xffff) {
-						one_step_stat.deferred = true;
-						return one_step_stat;
+					if (require_lighting_complete && !step) {
+						const bool incomplete = nblock->getLightingComplete() != 0xffff;
+						if (request_lighting_func
+										? request_lighting_func(nbpos, incomplete)
+										: incomplete) {
+							one_step_stat.deferred = true;
+							continue;
+						}
 					}
 					if (const auto ts = nblock->getActualTimestamp(); ts > timestamp)
 						timestamp = ts;
@@ -382,6 +386,15 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					blocks[rpos] = nblock;
 				}
 	}
+	if (one_step_stat.deferred)
+		return one_step_stat;
+	const auto finish_lighting = [&]() {
+		if (!step && finish_lighting_func)
+			for (bpos_t x = 0; x < step_size; ++x)
+				for (bpos_t y = 0; y < step_size; ++y)
+					for (bpos_t z = 0; z < step_size; ++z)
+						finish_lighting_func(bpos_aligned + v3bpos_t(x, y, z));
+	};
 
 	if (!timestamp && get_time_func) {
 		timestamp = get_time_func();
@@ -397,6 +410,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					timestamp, std::max<uint64_t>(valid_update_time(heat_last_update),
 									   valid_update_time(humidity_last_update)));
 			if (within_lazy_window(source_time, newest_block_time(block_up), lazy_up)) {
+				finish_lighting();
 				return {};
 			}
 		}
@@ -486,7 +500,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						sample_pos.Z %= MAP_BLOCKSIZE;
 						return sample_block_it->second->getNodeNoLock(sample_pos);
 					};
-					// TODO: tune block selector
+			// TODO: tune block selector
 
 #if 0
 // Simple grid aligned
@@ -687,14 +701,18 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	// light points still need a saved/generated block for subsequent LODs.
 	if (not_empty_nodes || !block_up->m_light_points->empty()) {
 		block_up->setGenerated(true);
-		if (ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level) &&
-				far_block_ready_func) {
+		if (!ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level)) {
+			one_step_stat.deferred = true;
+			return one_step_stat;
+		}
+		if (far_block_ready_func) {
 			block_up->far_step = step + 1;
 			far_block_ready_func(block_up, step + 1);
 		}
 	} else {
 		dbase_up->deleteBlock(bpos_aligned);
 	}
+	finish_lighting();
 
 	return one_step_stat;
 }
@@ -883,8 +901,10 @@ bool WorldMerger::merge_server_diff(
 			return false;
 		}
 
-		blocks_todo = smap_changed_blocks_for_merge;
-		smap_changed_blocks_for_merge.clear();
+		// Transfer the hash table as well as its entries, so the emptied queue
+		// releases its old bucket allocation when this batch finishes.
+		blocks_todo.swap(static_cast<concurrent_unordered_set<v3bpos_t>::full_type &>(
+				smap_changed_blocks_for_merge));
 	}
 	retry_deferred = false;
 	return merge_list(blocks_todo);

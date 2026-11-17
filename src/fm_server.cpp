@@ -947,6 +947,7 @@ void *WorldMergeThread::run()
 
 	uint32_t throttle_per_client = 20;
 	g_settings->getU32NoEx("world_merge_throttle_per_client", throttle_per_client);
+	bool idle_drain = false;
 	WorldMerger merger{
 			.stop_func{[this]() { return stopRequested(); }},
 			.throttle_func{[&]() {
@@ -956,6 +957,13 @@ void *WorldMergeThread::run()
 			.get_time_func{[this]() { return m_server->getEnv().getGameTime(); }},
 			.far_block_ready_func{[this](const MapBlockPtr &block, block_step_t step) {
 				m_server->QueueFarBlockReady(block, step);
+			}},
+			.request_lighting_func{[this](const v3bpos_t &pos, bool needs_repair) {
+				return m_server->getEnv().getServerMap().lighting_merge_add(
+						pos, needs_repair);
+			}},
+			.finish_lighting_func{[this](const v3bpos_t &pos) {
+				m_server->getEnv().getServerMap().lighting_merge_done(pos);
 			}},
 			.ndef{m_server->getNodeDefManager()},
 			.smap{m_server->getEnv().m_map.get()},
@@ -993,11 +1001,24 @@ void *WorldMergeThread::run()
 	// Minimum blocks changed for periodic merge
 	uint64_t world_merge_min = 100;
 	g_settings->getU64NoEx("world_merge_min", world_merge_min);
+	constexpr auto idle_delay = std::chrono::seconds(300);
+	std::optional<std::chrono::steady_clock::time_point> idle_since;
 
 	while (!stopRequested()) {
-		if (merger.merge_server_diff(
-					m_server->getEnv().getServerMap().changed_blocks_for_merge,
-					world_merge_min)) {
+		if (m_server->getEnv().getPlayerCount() == 0) {
+			const auto now = std::chrono::steady_clock::now();
+			if (!idle_since)
+				idle_since = now;
+			idle_drain = now - *idle_since >= idle_delay;
+		} else {
+			idle_since.reset();
+			idle_drain = false;
+		}
+		auto &changed = m_server->getEnv().getServerMap().changed_blocks_for_merge;
+		if (idle_drain && !changed.empty())
+			actionstream << "World merge: idle drain of " << changed.size()
+						 << " queued blocks\n";
+		if (merger.merge_server_diff(changed, idle_drain ? 1 : world_merge_min)) {
 			break;
 		}
 
@@ -1009,7 +1030,6 @@ void *WorldMergeThread::run()
 		merger.stop_func = {};
 		merger.throttle_func = {};
 		merger.world_merge_throttle = 0;
-		merger.require_lighting_complete = false;
 
 		if (!m_server->getEnv().getServerMap().changed_blocks_for_merge.empty()) {
 			actionstream
@@ -1017,8 +1037,20 @@ void *WorldMergeThread::run()
 					<< m_server->getEnv().getServerMap().changed_blocks_for_merge.size()
 					<< "\n";
 		}
-		merger.merge_server_diff(
-				m_server->getEnv().getServerMap().changed_blocks_for_merge);
+		auto &map = m_server->getEnv().getServerMap();
+		while (!map.changed_blocks_for_merge.empty()) {
+			merger.merge_server_diff(map.changed_blocks_for_merge);
+			if (map.changed_blocks_for_merge.empty())
+				break;
+			int lighting_attempts = 0;
+			map.updateLightingMergeQueue(1000, lighting_attempts);
+			if (!lighting_attempts) {
+				warningstream << "World merge: shutdown left "
+							  << map.changed_blocks_for_merge.size()
+							  << " blocks pending; lighting repair made no progress\n";
+				break;
+			}
+		}
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER;

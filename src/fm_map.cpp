@@ -1639,6 +1639,107 @@ void ServerMap::lighting_modified_add(const v3bpos_t &pos, int range)
 	m_lighting_modified_blocks_range[range][pos] = range;
 };
 
+bool ServerMap::lighting_merge_add(const v3bpos_t &pos, bool needs_repair)
+{
+	MutexAutoLock lock(m_lighting_modified_mutex);
+	if (m_lighting_merge_fallback.contains(pos))
+		return false;
+	if (m_lighting_merge_pending.contains(pos) || m_lighting_merge_active.contains(pos))
+		return true;
+	if (!needs_repair)
+		return false;
+	// A large deferred merge must not replace one unbounded queue with another.
+	if (m_lighting_merge_pending.size() + m_lighting_merge_active.size() >= 4096)
+		return true; // Keep the merge deferred until there is room to queue it.
+	m_lighting_merge_pending.emplace(pos, 0);
+	m_lighting_merge_order.push_back(pos);
+	return true;
+}
+
+void ServerMap::lighting_merge_done(const v3bpos_t &pos)
+{
+	MutexAutoLock lock(m_lighting_modified_mutex);
+	m_lighting_merge_fallback.erase(pos);
+}
+
+unsigned int ServerMap::updateLightingMergeQueue(
+		unsigned int max_cycle_ms, int &loopcount)
+{
+	const auto start = porting::getTimeMs();
+	unsigned int repaired = 0;
+	for (;;) {
+		v3bpos_t pos;
+		unsigned failures = 0;
+		{
+			MutexAutoLock lock(m_lighting_modified_mutex);
+			if (m_lighting_merge_order.empty())
+				break;
+			pos = m_lighting_merge_order.front();
+			m_lighting_merge_order.pop_front();
+			const auto it = m_lighting_merge_pending.find(pos);
+			failures = it->second;
+			m_lighting_merge_active.emplace(pos);
+			m_lighting_merge_pending.erase(it);
+		}
+
+		bool success = false;
+		try {
+			auto block = getBlock(pos);
+			if (!block)
+				block = loadBlock(pos);
+			if (!block || !block->isGenerated()) {
+				// The source disappeared; the merger will recheck the position.
+				changed_blocks_for_merge.emplace(pos);
+				success = true;
+			} else {
+				std::map<v3bpos_t, MapBlock *> modified;
+				if (!voxalgo::repair_block_light(this, block.get(), &modified)) {
+					// Completion flags do not themselves mark blocks dirty. Persist the
+					// repaired source even if it has meanwhile left the live map.
+					success = saveBlock(block.get());
+					for (const auto &[changed_pos, ignored] : modified) {
+						changed_blocks_for_merge.emplace(changed_pos);
+						if (changed_pos == pos)
+							continue;
+						auto changed = getBlock(changed_pos);
+						if (!changed || !saveBlock(changed.get()))
+							success = false;
+					}
+				}
+			}
+		} catch (const std::exception &e) {
+			errorstream << "World merge lighting repair at " << pos << ": " << e.what()
+						<< '\n';
+		} catch (...) {
+			errorstream << "World merge lighting repair at " << pos << " failed\n";
+		}
+		bool fallback = false;
+		{
+			MutexAutoLock lock(m_lighting_modified_mutex);
+			m_lighting_merge_active.erase(pos);
+			if (!success && ++failures >= 3) {
+				m_lighting_merge_fallback.emplace(pos);
+				fallback = true;
+			} else if (!success) {
+				m_lighting_merge_pending.emplace(pos, failures);
+				m_lighting_merge_order.push_back(pos);
+			}
+		}
+		if (fallback) {
+			warningstream << "World merge: lighting repair failed 3 times at " << pos
+						  << "; merging with current lighting\n";
+			changed_blocks_for_merge.emplace(pos);
+		}
+		++loopcount;
+		if (!success && !fallback)
+			break; // Retry on a later lighting step without spinning on a locked block.
+		++repaired;
+		if (porting::getTimeMs() - start >= max_cycle_ms)
+			break;
+	}
+	return repaired;
+}
+
 unsigned int ServerMap::updateLightingQueue(
 		unsigned int max_cycle_ms, int &loopcount, bool load_blocks)
 {
@@ -1647,7 +1748,7 @@ unsigned int ServerMap::updateLightingQueue(
 	thread_local static size_t rare{};
 	const bool log_info = !(rare++ % 1000);
 	size_t queued_blocks = 0, queued_ranges = 0;
-	unsigned int ret = 0;
+	unsigned int ret = updateLightingMergeQueue(std::min(max_cycle_ms, 1000u), loopcount);
 	const auto end_ms = porting::getTimeMs() + max_cycle_ms;
 	unordered_map_v3pos<int> processed;
 	for (;;) {
