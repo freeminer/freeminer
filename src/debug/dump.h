@@ -540,4 +540,3 @@ inline std::mutex &OutputMutex()
 	DUMP_DETAIL_MAKE_VAR_MACRO(DUMP_DETAIL_DUMP, __VA_ARGS__)                            \
 	(__VA_ARGS__)
 //#define DUMP() do { DUMP(__PRETTY_FUNCTION__); } while(0)
-
