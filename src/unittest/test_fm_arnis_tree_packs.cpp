@@ -96,6 +96,7 @@ public:
 		TEST(testTreeRowPositionsMatchRust);
 		TEST(testMappedTreeTagsMatchRust);
 		TEST(testPackTreeHeightFollowsRequestedCanopyHeight);
+		TEST(testShiftedTreeSlotCellsMatchRust);
 		TEST(testTreeSlotClaimIsUnique);
 		TEST(testScatteredTreesRespectSealedSurface);
 		TEST(testMappedTreesMayUseSealedSurface);
@@ -458,6 +459,30 @@ public:
 			const int median = heights[heights.size() / 2];
 			UASSERT(median > previous_median);
 			previous_median = median;
+		}
+	}
+
+	void testShiftedTreeSlotCellsMatchRust()
+	{
+		constexpr int spacing = 5;
+		std::set<int> row_offsets;
+		for (int row = 0; row < 40; ++row) {
+			const int z = row * spacing;
+			const auto [x0, z0] = arnis::trees::slot_cell(0, z, spacing);
+			UASSERT(z0 <= z && z < z0 + spacing);
+			row_offsets.insert((x0 % spacing + spacing) % spacing);
+		}
+		UASSERT(row_offsets.size() == spacing);
+
+		for (int x = -40; x < 40; ++x) {
+			for (int z = -40; z < 40; ++z) {
+				const auto [x0, z0] = arnis::trees::slot_cell(x, z, spacing);
+				const auto [slot_x, slot_z] = arnis::trees::trunk_slot_s(x, z, spacing);
+				UASSERT(x0 <= x && x < x0 + spacing);
+				UASSERT(z0 <= z && z < z0 + spacing);
+				UASSERT(x0 <= slot_x && slot_x < x0 + spacing);
+				UASSERT(z0 <= slot_z && slot_z < z0 + spacing);
+			}
 		}
 	}
 
