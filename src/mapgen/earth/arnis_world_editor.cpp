@@ -10,6 +10,7 @@
 #include "arnis-cpp/src/element_processing/signage.h"
 #include "arnis-cpp/src/element_processing/stations.h"
 #include "arnis-cpp/src/water_depth.h"
+#include "arnis-cpp/src/ground_generation.h"
 #include "arnis-cpp/src/world_editor/common.h"
 
 #include <algorithm>
@@ -262,6 +263,7 @@ bool WorldEditor::tile_worker_callbacks_safe() const
 WorldEditor WorldEditor::make_tile_worker() const
 {
 	WorldEditor worker;
+	worker.parked_car_models = parked_car_models;
 	worker.traffic_signal_index = traffic_signal_index;
 	worker.car_network = car_network;
 	worker.train_network = train_network;
@@ -273,6 +275,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.water_probe = water_probe;
 	worker.walk_probe = walk_probe;
 	worker.sealed_surface = sealed_surface;
+	worker.carriageway = carriageway;
 	worker.clear_corridors = clear_corridors;
 	worker.station_tree_clearance = station_tree_clearance;
 	worker.station_track_beds = station_track_beds;
@@ -1494,6 +1497,15 @@ bool WorldEditor::is_lc_water(int x, int z) const
 	// areas, before their own fill decisions have completed.
 	return ground && cover_class(x, z) == land_cover::LC_WATER;
 }
+bool WorldEditor::is_mapped_water(int x, int z) const
+{
+	return is_lc_water(x, z) ||
+		   (ground && ground->inland_water_mapped(ground_point(x, z)));
+}
+std::optional<Block> WorldEditor::forest_floor_at(int x, int z) const
+{
+	return ground_generation::mapped_forest_floor(*this, x, z);
+}
 bool WorldEditor::is_steep_land(int x, int z) const
 {
 	if (!ground)
@@ -1781,6 +1793,17 @@ std::optional<Block> WorldEditor::support_column(int x, int z) const
 		return std::nullopt;
 	const auto it = columns.find({x, z});
 	return it == columns.end() ? std::nullopt : std::optional<Block>(it->second);
+}
+std::vector<std::tuple<int, int, Block>> WorldEditor::support_column_entries() const
+{
+	auto columns = support_columns;
+	for (const auto &[cell, block] : active_support_columns)
+		columns.insert_or_assign(cell, block);
+	std::vector<std::tuple<int, int, Block>> out;
+	out.reserve(columns.size());
+	for (const auto &[cell, block] : columns)
+		out.emplace_back(cell.first, cell.second, block);
+	return out;
 }
 void WorldEditor::fill_column_absolute(
 		const Block &block, int x, int z, int min_y, int max_y, bool skip_existing)
