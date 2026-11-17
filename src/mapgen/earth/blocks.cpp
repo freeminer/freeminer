@@ -1194,8 +1194,9 @@ void init(MapgenEarth *mg)
 	BROWN_WOOL = g("brown_wool", "wool:brown");
 	OXIDIZED_COPPER = g("oxidized_copper", {"default:copperblock", "default:stone"});
 	YELLOW_TERRACOTTA = g("yellow_terracotta", "default:clay");
-	SNOW_BLOCK = g("snow_block", "default:snow");
-	SNOW_LAYER = g("snow_layer", "default:snow");
+	SNOW_BLOCK =
+			g("snow_block", {"mcl_core:snowblock", "default:snowblock", "default:snow"});
+	SNOW_LAYER = g("snow_layer", {"mcl_core:snow", "default:snow"});
 	SIGN = g("sign", {"default:sign_wall_wood", "default:sign_wall", "default:wood"});
 	STEEL_SIGN = g("steel_sign",
 			{"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});

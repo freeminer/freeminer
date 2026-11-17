@@ -23,13 +23,13 @@ public:
 		// populated from the loaded game, which is absent in these unit tests.
 		struct PaletteFixture
 		{
-			std::array<std::pair<Block *, content_t>, 11> entries{
+			std::array<std::pair<Block *, content_t>, 12> entries{
 					{{&STONE, 84}, {&KELP, 66}, {&OAK_STAIRS, 144}, {&FLOWER_POT, 235},
 							{&POTTED_RED_TULIP, 246}, {&POTTED_DANDELION, 247},
 							{&POTTED_BLUE_ORCHID, 248}, {&HOPPER, 284},
 							{&CHISELED_SANDSTONE, 516}, {&CUT_SANDSTONE, 517},
-							{&RAW_GOLD_BLOCK, 518}}};
-			std::array<Block, 11> saved;
+							{&RAW_GOLD_BLOCK, 518}, {&BARRIER, 527}}};
+			std::array<Block, 12> saved;
 			Block lapis = LAPIS_BLOCK;
 			PaletteFixture()
 			{
@@ -92,7 +92,7 @@ public:
 		const auto corner = state(192, {{"north", "true"}, {"east", "true"}});
 		UASSERT(std::string(corner.name) == "mcl_panes:pane_grey_flat");
 		UASSERT(corner.param2 == 0);
-		UASSERT(std::string(to_luanti_node(Block(527)).name) == "air");
+		UASSERT(std::string(to_luanti_node(BARRIER).name) == "air");
 	}
 
 	void testPottedPlantBedrockMapping()
@@ -224,6 +224,23 @@ public:
 	void testGenericSnowBlockDiffersFromSnowLayer()
 	{
 		using namespace arnis;
+		struct SnowPaletteFixture
+		{
+			Block full = SNOW_BLOCK;
+			Block layer = SNOW_LAYER;
+			SnowPaletteFixture()
+			{
+				// The Rust palette has distinct IDs. Give the host-resolved blocks
+				// distinct IDs here too, independent of whether a game is loaded.
+				SNOW_BLOCK = Block(600);
+				SNOW_LAYER = Block(601);
+			}
+			~SnowPaletteFixture()
+			{
+				SNOW_BLOCK = full;
+				SNOW_LAYER = layer;
+			}
+		} snow_fixture;
 		const Block unlisted{CONTENT_UNKNOWN};
 		const auto full_block = to_bedrock_block_with_properties(
 				BlockWithProperties{unlisted}, "minecraft:snow_block");
