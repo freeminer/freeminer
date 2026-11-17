@@ -4,6 +4,7 @@
 #include "mapgen/earth/arnis-cpp/src/block_definitions.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/tree.h"
 #include "mapgen/earth/arnis-cpp/src/floodfill_cache.h"
+#include "mapgen/earth/arnis-cpp/src/ground_decoration.h"
 #include "mapgen/earth/arnis-cpp/src/trees/region.h"
 #include "mapgen/earth/arnis-cpp/src/trees/mapped.h"
 #include "mapgen/earth/arnis-cpp/src/trees/schematic.h"
@@ -21,6 +22,7 @@
 #include <fstream>
 #include <initializer_list>
 #include <limits>
+#include <map>
 #include <nlohmann/json.hpp>
 #include <memory>
 #include <optional>
@@ -56,6 +58,48 @@ struct TreePlacementBlockFixture
 		arnis::WATER = water;
 	}
 };
+
+struct TreeAssetCheck
+{
+	bool has_leaves = false;
+	bool exposed_wood = false;
+	int min_y = std::numeric_limits<int>::max();
+	int max_y = std::numeric_limits<int>::min();
+};
+
+TreeAssetCheck check_tree_asset(const std::filesystem::path &file)
+{
+	std::ifstream in(file, std::ios::binary);
+	const std::vector<std::uint8_t> bytes((std::istreambuf_iterator<char>(in)), {});
+	std::map<std::pair<int, int>, std::pair<int, std::uint8_t>> tops;
+	TreeAssetCheck result;
+	arnis::structures::SchemDecodeOptions options;
+	options.include_entities = false;
+	options.palette_mapper = [](const std::string &name) -> std::optional<std::uint8_t> {
+		if (!arnis::trees::map_block(name))
+			return std::nullopt;
+		const bool leaf = name.find("leaves") != std::string::npos ||
+						  name.find("vine") != std::string::npos ||
+						  name.find("moss_") != std::string::npos ||
+						  name.find("propagule") != std::string::npos;
+		return leaf ? 1 : 0;
+	};
+	options.indexed_voxel_sink = [&](int x, int y, int z, std::uint8_t kind) {
+		result.has_leaves |= kind == 1;
+		result.min_y = std::min(result.min_y, y);
+		result.max_y = std::max(result.max_y, y);
+		auto [it, inserted] = tops.try_emplace(std::pair{x, z}, std::pair{y, kind});
+		if (!inserted && y > it->second.first)
+			it->second = {y, kind};
+	};
+	arnis::structures::decode_sponge_schem(bytes, options);
+	result.exposed_wood = result.has_leaves &&
+						  std::any_of(tops.begin(), tops.end(), [](const auto &column) {
+							  return column.second.second == 0;
+						  });
+	return result;
+}
+
 } // namespace
 
 class TestFmArnisTreePacks : public TestBase
@@ -76,6 +120,7 @@ public:
 		TEST(testTreeRowPositionsMatchRust);
 		TEST(testMappedTreeTagsMatchRust);
 		TEST(testPackTreeHeightFollowsRequestedCanopyHeight);
+		TEST(testShiftedTreeSlotCellsMatchRust);
 		TEST(testTreeSlotClaimIsUnique);
 		TEST(testScatteredTreesRespectSealedSurface);
 		TEST(testMappedTreesMayUseSealedSurface);
@@ -175,6 +220,20 @@ public:
 
 	void testTreeConnectivityDenseAndSparse()
 	{
+		struct RestoreBirch
+		{
+			arnis::Block log = arnis::block_definitions::BIRCH_LOG;
+			arnis::Block leaves = arnis::block_definitions::BIRCH_LEAVES;
+			~RestoreBirch()
+			{
+				arnis::block_definitions::BIRCH_LOG = log;
+				arnis::block_definitions::BIRCH_LEAVES = leaves;
+			}
+		} restore_birch;
+		arnis::block_definitions::BIRCH_LOG = arnis::Block(124);
+		arnis::block_definitions::BIRCH_LEAVES = arnis::Block(125);
+		UASSERT(arnis::trees::map_block("minecraft:birch_log") == arnis::Block(124));
+		UASSERT(arnis::trees::map_block("minecraft:birch_leaves") == arnis::Block(125));
 		// Standalone unit tests do not register game nodes; give leaves a
 		// distinct ID so they are not mistaken for the default-valued logs.
 		struct RestoreLeaves
@@ -441,6 +500,30 @@ public:
 		}
 	}
 
+	void testShiftedTreeSlotCellsMatchRust()
+	{
+		constexpr int spacing = 5;
+		std::set<int> row_offsets;
+		for (int row = 0; row < 40; ++row) {
+			const int z = row * spacing;
+			const auto [x0, z0] = arnis::trees::slot_cell(0, z, spacing);
+			UASSERT(z0 <= z && z < z0 + spacing);
+			row_offsets.insert((x0 % spacing + spacing) % spacing);
+		}
+		UASSERT(row_offsets.size() == spacing);
+
+		for (int x = -40; x < 40; ++x) {
+			for (int z = -40; z < 40; ++z) {
+				const auto [x0, z0] = arnis::trees::slot_cell(x, z, spacing);
+				const auto [slot_x, slot_z] = arnis::trees::trunk_slot_s(x, z, spacing);
+				UASSERT(x0 <= x && x < x0 + spacing);
+				UASSERT(z0 <= z && z < z0 + spacing);
+				UASSERT(x0 <= slot_x && slot_x < x0 + spacing);
+				UASSERT(z0 <= slot_z && slot_z < z0 + spacing);
+			}
+		}
+	}
+
 	void testTreeSlotClaimIsUnique()
 	{
 		// Rust's regional tree placement claims the snapped trunk slot before
@@ -577,11 +660,15 @@ public:
 								UTEST(false, "Invalid tree schematic %s: %s",
 										file.string().c_str(), e.what());
 							}
+							const auto asset = check_tree_asset(file);
+							UTEST(!asset.exposed_wood,
+									"Tree schematic exposes a log from above: %s",
+									file.string().c_str());
 							if (relative_to_root.find("/contrib/") != std::string::npos) {
-								UTEST(arnis::trees::has_leaves(schematic),
+								UTEST(asset.has_leaves,
 										"Contributed schematic has no leaves: %s",
 										file.string().c_str());
-								UTEST(schematic.height >= 2,
+								UTEST(asset.max_y - asset.min_y >= 1,
 										"Contributed schematic is too short: %s",
 										file.string().c_str());
 							}

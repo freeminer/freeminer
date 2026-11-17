@@ -5,22 +5,128 @@
 #include "mapgen/earth/arnis_world_editor.h"
 
 #include <algorithm>
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <filesystem>
+#include <fstream>
 #include <initializer_list>
 #include <numbers>
 #include <string>
 #include <utility>
 #include <unordered_map>
 #include <vector>
+#include <zlib.h>
 
 namespace
 {
 using arnis::ProcessedWay;
 using Tags = std::initializer_list<std::pair<const char *, const char *>>;
 using Points = std::initializer_list<std::pair<int, int>>;
+
+void append_u8(std::vector<std::uint8_t> &out, std::uint8_t value)
+{
+	out.push_back(value);
+}
+
+void append_u16(std::vector<std::uint8_t> &out, std::uint16_t value)
+{
+	append_u8(out, static_cast<std::uint8_t>(value >> 8));
+	append_u8(out, static_cast<std::uint8_t>(value));
+}
+
+void append_u32(std::vector<std::uint8_t> &out, std::uint32_t value)
+{
+	append_u8(out, static_cast<std::uint8_t>(value >> 24));
+	append_u8(out, static_cast<std::uint8_t>(value >> 16));
+	append_u8(out, static_cast<std::uint8_t>(value >> 8));
+	append_u8(out, static_cast<std::uint8_t>(value));
+}
+
+void append_nbt_string(std::vector<std::uint8_t> &out, const std::string &value)
+{
+	append_u16(out, static_cast<std::uint16_t>(value.size()));
+	out.insert(out.end(), value.begin(), value.end());
+}
+
+void append_nbt_tag(
+		std::vector<std::uint8_t> &out, std::uint8_t type, const std::string &name)
+{
+	append_u8(out, type);
+	append_nbt_string(out, name);
+}
+
+std::vector<std::uint8_t> bridge_module_schem(int street_y)
+{
+	constexpr int width = 8;
+	constexpr int length = 13;
+	const int height = street_y + 1;
+	std::vector<std::uint8_t> nbt;
+	append_u8(nbt, 10); // Root compound.
+	append_nbt_string(nbt, "");
+	for (const auto &[name, value] : {std::pair<const char *, int>{"Width", width},
+				 {"Height", height}, {"Length", length}}) {
+		append_nbt_tag(nbt, 2, name);
+		append_u16(nbt, static_cast<std::uint16_t>(value));
+	}
+	append_nbt_tag(nbt, 10, "Palette");
+	append_nbt_tag(nbt, 3, "minecraft:air");
+	append_u32(nbt, 0);
+	append_nbt_tag(nbt, 3, "minecraft:stone");
+	append_u32(nbt, 1);
+	append_u8(nbt, 0); // Palette compound end.
+	append_nbt_tag(nbt, 7, "BlockData");
+	append_u32(nbt, width * height * length);
+	for (int y = 0; y < height; ++y)
+		for (int z = 0; z < length; ++z)
+			for (int x = 0; x < width; ++x) {
+				const bool deck = y == street_y;
+				const bool support = y == 0 && z == length / 2;
+				append_u8(nbt, deck || support ? 1 : 0);
+			}
+	append_u8(nbt, 0); // Root compound end.
+
+	z_stream stream{};
+	if (deflateInit2(&stream, Z_DEFAULT_COMPRESSION, Z_DEFLATED, MAX_WBITS + 16, 8,
+				Z_DEFAULT_STRATEGY) != Z_OK)
+		return {};
+	std::vector<std::uint8_t> compressed(
+			static_cast<std::size_t>(deflateBound(&stream, nbt.size())));
+	stream.next_in = nbt.data();
+	stream.avail_in = static_cast<uInt>(nbt.size());
+	stream.next_out = compressed.data();
+	stream.avail_out = static_cast<uInt>(compressed.size());
+	const int status = deflate(&stream, Z_FINISH);
+	const auto size = stream.total_out;
+	deflateEnd(&stream);
+	if (status != Z_STREAM_END)
+		return {};
+	compressed.resize(size);
+	return compressed;
+}
+
+const std::filesystem::path &bridge_module_fixture_root()
+{
+	static const auto root = [] {
+		const auto path = std::filesystem::temp_directory_path() /
+						  "freeminer-arnis-bridge-module-fixtures";
+		std::filesystem::create_directories(path);
+		const std::array<std::pair<const char *, int>, 4> modules{
+				{{"bridge_segment_1", 8}, {"bridge_segment_2", 16},
+						{"bridge_segment_3", 2}, {"bridge_segment_4", 3}}};
+		for (const auto &[name, street_y] : modules) {
+			const auto bytes = bridge_module_schem(street_y);
+			std::ofstream file(path / (std::string(name) + ".schem"),
+					std::ios::binary | std::ios::trunc);
+			file.write(reinterpret_cast<const char *>(bytes.data()),
+					static_cast<std::streamsize>(bytes.size()));
+		}
+		return path;
+	}();
+	return root;
+}
 
 ProcessedWay way(std::uint64_t id, Tags tags, Points points)
 {
@@ -69,6 +175,9 @@ BuiltBridges structuresOver(
 
 	arnis::WorldEditor editor;
 	editor.ground = &ground;
+	// Production bridge schematics are optional assets. Build compact synthetic
+	// equivalents here so module and coverage tests are independent of install data.
+	editor.set_schematic_asset_root(bridge_module_fixture_root());
 	std::vector<arnis::ProcessedElement> elements;
 	elements.reserve(ways.size());
 	for (const auto &way : ways)

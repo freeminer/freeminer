@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: LGPL-2.1-or-later
 #include "test.h"
 #include "fm_gravity.h"
+#include "client/fm_player_gravity.h"
 #include "mapblock.h"
 #include "mapgen/fm_earth_gravity.h"
 #include "network/fm_gravity_sync.h"
@@ -24,6 +25,8 @@ public:
 		TEST(testValidation);
 		TEST(testBlockCoordinates);
 		TEST(testBackground);
+		TEST(testPlayerUp);
+		TEST(testPlayerGravityFrame);
 		TEST(testEarthProjectionDefaults);
 		TEST(testTorusGravityDefaults);
 		TEST(testEarthEnvironmentDefaults);
@@ -81,6 +84,35 @@ public:
 	void testBlockCoordinates()
 	{
 		UASSERT(getNodeBlockPos(v3pos_t(-1, -16, -17)) == v3bpos_t(-1, -1, -2));
+	}
+
+	void testPlayerUp()
+	{
+		FmGravityField field;
+		const v3opos_t pos(7.5 * BS, 7.5 * BS, 7.5 * BS);
+		UASSERT(fm_player_gravity::up(field, true, 9.81f * BS, pos) == v3f(0, 1, 0));
+		UASSERT(fm_player_gravity::up(field, false, 0, pos) == v3f(0, 1, 0));
+		UASSERT(field.setSources("23.5,7.5,7.5,10,16"));
+		const v3f up = fm_player_gravity::up(field, false, 0, pos);
+		UASSERT(std::abs(up.X + 1.0f) < 0.0001f && up.Y == 0 && up.Z == 0);
+	}
+
+	void testPlayerGravityFrame()
+	{
+		for (const v3f up : {v3f(0, 1, 0), v3f(0, -1, 0), v3f(1, 0, 0), v3f(0, 0, -1),
+					 v3f(1, 2, 3).normalize()}) {
+			const auto frame = fm_player_gravity::frame(up);
+			UASSERT((frame * v3f(0, 1, 0) - up).getLength() < 0.0001f);
+			for (float yaw : {0.0f, 45.0f, 180.0f, 270.0f}) {
+				v3f forward(0, 0, 1);
+				forward.rotateXZBy(yaw);
+				const v3f world = frame * forward;
+				UASSERT(std::abs(world.dotProduct(up)) < 0.0001f);
+				auto inverse = frame;
+				inverse.makeInverse();
+				UASSERT((inverse * world - forward).getLength() < 0.0001f);
+			}
+		}
 	}
 
 	void testBackground()

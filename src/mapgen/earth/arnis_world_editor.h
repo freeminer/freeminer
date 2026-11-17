@@ -146,6 +146,9 @@ using RailHeightMap = std::map<RailHeightKey, int>;
 // A “WorldEditor” that can set blocks in your map
 struct WorldEditor
 {
+	// Java generations with the moving-vehicle extras draw parked cars with the
+	// same native display geometry, instead of stamping static car schematics.
+	bool parked_car_models = false;
 	std::shared_ptr<const highways::SignalIndex> traffic_signal_index;
 	std::shared_ptr<const highways::cars::CarNetwork> car_network;
 	// Backend-neutral train routes and schedules, shared with tile workers for
@@ -172,6 +175,7 @@ struct WorldEditor
 			std::make_shared<std::vector<std::tuple<int, int, int>>>();
 	std::shared_ptr<std::mutex> laid_rails_mutex = std::make_shared<std::mutex>();
 	std::shared_ptr<const CoordinateBitmap> sealed_surface;
+	std::shared_ptr<const CoordinateBitmap> carriageway;
 	std::shared_ptr<const CoordinateBitmap> clear_corridors;
 	std::shared_ptr<const stations::SparseCells> station_tree_clearance;
 	std::shared_ptr<const stations::TrackBedIndex> station_track_beds;
@@ -237,6 +241,11 @@ struct WorldEditor
 	{
 		sealed_surface = std::move(mask);
 	}
+	void set_carriageway(std::shared_ptr<const CoordinateBitmap> mask)
+	{
+		carriageway = std::move(mask);
+	}
+	void release_carriageway() { carriageway.reset(); }
 	void set_clear_corridors(std::shared_ptr<const CoordinateBitmap> mask)
 	{
 		clear_corridors = std::move(mask);
@@ -271,6 +280,7 @@ struct WorldEditor
 	}
 	bool under_mapped_crown(int x, int z) const;
 	bool surface_is_sealed(int x, int z) const;
+	bool on_carriageway(int x, int z) const;
 	bool nested_area_owns(int x, int z) const;
 	uint8_t cover_class(int x, int z) const;
 	bool near_beach(int x, int z, double reach) const;
@@ -469,6 +479,8 @@ struct WorldEditor
 	// Lamps are installed before later water passes; retain their columns so
 	// quay-edge false positives can be removed once water has been carved.
 	std::vector<std::pair<int, int>> lamp_columns;
+	// Benches and bins are checked after water carving, then removed if submerged.
+	std::vector<std::vector<std::tuple<int, int, int>>> furniture_cells;
 	// Bounds of the full generation area. Tile merges keep the owning tile's
 	// road elevations and retain non-owned values only outside this area.
 	std::optional<std::tuple<int, int, int, int>> generation_bounds;
@@ -1115,6 +1127,14 @@ struct WorldEditor
 	}
 	RoadSurfaceOverrides take_road_surface_overrides();
 	void register_lamp(int x, int z) { lamp_columns.emplace_back(x, z); }
+	void register_furniture(std::vector<std::tuple<int, int, int>> cells)
+	{
+		furniture_cells.push_back(std::move(cells));
+	}
+	std::vector<std::vector<std::tuple<int, int, int>>> take_furniture()
+	{
+		return std::exchange(furniture_cells, {});
+	}
 	std::vector<std::pair<int, int>> take_lamps()
 	{
 		return std::exchange(lamp_columns, {});
@@ -1131,6 +1151,8 @@ struct WorldEditor
 	std::optional<biome::Climate> local_climate(int x, int z) const;
 	int get_water_level(int x, int z) const;
 	bool is_lc_water(int x, int z) const;
+	bool is_mapped_water(int x, int z) const;
+	std::optional<Block> forest_floor_at(int x, int z) const;
 	bool is_steep_land(int x, int z) const;
 	bool land_cover_backs_trees(int x, int z) const;
 	std::optional<std::optional<std::uint8_t>> canopy_top_m(
@@ -1164,6 +1186,7 @@ struct WorldEditor
 			const BlockWithProperties &bwp, int x, int y, int z);
 	void register_support_column(int x, int z, const Block &block);
 	std::optional<Block> support_column(int x, int z) const;
+	std::vector<std::tuple<int, int, Block>> support_column_entries() const;
 
 	void fill_column_absolute(
 			const Block &block, int x, int z, int min_y, int max_y, bool skip_existing);

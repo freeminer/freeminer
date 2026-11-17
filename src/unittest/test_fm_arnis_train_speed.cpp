@@ -5,8 +5,12 @@
 #include "mapgen/earth/arnis-cpp/src/coordinate_system/cartesian/xzbbox/xzbbox_enum.h"
 #include "mapgen/earth/arnis-cpp/src/fm_xz_bbox_shape.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/trains.h"
+#include "mapgen/earth/arnis-cpp/src/element_processing/train_bodies.h"
+#include "mapgen/earth/arnis-cpp/src/vehicle_models.h"
 
 #include <algorithm>
+#include <array>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <memory>
@@ -29,6 +33,30 @@ public:
 		TEST(testBedrockMovingVehiclesPassValidation);
 		TEST(testMoonDefaultsPreserveBodyGravity);
 		TEST(testTrainRoutesSplitAtGapsBetweenSelectedAreas);
+		TEST(testSpectatorBoxesFollowTheirOwnCarriage);
+	}
+
+	void testSpectatorBoxesFollowTheirOwnCarriage()
+	{
+		using namespace arnis::train_bodies;
+		const std::array<Coach, 3> freight = {
+				Coach{Container{0}}, Coach{Tank{0}}, Coach{Boxcar{0}}};
+		for (const auto &coach : freight) {
+			const auto layout = doors(coach);
+			UASSERT(layout.spots.empty());
+			UASSERT(!layout.view.empty());
+			const auto [keep, make] = door_functions(door_key(coach), layout, 1.0);
+			UASSERT(make.find("arnis.tview") != std::string::npos);
+			UASSERT(make.find("arnis.tw $(c)") != std::string::npos);
+			UASSERT(keep.find("tag=arnis.tv0") != std::string::npos);
+		}
+
+		const auto vessel = arnis::ship_bodies::Vessel::CarFerry;
+		const auto ship_layout = doors(Coach{Ship{vessel, false}});
+		const float clear = std::max(6.0f, ship_layout.width);
+		for (const float view : ship_layout.view)
+			for (const float seat : ship_layout.spots)
+				UASSERT(std::abs(view - seat) >= clear);
 	}
 
 	void testTrainRoutesSplitAtGapsBetweenSelectedAreas()
@@ -142,11 +170,12 @@ public:
 		}
 		UASSERT(train_count == network.train_count());
 		UASSERT(data["bodies"].size() == bodies.size());
+		const auto model_ids = arnis::vehicle_models::model_ids();
 		for (std::size_t i = 0; i < bodies.size(); ++i) {
 			UASSERT(data["bodies"][i].get<std::string>() == bodies[i].name);
 			UASSERT(bodies[i].name.starts_with("train_"));
-			for (const auto &shape : bodies[i].shapes)
-				UASSERT(arnis::bedrock_addon::models::knows(shape.block));
+			UASSERT(std::find(model_ids.begin(), model_ids.end(), bodies[i].look.model) !=
+					model_ids.end());
 		}
 		const auto without_rails = network.bedrock_data(
 				[](std::uint64_t, int, int) { return std::optional<int>{}; });

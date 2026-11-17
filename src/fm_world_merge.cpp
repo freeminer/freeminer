@@ -253,6 +253,9 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 			   !(select_solid && has_opaque_structure &&
 					   farmesh::isTransparentCover(ndef->get(content)));
 	};
+	std::array<bool, 8> material_candidates;
+	for (size_t i = 0; i < samples.size(); ++i)
+		material_candidates[i] = material_candidate(samples[i].getContent());
 	// Occupancy remains volume-based, but material can come from the exposed
 	// upper layer. This keeps grass, snow, roads, and similar surface covers from
 	// being outvoted by the dirt or stone directly underneath them.
@@ -260,8 +263,7 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	int selected_exposed_y = -1;
 	if (select_solid && exposed) {
 		for (size_t i = 0; i < samples.size(); ++i) {
-			const auto content = samples[i].getContent();
-			if ((*exposed)[i] && material_candidate(content)) {
+			if ((*exposed)[i] && material_candidates[i]) {
 				selected_exposed_y =
 						std::max(selected_exposed_y, static_cast<int>(sample_y[i]));
 			}
@@ -272,7 +274,7 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 
 	for (size_t i = 0; i < samples.size(); ++i) {
 		const auto content = samples[i].getContent();
-		if (!material_candidate(content) ||
+		if (!material_candidates[i] ||
 				(selected_exposed_y >= 0 &&
 						(!(*exposed)[i] || sample_y[i] != selected_exposed_y)))
 			continue;
@@ -354,10 +356,23 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 							continue;
 						}
 					}
-					if (require_lighting_complete && !step &&
-							nblock->getLightingComplete() != 0xffff) {
-						one_step_stat.deferred = true;
-						return one_step_stat;
+					if (require_lighting_complete && !step) {
+						const bool incomplete = nblock->getLightingComplete() != 0xffff;
+						if (request_lighting_func
+										? request_lighting_func(nbpos, incomplete)
+										: incomplete) {
+							one_step_stat.deferred = true;
+							continue;
+						}
+						// Synchronous repair may replace a disk-only snapshot.
+						if (incomplete && request_lighting_func) {
+							auto refreshed = smap->getBlock(nbpos);
+							if (!refreshed || !refreshed->isGenerated())
+								refreshed = load_block(smap, dbase, nbpos);
+							if (!refreshed || !refreshed->isGenerated())
+								continue;
+							nblock = std::move(refreshed);
+						}
 					}
 					if (const auto ts = nblock->getActualTimestamp(); ts > timestamp)
 						timestamp = ts;
@@ -382,6 +397,15 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					blocks[rpos] = nblock;
 				}
 	}
+	if (one_step_stat.deferred)
+		return one_step_stat;
+	const auto finish_lighting = [&]() {
+		if (!step && finish_lighting_func)
+			for (bpos_t x = 0; x < step_size; ++x)
+				for (bpos_t y = 0; y < step_size; ++y)
+					for (bpos_t z = 0; z < step_size; ++z)
+						finish_lighting_func(bpos_aligned + v3bpos_t(x, y, z));
+	};
 
 	if (!timestamp && get_time_func) {
 		timestamp = get_time_func();
@@ -397,6 +421,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 					timestamp, std::max<uint64_t>(valid_update_time(heat_last_update),
 									   valid_update_time(humidity_last_update)));
 			if (within_lazy_window(source_time, newest_block_time(block_up), lazy_up)) {
+				finish_lighting();
 				return {};
 			}
 		}
@@ -470,7 +495,14 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 							(z << step_pow) % MAP_BLOCKSIZE);
 					// Resolve samples through the loaded 2x2x2 source-block group so
 					// surface exposure is correct at a source mapblock boundary as well.
-					const auto get_source_node = [&blocks, &bbpos](v3pos_t sample_pos) {
+					const auto get_source_node = [&blocks, &bbpos, &block](
+														 v3pos_t sample_pos) {
+						// Most samples are inside the current source block. Avoid a hash
+						// lookup and coordinate division for each of those node reads.
+						if (sample_pos.X < MAP_BLOCKSIZE &&
+								sample_pos.Y < MAP_BLOCKSIZE &&
+								sample_pos.Z < MAP_BLOCKSIZE)
+							return block->getNodeNoLock(sample_pos);
 						const v3bpos_t sample_bbpos{
 								static_cast<bpos_t>(
 										bbpos.X + sample_pos.X / MAP_BLOCKSIZE),
@@ -687,14 +719,18 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	// light points still need a saved/generated block for subsequent LODs.
 	if (not_empty_nodes || !block_up->m_light_points->empty()) {
 		block_up->setGenerated(true);
-		if (ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level) &&
-				far_block_ready_func) {
+		if (!ServerMap::saveBlock(block_up.get(), dbase_up, m_map_compression_level)) {
+			one_step_stat.deferred = true;
+			return one_step_stat;
+		}
+		if (far_block_ready_func) {
 			block_up->far_step = step + 1;
 			far_block_ready_func(block_up, step + 1);
 		}
 	} else {
 		dbase_up->deleteBlock(bpos_aligned);
 	}
+	finish_lighting();
 
 	return one_step_stat;
 }
@@ -770,9 +806,6 @@ bool WorldMerger::merge_one_step(
 		v3bpos_t bpos_aligned((bpos.X >> shift) << shift, (bpos.Y >> shift) << shift,
 				(bpos.Z >> shift) << shift);
 		if (blocks_seen.contains(bpos_aligned)) {
-			if (require_lighting_complete && !step &&
-					blocks_deferred.contains(bpos_aligned))
-				smap->changed_blocks_for_merge.emplace(bpos);
 			continue;
 		}
 		blocks_seen.emplace(bpos_aligned);
@@ -784,7 +817,7 @@ bool WorldMerger::merge_one_step(
 				blocks_deferred.emplace(bpos_aligned);
 				if (require_lighting_complete && !step) {
 					retry_deferred = true;
-					smap->changed_blocks_for_merge.emplace(bpos);
+					smap->changed_blocks_for_merge.emplace(bpos_aligned);
 				}
 				continue;
 			}
@@ -808,7 +841,7 @@ bool WorldMerger::merge_one_step(
 			if (require_lighting_complete && !step) {
 				retry_deferred = true;
 				blocks_deferred.emplace(bpos_aligned);
-				smap->changed_blocks_for_merge.emplace(bpos);
+				smap->changed_blocks_for_merge.emplace(bpos_aligned);
 			}
 			errorstream << "world merge" << ": exception: " << e.what() << "\n"
 						<< stacktrace() << '\n';
@@ -816,7 +849,7 @@ bool WorldMerger::merge_one_step(
 			if (require_lighting_complete && !step) {
 				retry_deferred = true;
 				blocks_deferred.emplace(bpos_aligned);
-				smap->changed_blocks_for_merge.emplace(bpos);
+				smap->changed_blocks_for_merge.emplace(bpos_aligned);
 			}
 			errorstream << "world merge" << ": Unknown unhandled exception at "
 						<< __PRETTY_FUNCTION__ << ":" << __LINE__ << '\n'
@@ -883,8 +916,10 @@ bool WorldMerger::merge_server_diff(
 			return false;
 		}
 
-		blocks_todo = smap_changed_blocks_for_merge;
-		smap_changed_blocks_for_merge.clear();
+		// Transfer the hash table as well as its entries, so the emptied queue
+		// releases its old bucket allocation when this batch finishes.
+		blocks_todo.swap(static_cast<concurrent_unordered_set<v3bpos_t>::full_type &>(
+				smap_changed_blocks_for_merge));
 	}
 	retry_deferred = false;
 	return merge_list(blocks_todo);

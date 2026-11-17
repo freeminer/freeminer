@@ -41,6 +41,7 @@ Block BLACKSTONE_WALL;
 Block BLUE_ICE;
 Block BLUE_FLOWER;
 Block BLUE_TERRACOTTA;
+Block BARRIER;
 Block BRICK;
 Block CAULDRON;
 Block CHISELED_STONE_BRICKS;
@@ -898,6 +899,7 @@ void init(MapgenEarth *mg)
 
 	ACACIA_PLANKS = g("acacia_planks", {"default:acacia_wood", "default:wood"});
 	AIR = CONTENT_AIR;
+	BARRIER = optional_g("barrier", AIR, {"mcl_core:barrier"});
 	ANDESITE = g("andesite", "default:stone");
 	BIRCH_LEAVES = g("birch_leaves", {"default:aspen_leaves", "default:leaves"});
 	BIRCH_LOG = g("birch_log", {"default:aspen_tree", "default:tree"});
@@ -1192,8 +1194,9 @@ void init(MapgenEarth *mg)
 	BROWN_WOOL = g("brown_wool", "wool:brown");
 	OXIDIZED_COPPER = g("oxidized_copper", {"default:copperblock", "default:stone"});
 	YELLOW_TERRACOTTA = g("yellow_terracotta", "default:clay");
-	SNOW_BLOCK = g("snow_block", "default:snow");
-	SNOW_LAYER = g("snow_layer", "default:snow");
+	SNOW_BLOCK =
+			g("snow_block", {"mcl_core:snowblock", "default:snowblock", "default:snow"});
+	SNOW_LAYER = g("snow_layer", {"mcl_core:snow", "default:snow"});
 	SIGN = g("sign", {"default:sign_wall_wood", "default:sign_wall", "default:wood"});
 	STEEL_SIGN = g("steel_sign",
 			{"default:sign_wall_steel", "default:sign_wall_wood", "default:steelblock"});
