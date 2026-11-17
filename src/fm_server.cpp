@@ -1037,20 +1037,11 @@ void *WorldMergeThread::run()
 					<< m_server->getEnv().getServerMap().changed_blocks_for_merge.size()
 					<< "\n";
 		}
-		auto &map = m_server->getEnv().getServerMap();
-		while (!map.changed_blocks_for_merge.empty()) {
-			merger.merge_server_diff(map.changed_blocks_for_merge);
-			if (map.changed_blocks_for_merge.empty())
-				break;
-			int lighting_attempts = 0;
-			map.updateLightingMergeQueue(1000, lighting_attempts);
-			if (!lighting_attempts) {
-				warningstream << "World merge: shutdown left "
-							  << map.changed_blocks_for_merge.size()
-							  << " blocks pending; lighting repair made no progress\n";
-				break;
-			}
-		}
+		// The normal shutdown lighting drain and map save have already run.
+		// Build the far cache from the available light values in one pass.
+		merger.require_lighting_complete = false;
+		merger.merge_server_diff(
+				m_server->getEnv().getServerMap().changed_blocks_for_merge);
 	}
 
 	END_DEBUG_EXCEPTION_HANDLER;

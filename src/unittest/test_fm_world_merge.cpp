@@ -47,6 +47,8 @@ public:
 	void testIdleDrain(IGameDef *gamedef);
 	void testLightingRepairFromDisk();
 	void testFailedLightingFallback(IGameDef *gamedef);
+	void testSynchronousLightingRefresh(IGameDef *gamedef);
+	void testDeferredGroupCoalescing(IGameDef *gamedef);
 	// ===
 };
 
@@ -75,6 +77,8 @@ void TestFmWorldMerge::runTests(IGameDef *gamedef)
 	TEST(testIdleDrain, gamedef);
 	TEST(testLightingRepairFromDisk);
 	TEST(testFailedLightingFallback, gamedef);
+	TEST(testSynchronousLightingRefresh, gamedef);
+	TEST(testDeferredGroupCoalescing, gamedef);
 	// ===
 }
 
@@ -469,6 +473,72 @@ void TestFmWorldMerge::testFailedLightingFallback(IGameDef *gamedef)
 	target.loadBlock(v3bpos_t(0, 0, 0), &blob);
 	UASSERT(!blob.empty());
 	UASSERTEQ(unsigned, finished, 1);
+}
+
+void TestFmWorldMerge::testSynchronousLightingRefresh(IGameDef *gamedef)
+{
+	Map map(gamedef);
+	Database_Dummy source, target;
+	ServerMap::far_dbases_t far_dbases;
+	auto block = map.createBlankBlockNoInsert(v3bpos_t(0, 0, 0));
+	block->fill(MapNode(t_CONTENT_STONE));
+	block->setGenerated(true);
+	block->setLightingComplete(0);
+	UASSERT(ServerMap::saveBlock(block.get(), &source, 1));
+	WorldMerger merger{
+			.request_lighting_func{[&](const v3bpos_t &, bool incomplete) {
+				if (incomplete) {
+					block->fill(MapNode(t_CONTENT_BRICK));
+					block->setLightingComplete(0xffff);
+					UASSERT(ServerMap::saveBlock(block.get(), &source, 1));
+				}
+				return false;
+			}},
+			.require_lighting_complete{true},
+			.ndef{gamedef->ndef()},
+			.smap{&map},
+			.far_dbases{far_dbases},
+	};
+	UASSERT(!merger.merge_one_block(&source, &target, v3bpos_t(0, 0, 0), 0).deferred);
+	std::string blob;
+	target.loadBlock(v3bpos_t(0, 0, 0), &blob);
+	UASSERT(!blob.empty());
+	std::istringstream stream(blob, std::ios::binary);
+	const auto version = static_cast<u8>(stream.get());
+	auto merged = map.createBlankBlockNoInsert(v3bpos_t(0, 0, 0));
+	UASSERT(merged->deSerialize(stream, version, true));
+	UASSERT(merged->getNodeNoLock(v3pos_t(0, 0, 0)).getContent() == t_CONTENT_BRICK);
+}
+
+void TestFmWorldMerge::testDeferredGroupCoalescing(IGameDef *gamedef)
+{
+	Map map(gamedef);
+	ServerMap::far_dbases_t far_dbases;
+	for (auto &db : far_dbases)
+		db = std::make_shared<Database_Dummy>();
+	WorldMerger merger{
+			.request_lighting_func{
+					[](const v3bpos_t &, bool incomplete) { return incomplete; }},
+			.require_lighting_complete{true},
+			.ndef{gamedef->ndef()},
+			.smap{&map},
+			.far_dbases{far_dbases},
+			.dbase{far_dbases[0]},
+	};
+	for (bpos_t x = 0; x < 2; ++x)
+		for (bpos_t y = 0; y < 2; ++y)
+			for (bpos_t z = 0; z < 2; ++z) {
+				const v3bpos_t pos(x, y, z);
+				auto block = map.createBlankBlockNoInsert(pos);
+				block->fill(MapNode(t_CONTENT_STONE));
+				block->setGenerated(true);
+				block->setLightingComplete(0);
+				UASSERT(ServerMap::saveBlock(block.get(), far_dbases[0].get(), 1));
+				map.changed_blocks_for_merge.emplace(pos);
+			}
+	merger.merge_server_diff(map.changed_blocks_for_merge, 1);
+	UASSERTEQ(size_t, map.changed_blocks_for_merge.size(), 1);
+	UASSERT(map.changed_blocks_for_merge.contains(v3bpos_t(0, 0, 0)));
 }
 
 void TestFmWorldMerge::testLightOnlyBlockPersistence(IGameDef *gamedef)
