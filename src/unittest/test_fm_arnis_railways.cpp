@@ -2,6 +2,7 @@
 
 #include "mapgen/earth/arnis-cpp/src/element_processing/advtrains.h"
 #include "mapgen/earth/arnis-cpp/src/element_processing/rail_track.h"
+#include "mapgen/earth/voxelibre_placement.h"
 
 #include <algorithm>
 #include <array>
@@ -129,6 +130,57 @@ public:
 		TEST(testCartBackendStillRegistersItsRaster);
 		TEST(testOneWorldAreaEdgeCrossings);
 		TEST(testNearbyRailProfileMatchesFullScan);
+		TEST(testVoxeLibreRailShapes);
+	}
+
+	void testVoxeLibreRailShapes()
+	{
+		using namespace arnis;
+		using namespace arnis::block_definitions;
+		std::array<Block *, 10> slots{&RAIL_NORTH_SOUTH, &RAIL_EAST_WEST,
+				&RAIL_ASCENDING_EAST, &RAIL_ASCENDING_WEST, &RAIL_ASCENDING_NORTH,
+				&RAIL_ASCENDING_SOUTH, &RAIL_NORTH_EAST, &RAIL_NORTH_WEST,
+				&RAIL_SOUTH_EAST, &RAIL_SOUTH_WEST};
+		struct Restore
+		{
+			std::array<Block *, 10> &slots;
+			std::array<Block, 10> original;
+			~Restore()
+			{
+				for (std::size_t i = 0; i < slots.size(); ++i)
+					*slots[i] = original[i];
+			}
+		} restore{slots, {}};
+		const auto shapes = voxelibre::rail_shapes(Block{360}, Block{361}, Block{362});
+		for (std::size_t i = 0; i < slots.size(); ++i) {
+			restore.original[i] = *slots[i];
+			*slots[i] = shapes[i];
+		}
+		struct Case
+		{
+			std::pair<int, int> before, after;
+			int after_height;
+			content_t id;
+			u8 rotation;
+		};
+		const std::array<Case, 10> cases{{
+				{{0, -1}, {0, 1}, 0, 360, 0},
+				{{-1, 0}, {1, 0}, 0, 360, 1},
+				{{-1, 0}, {1, 0}, 1, 362, 1},
+				{{1, 0}, {-1, 0}, 1, 362, 3},
+				{{0, 1}, {0, -1}, 1, 362, 2},
+				{{0, -1}, {0, 1}, 1, 362, 0},
+				{{0, -1}, {1, 0}, 0, 361, 0},
+				{{0, -1}, {-1, 0}, 0, 361, 1},
+				{{0, 1}, {1, 0}, 0, 361, 3},
+				{{0, 1}, {-1, 0}, 0, 361, 2},
+		}};
+		for (const auto &c : cases) {
+			const auto result = railways::rail_shapes({{0, 0}}, {0},
+					std::tuple{c.before, 0}, std::tuple{c.after, c.after_height});
+			UASSERT(result.size() == 1);
+			UASSERT(result[0].id() == c.id && result[0].getParam2() == c.rotation);
+		}
 	}
 
 	void check_native(const arnis::ProcessedWay &railway)

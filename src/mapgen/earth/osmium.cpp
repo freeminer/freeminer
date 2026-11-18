@@ -696,6 +696,7 @@ arnis::Args earth_arnis_args()
 	::arnis::assets::set_base_directory(
 			std::filesystem::path(porting::path_share) / "assets" / "arnis");
 	::arnis::Args arnis;
+	arnis.lidar = true;
 	arnis.use_3d = true;
 	arnis.interior = true;
 	arnis.roof = true;
@@ -882,6 +883,16 @@ arnis::Args earth_arnis_args()
 	read_bool("legacy_terrain", arnis.legacy_terrain);
 	read_bool("legacy_trees", arnis.legacy_trees);
 	read_bool("canopy_height", arnis.canopy_height);
+	read_bool("lidar", arnis.lidar);
+	read_bool("garden_detail", arnis.garden_detail);
+	read_bool("measured_trees", arnis.measured_trees);
+	read_bool("measured_heights", arnis.measured_heights);
+	{
+		std::optional<std::uint64_t> max_mb;
+		read_optional_u64("lidar_max_mb", max_mb);
+		if (max_mb && *max_mb <= std::numeric_limits<std::uint32_t>::max())
+			arnis.lidar_max_mb = static_cast<std::uint32_t>(*max_mb);
+	}
 	read_bool("overture", arnis.overture);
 	read_bool("aws_only_elevation", arnis.aws_only_elevation);
 	read_bool("city_boundaries", arnis.city_boundaries);

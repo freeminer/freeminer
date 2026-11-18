@@ -4,6 +4,10 @@
 
 #pragma once
 
+// fm:
+#include "mapgen/earth/voxelibre_metadata.h"
+// ===
+
 #include <map>
 #include <mutex>
 #include "network/networkprotocol.h"
@@ -54,6 +58,7 @@ struct BlockMakeData {
 	std::vector<GeneratedSignMetadata> generated_signs;
 	std::vector<GeneratedDecalMetadata> generated_decals;
 	std::vector<GeneratedSchemEntity> generated_schem_entities;
+	std::vector<VoxeLibreGeneratedMetadata> generated_voxelibre_metadata;
 	// ===
 
 	MMVManip *vmanip = nullptr;

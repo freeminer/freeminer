@@ -796,6 +796,30 @@ MapgenEarth::~MapgenEarth()
 {
 }
 
+bool MapgenEarth::queueVoxeLibreMetadata(
+		std::optional<TileOverlayId> tile_id, VoxeLibreGeneratedMetadata metadata)
+{
+	if (!active_block_data || !vm || !vm->exists(metadata.pos))
+		return false;
+	if (tile_id) {
+		std::shared_ptr<TileOverlay> overlay;
+		{
+			std::lock_guard<std::mutex> lock(tile_overlay_mutex);
+			const auto it = tile_overlays.find(*tile_id);
+			if (it == tile_overlays.end())
+				return false;
+			overlay = it->second;
+		}
+		std::lock_guard<std::mutex> lock(overlay->mutex);
+		if (overlay->closed)
+			return false;
+		overlay->voxelibre_metadata.push_back(std::move(metadata));
+		return true;
+	}
+	active_block_data->generated_voxelibre_metadata.push_back(std::move(metadata));
+	return true;
+}
+
 bool MapgenEarth::queueGeneratedSign(
 		std::optional<TileOverlayId> tile_id, const v3pos_t &pos, const std::string &text)
 {
@@ -971,6 +995,8 @@ bool MapgenEarth::mergeTileOverlay(TileOverlayId id)
 			for (const auto &entity : overlay->schematic_entities)
 				active_block_data->generated_schem_entities.push_back(
 						{entity.pos, entity.nbt});
+			for (const auto &metadata : overlay->voxelibre_metadata)
+				active_block_data->generated_voxelibre_metadata.push_back(metadata);
 		}
 	}
 	{

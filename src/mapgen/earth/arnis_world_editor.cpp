@@ -1,4 +1,5 @@
 #include "arnis_world_editor.h"
+#include "voxelibre_placement.h"
 #include "map.h"
 #include "emerge.h"
 #include "mapgen/mapgen_earth.h"
@@ -276,6 +277,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.walk_probe = walk_probe;
 	worker.sealed_surface = sealed_surface;
 	worker.carriageway = carriageway;
+	worker.kerb_strips = kerb_strips;
 	worker.clear_corridors = clear_corridors;
 	worker.station_tree_clearance = station_tree_clearance;
 	worker.station_track_beds = station_track_beds;
@@ -1112,7 +1114,20 @@ bool WorldEditor::try_set_block_with_properties_absolute(const BlockWithProperti
 		const std::optional<std::vector<Block>> &variants,
 		const std::optional<std::vector<Block>> &replacements)
 {
-	if (!try_set_block_absolute(bwp.block, x, y, z, variants, replacements))
+	Block actual = bwp.block;
+	if (mg && mg->m_emerge && mg->m_emerge->ndef && !bwp.property_values().empty()) {
+		const auto *ndef = mg->m_emerge->ndef;
+		const auto &name = ndef->get(actual.id()).name;
+		if (const auto state = voxelibre::node_state(
+					name, actual.getParam2(), bwp.property_values())) {
+			const auto id = ndef->getId(state->first);
+			if (id != CONTENT_IGNORE && id != CONTENT_UNKNOWN && id != CONTENT_AIR) {
+				actual.setContent(id);
+				actual.setParam2(state->second);
+			}
+		}
+	}
+	if (!try_set_block_absolute(actual, x, y, z, variants, replacements))
 		return false;
 	const auto key =
 			std::tuple{static_cast<int>(x), static_cast<int>(y), static_cast<int>(z)};

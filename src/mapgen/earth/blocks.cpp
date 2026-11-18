@@ -1,4 +1,6 @@
 #include "arnis_adapter.h"
+#include "voxelibre_nodes.h"
+#include "voxelibre_placement.h"
 #include "arnis-cpp/src/fm_native_signs.h"
 // fm: Native train placement configuration and host node resolution.
 #include "arnis-cpp/src/fm_native_trains.h"
@@ -751,6 +753,15 @@ void init(MapgenEarth *mg)
 			return mg->m_emerge->ndef->getId(candidate);
 		}
 
+		content_t voxelibre_node(const char *name) const
+		{
+			const auto *candidate = voxelibre_node_name(name);
+			if (!candidate)
+				return CONTENT_IGNORE;
+			const auto id = mg->m_emerge->ndef->getId(candidate);
+			return usable(id) ? id : CONTENT_IGNORE;
+		}
+
 		content_t same_name_in_any_namespace(const char *name) const
 		{
 			if (!nodes_by_suffix || !name)
@@ -866,6 +877,14 @@ void init(MapgenEarth *mg)
 			const auto id = arnis_node(block_name);
 			if (usable(id))
 				return id;
+			for (const auto *name : names) {
+				const auto alternate = arnis_node(name);
+				if (usable(alternate))
+					return alternate;
+			}
+			if (const auto game_id = voxelibre_node(block_name);
+					game_id != CONTENT_IGNORE)
+				return game_id;
 			return (*this)(names);
 		}
 	};
@@ -874,6 +893,10 @@ void init(MapgenEarth *mg)
 	const auto optional_g = [&](const char *block_name, Block fallback,
 									std::initializer_list<const char *> names) {
 		NodeResolver resolver{mg, fallback.id(), false, &nodes_by_suffix};
+		if (const auto id = resolver.arnis_node(block_name); resolver.usable(id))
+			return Block{id};
+		if (const auto id = resolver.voxelibre_node(block_name); id != CONTENT_IGNORE)
+			return Block{id};
 		if (const auto id = resolver.find(block_name); id != CONTENT_IGNORE)
 			return Block{id};
 		for (const auto *name : names)
@@ -884,7 +907,10 @@ void init(MapgenEarth *mg)
 	const auto prefer_arnis = [&](const char *name, Block fallback) {
 		const NodeResolver resolver{mg, fallback.id(), false, &nodes_by_suffix};
 		const auto id = resolver.arnis_node(name);
-		return Block{resolver.usable(id) ? id : fallback.id()};
+		if (resolver.usable(id))
+			return Block{id};
+		const auto game_id = resolver.voxelibre_node(name);
+		return game_id != CONTENT_IGNORE ? Block{game_id} : fallback;
 	};
 	const auto available_node = [&](const char *name) {
 		const NodeResolver resolver{mg, CONTENT_AIR, false, &nodes_by_suffix};
@@ -1134,6 +1160,60 @@ void init(MapgenEarth *mg)
 					"default:marram_grass_1"});
 	TALL_SEAGRASS_TOP = g("tall_seagrass_top",
 			{"marinara:seagrass2", "default:marram_grass_3", "default:marram_grass_1"});
+	voxelibre::seagrass = {};
+	if (WATER.id() == node_def_manager->getId("mcl_core:water_source") &&
+			!g.usable(g.arnis_node("seagrass")) &&
+			!g.usable(g.arnis_node("tall_seagrass_bottom")) &&
+			!g.usable(g.arnis_node("tall_seagrass_top"))) {
+		const std::array<const char *, 4> ground_names{
+				"mcl_core:dirt", "mcl_core:sand", "mcl_core:redsand", "mcl_core:gravel"};
+		const std::array<const char *, 4> plant_names{"mcl_ocean:seagrass_dirt",
+				"mcl_ocean:seagrass_sand", "mcl_ocean:seagrass_redsand",
+				"mcl_ocean:seagrass_gravel"};
+		voxelibre::seagrass.enabled = true;
+		voxelibre::seagrass.water = WATER;
+		for (std::size_t i = 0; i < ground_names.size(); ++i) {
+			const auto ground = node_def_manager->getId(ground_names[i]);
+			const auto plant = node_def_manager->getId(plant_names[i]);
+			if (!g.usable(ground) || !g.usable(plant)) {
+				voxelibre::seagrass.enabled = false;
+				break;
+			}
+			voxelibre::seagrass.substrates[i] = Block{ground};
+			voxelibre::seagrass.plants[i] = Block{plant};
+		}
+	}
+	voxelibre::ocean = {};
+	voxelibre::ocean.enabled =
+			WATER.id() == node_def_manager->getId("mcl_core:water_source");
+	voxelibre::ocean.water = WATER;
+	voxelibre::ocean.kelp_enabled = voxelibre::ocean.enabled &&
+									!g.usable(g.arnis_node("kelp")) &&
+									!g.usable(g.arnis_node("kelp_plant"));
+	const std::array<const char *, 4> kelp_ground{
+			"mcl_core:dirt", "mcl_core:sand", "mcl_core:redsand", "mcl_core:gravel"};
+	const std::array<const char *, 4> kelp_nodes{"mcl_ocean:kelp_dirt",
+			"mcl_ocean:kelp_sand", "mcl_ocean:kelp_redsand", "mcl_ocean:kelp_gravel"};
+	for (std::size_t i = 0; i < kelp_ground.size(); ++i) {
+		const auto ground = node_def_manager->getId(kelp_ground[i]);
+		const auto kelp = node_def_manager->getId(kelp_nodes[i]);
+		if (!g.usable(ground) || !g.usable(kelp))
+			voxelibre::ocean.kelp_enabled = false;
+		voxelibre::ocean.substrates[i] = Block{ground};
+		voxelibre::ocean.kelp[i] = Block{kelp};
+	}
+	const auto pickle =
+			node_def_manager->getId("mcl_ocean:sea_pickle_1_dead_brain_coral_block");
+	voxelibre::ocean.pickle = Block{pickle};
+	voxelibre::ocean.pickle_enabled = voxelibre::ocean.enabled && g.usable(pickle) &&
+									  !g.usable(g.arnis_node("sea_pickle"));
+	const std::array<const char *, 5> coral_names{
+			"tube", "brain", "fire", "horn", "bubble"};
+	for (std::size_t i = 0; i < coral_names.size(); ++i) {
+		const std::string base = std::string("mcl_ocean:") + coral_names[i] + "_coral";
+		voxelibre::ocean.corals[i] = Block{node_def_manager->getId(base)};
+		voxelibre::ocean.fans[i] = Block{node_def_manager->getId(base + "_fan")};
+	}
 	SEA_PICKLE =
 			g("sea_pickle", {"marinara:seaanemone_tentacle", "marinara:hardcoral_green",
 									"default:coral_green", "default:coral_cyan",
@@ -1336,16 +1416,27 @@ void init(MapgenEarth *mg)
 	BEETROOTS_YOUNG = optional_g("beetroots_young", BEETROOTS,
 			{"farming:beetroot_1", "mcl_farming:beetroot_1", "mcl_farming:beetroot_2"});
 	BEDROCK = g("bedrock", "default:obsidian");
-	RAIL_NORTH_SOUTH = prefer_arnis("rail_north_south", RAIL);
-	RAIL_EAST_WEST = prefer_arnis("rail_east_west", RAIL);
-	RAIL_ASCENDING_EAST = prefer_arnis("rail_ascending_east", RAIL);
-	RAIL_ASCENDING_WEST = prefer_arnis("rail_ascending_west", RAIL);
-	RAIL_ASCENDING_NORTH = prefer_arnis("rail_ascending_north", RAIL);
-	RAIL_ASCENDING_SOUTH = prefer_arnis("rail_ascending_south", RAIL);
-	RAIL_NORTH_EAST = prefer_arnis("rail_north_east", RAIL);
-	RAIL_NORTH_WEST = prefer_arnis("rail_north_west", RAIL);
-	RAIL_SOUTH_EAST = prefer_arnis("rail_south_east", RAIL);
-	RAIL_SOUTH_WEST = prefer_arnis("rail_south_west", RAIL);
+	const auto straight = node_def_manager->getId("mcl_minecarts:rail_v2");
+	const auto corner = node_def_manager->getId("mcl_minecarts:rail_v2_corner");
+	const auto slope = node_def_manager->getId("mcl_minecarts:rail_v2_sloped");
+	const bool voxelibre_rails = g.usable(straight) && g.usable(corner) &&
+								 g.usable(slope) && !g.usable(g.arnis_node("rail"));
+	if (voxelibre_rails)
+		RAIL = Block{straight};
+	const auto shapes = voxelibre_rails ? voxelibre::rail_shapes(Block{straight},
+												  Block{corner}, Block{slope})
+										: std::array<Block, 10>{RAIL, RAIL, RAIL, RAIL,
+												  RAIL, RAIL, RAIL, RAIL, RAIL, RAIL};
+	RAIL_NORTH_SOUTH = prefer_arnis("rail_north_south", shapes[0]);
+	RAIL_EAST_WEST = prefer_arnis("rail_east_west", shapes[1]);
+	RAIL_ASCENDING_EAST = prefer_arnis("rail_ascending_east", shapes[2]);
+	RAIL_ASCENDING_WEST = prefer_arnis("rail_ascending_west", shapes[3]);
+	RAIL_ASCENDING_NORTH = prefer_arnis("rail_ascending_north", shapes[4]);
+	RAIL_ASCENDING_SOUTH = prefer_arnis("rail_ascending_south", shapes[5]);
+	RAIL_NORTH_EAST = prefer_arnis("rail_north_east", shapes[6]);
+	RAIL_NORTH_WEST = prefer_arnis("rail_north_west", shapes[7]);
+	RAIL_SOUTH_EAST = prefer_arnis("rail_south_east", shapes[8]);
+	RAIL_SOUTH_WEST = prefer_arnis("rail_south_west", shapes[9]);
 	// Advtrains 2.5+ registers four angular variants and rotates each with
 	// param2. Resolve the complete family only when the mod is present; the
 	// railway renderer then selects either this family or carts for the whole
@@ -1894,6 +1985,18 @@ void init(MapgenEarth *mg)
 	RED_BED_SOUTH_FOOT = g("red_bed_south_foot", "beds:bed_bottom");
 	RED_BED_WEST_HEAD = g("red_bed_west_head", "beds:bed_top");
 	RED_BED_WEST_FOOT = g("red_bed_west_foot", "beds:bed_bottom");
+	const auto red_bed_top = node_def_manager->getId("mcl_beds:bed_red_top");
+	const auto red_bed_bottom = node_def_manager->getId("mcl_beds:bed_red_bottom");
+	const auto rotate_bed = [&](Block &bed, content_t expected, u8 rotation) {
+		if (g.usable(expected) && bed.id() == expected)
+			bed.setParam2(rotation);
+	};
+	rotate_bed(RED_BED_EAST_HEAD, red_bed_top, 1);
+	rotate_bed(RED_BED_EAST_FOOT, red_bed_bottom, 1);
+	rotate_bed(RED_BED_SOUTH_HEAD, red_bed_top, 2);
+	rotate_bed(RED_BED_SOUTH_FOOT, red_bed_bottom, 2);
+	rotate_bed(RED_BED_WEST_HEAD, red_bed_top, 3);
+	rotate_bed(RED_BED_WEST_FOOT, red_bed_bottom, 3);
 	GRAY_STAINED_GLASS = prefer_arnis("gray_stained_glass", GLASS);
 	LIGHT_GRAY_STAINED_GLASS = prefer_arnis("light_gray_stained_glass", GLASS);
 	BROWN_STAINED_GLASS = prefer_arnis("brown_stained_glass", GLASS);
@@ -1976,14 +2079,22 @@ void init(MapgenEarth *mg)
 	CHAIN_Z.param2 = 4; // Mineclonia chain axis=z, matching Rust's CHAIN_Z.
 	CHAIN_Y = prefer_arnis("chain", CHAIN);
 	CHAIN_Y.param2 = 0; // Mineclonia's default chain axis is vertical.
-	SPRUCE_DOOR_LOWER = prefer_arnis("spruce_door", OAK_DOOR);
-	SPRUCE_DOOR_UPPER = prefer_arnis("spruce_door", OAK_DOOR);
+	SPRUCE_DOOR_LOWER =
+			prefer_arnis("spruce_door", optional_g("spruce_door_lower", OAK_DOOR, {}));
+	SPRUCE_DOOR_UPPER =
+			prefer_arnis("spruce_door", optional_g("spruce_door_upper", OAK_DOOR, {}));
 	SMOOTH_STONE_SLAB = g("smooth_stone_slab",
 			{"stairs:slab_stone_block", "stairs:slab_stone", "default:stone"});
 	GLASS_PANE = g("glass_pane", {"xpanes:pane_flat", "default:glass"});
 	LIGHT_GRAY_TERRACOTTA = g("light_gray_terracotta", "default:clay");
-	OAK_SLAB_TOP = prefer_arnis("oak_slab", OAK_SLAB);
-	OAK_DOOR_UPPER = prefer_arnis("oak_door", OAK_DOOR);
+	if (const auto id = g.arnis_node("oak_slab"); g.usable(id))
+		OAK_SLAB_TOP = Block{id};
+	else
+		OAK_SLAB_TOP = optional_g("oak_slab_top", OAK_SLAB, {});
+	if (const auto id = g.arnis_node("oak_door"); g.usable(id))
+		OAK_DOOR_UPPER = Block{id};
+	else
+		OAK_DOOR_UPPER = optional_g("oak_door_upper", OAK_DOOR, {});
 	SPRUCE_LEAVES = g("spruce_leaves", {"default:pine_needles", "default:leaves"});
 	CYAN_STAINED_GLASS = prefer_arnis("cyan_stained_glass", GLASS);
 	BLUE_STAINED_GLASS = prefer_arnis("blue_stained_glass", GLASS);
@@ -2053,7 +2164,10 @@ void init(MapgenEarth *mg)
 	DEEPSLATE = prefer_arnis("deepslate", STONE);
 	TUFF = prefer_arnis("tuff", STONE);
 	COBBLED_DEEPSLATE = prefer_arnis("cobbled_deepslate", COBBLESTONE);
-	WATER_CAULDRON = prefer_arnis("cauldron", CAULDRON);
+	if (const auto id = g.arnis_node("cauldron"); g.usable(id))
+		WATER_CAULDRON = Block{id};
+	else
+		WATER_CAULDRON = optional_g("water_cauldron", CAULDRON, {});
 	WAXED_COPPER_BLOCK =
 			g("waxed_copper_block", {"default:copperblock", "default:stone"});
 	WAXED_EXPOSED_COPPER =
@@ -2125,9 +2239,10 @@ void init(MapgenEarth *mg)
 	BLACKSTONE_SLAB = g("blackstone_slab",
 			{"mcl_stairs:slab_blackstone", "mcl_stairs:slab_polished_blackstone",
 					"stairs:slab_obsidianbrick", "default:obsidianbrick"});
-	POWERED_RAIL =
-			g("powered_rail", {"mcl_minecarts:golden_rail", "mcl_minecarts:powered_rail",
-									  "carts:powerrail", "carts:rail", "default:rail"});
+	POWERED_RAIL = g(
+			"powered_rail", {"mcl_minecarts:golden_rail_v2", "mcl_minecarts:golden_rail",
+									"mcl_minecarts:powered_rail", "carts:powerrail",
+									"carts:rail", "default:rail"});
 	WAXED_EXPOSED_CUT_COPPER_SLAB = g("waxed_exposed_cut_copper_slab",
 			{"mcl_stairs:slab_waxed_exposed_cut_copper", "mcl_stairs:slab_copper",
 					"stairs:slab_copperblock", "default:copperblock"});
