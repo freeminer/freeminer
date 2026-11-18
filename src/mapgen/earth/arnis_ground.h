@@ -21,6 +21,7 @@
 #include "arnis-cpp/src/biome.h"
 #include "arnis-cpp/src/climate.h"
 #include "arnis-cpp/src/canopy/canopy.h"
+#include "arnis-cpp/src/survey/survey.h"
 #include "arnis-cpp/src/land_cover/land_cover.h"
 #include "arnis-cpp/src/ecoregion.h"
 #include "arnis-cpp/src/coordinate_system/geographic/llbbox.h"
@@ -66,6 +67,9 @@ struct Ground
 	std::size_t world_width = 0, world_height = 0;
 	std::optional<canopy::CanopyData> canopy_data;
 	std::size_t canopy_world_width = 0, canopy_world_height = 0;
+	// Classified open-survey cells (garden detail, measured trees and building
+	// heights), sampled over this Ground's world frame like canopy and land cover.
+	std::optional<survey::SurveyData> survey_data;
 	double elevation_min_height_m = 0.0, elevation_blocks_per_meter = 0.0;
 	// Converts host block-space slope back to the documented world-scale slope.
 	double elevation_slope_correction = 1.0;
@@ -187,6 +191,23 @@ struct Ground
 	void save_canopy_debug_image(const std::string &filename) const;
 	std::pair<std::size_t, std::size_t> canopy_index(const XZPoint &coord) const;
 	std::optional<std::uint8_t> canopy_height_m(const XZPoint &coord) const;
+	bool has_survey() const
+	{
+		return survey_data && survey_data->features.garden && !survey_data->empty();
+	}
+	bool has_laser() const { return survey_data && !survey_data->empty(); }
+	bool laser_heights_wanted() const
+	{
+		return has_laser() && survey_data->features.heights;
+	}
+	bool laser_trees_wanted() const { return has_laser() && survey_data->features.trees; }
+	void set_survey(std::optional<survey::SurveyData> data);
+	std::optional<survey::Cell> survey_cell(const XZPoint &coord) const;
+	std::optional<survey::Cell> laser_cell(const XZPoint &coord) const;
+	std::optional<std::array<std::uint8_t, 5>> survey_raw(const XZPoint &coord) const;
+	void rotate_survey(std::vector<std::array<std::uint8_t, 5>> cells, std::size_t width,
+			std::size_t height);
+	void apply_measured_canopy();
 	bool canopy_measured(const XZPoint &origin, int span) const;
 	std::optional<std::pair<double, std::uint8_t>> canopy_cell(
 			const XZPoint &origin, int span) const;

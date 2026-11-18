@@ -625,14 +625,36 @@ void TestFmArnisBridges::testRoadReachesAnchoredBridgeAtJunctionLevel()
 			arnis::highways::highway_block_range("residential", road.tags, 1.0);
 	const auto roadYs = arnis::highways::road_profile(editor, road, blockRange,
 			connectivity, [&](int x, int z) -> std::optional<int> {
-				return connectivity.is_shared(x, z)
-							   ? std::optional<int>(
-										 arnis::highways::junction_level(editor, x, z))
-							   : std::nullopt;
+				if (!connectivity.is_shared(x, z))
+					return std::nullopt;
+				return structures.landing_y(x, z).value_or(
+						arnis::highways::junction_level(editor, x, z));
 			});
 	UASSERT(!roadYs.empty());
 	UASSERT(structures.lookup_member(1) != nullptr);
 	UASSERT(structures.lookup_member(1)->ys.front() == roadYs.back());
+	const int junction = arnis::highways::junction_level(editor, 40, 40);
+	UASSERT(roadYs.back() >= junction && roadYs.back() <= junction + 2);
+
+	// Rust also checks a shallow bank: the landing is lifted one block to
+	// meet the approach instead of introducing a dip at the junction.
+	for (std::size_t x = 0; x < side; ++x)
+		row[x] = x < 40 ? 11.0f : 10.0f;
+	ground.elevation_grid.assign(side, row);
+	const auto bank = arnis::bridges::BridgeStructureMap::build(
+			elements, editor, connectivity, outlines, 1.0);
+	const auto bankRoad = arnis::highways::road_profile(editor, road, blockRange,
+			connectivity, [&](int x, int z) -> std::optional<int> {
+				if (!connectivity.is_shared(x, z))
+					return std::nullopt;
+				return bank.landing_y(x, z).value_or(
+						arnis::highways::junction_level(editor, x, z));
+			});
+	UASSERT(bank.lookup_member(1) != nullptr);
+	UASSERT(bank.lookup_member(1)->ys.front() == 11);
+	UASSERT(bankRoad.size() >= 6);
+	UASSERT(std::all_of(
+			bankRoad.end() - 6, bankRoad.end(), [](int y) { return y == 11; }));
 }
 
 void TestFmArnisBridges::testDecksForkingOffRoadLand()

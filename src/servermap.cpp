@@ -32,6 +32,7 @@
 #include "database/database-sqlite3.h"
 #include "script/scripting_server.h"
 // fm:
+#include "mapgen/earth/voxelibre_metadata_server.h"
 #if USE_ROCKSDB
 #include "database/database-rocksdb.h"
 #endif
@@ -328,6 +329,16 @@ void ServerMap::finishBlockMake(BlockMakeData *data,
 	}
 
 	// fm:
+	for (const auto &record : data->generated_voxelibre_metadata) {
+		// Later tile writes may have replaced the node that requested metadata.
+		if (!data->vmanip->exists(record.pos) ||
+				data->vmanip->getNode(record.pos).getContent() != record.expected)
+			continue;
+		auto *meta = new NodeMetadata(m_gamedef->idef());
+		voxelibre_metadata::initialize(*meta, m_gamedef->idef(), record);
+		if (!setNodeMetadata(record.pos, meta))
+			delete meta;
+	}
 	for (const auto &sign : data->generated_signs) {
 		auto *meta = new NodeMetadata(m_gamedef->idef());
 		meta->setString("text", sign.text);

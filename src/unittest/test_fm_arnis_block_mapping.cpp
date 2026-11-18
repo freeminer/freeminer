@@ -2,6 +2,7 @@
 
 #include "mapgen/earth/arnis_block.h"
 #include "mapgen/earth/arnis_world_editor.h"
+#include "mapgen/earth/voxelibre_nodes.h"
 #include "mapgen/earth/arnis-cpp/src/bedrock_block_map.h"
 #include "mapgen/earth/arnis-cpp/src/luanti_block_map.h"
 #include "mapgen/earth/arnis-cpp/src/world_editor/common.h"
@@ -58,6 +59,31 @@ public:
 		TEST(testGenericSnowBlockDiffersFromSnowLayer);
 		TEST(testBedrockHoppersStartUnlocked);
 		TEST(testNestedBlockPropertyValuesSurviveSectionsAndPalettePacking);
+		TEST(testVoxeLibreRegisteredFamilies);
+	}
+
+	void testVoxeLibreRegisteredFamilies()
+	{
+		const std::array<std::pair<const char *, const char *>, 13> cases{{
+				{"cherry_log", "mcl_cherry_blossom:cherrytree"},
+				{"cherry_leaves", "mcl_cherry_blossom:cherryleaves"},
+				{"cherry_planks", "mcl_cherry_blossom:cherrywood"},
+				{"cherry_stairs", "mcl_stairs:stair_cherrywood"},
+				{"cherry_slab", "mcl_stairs:slab_cherrywood"},
+				{"bamboo_slab", "mcl_stairs:slab_bamboo_plank"},
+				{"iron_ore", "mcl_core:stone_with_iron"},
+				{"deepslate_diamond_ore", "mcl_deepslate:deepslate_with_diamond"},
+				{"carrots", "mcl_farming:carrot"},
+				{"redstone_torch", "mesecons_torch:mesecon_torch_on"},
+				{"light_gray_wool", "mcl_wool:silver"},
+				{"smoker", "mcl_smoker:smoker"},
+				{"water_cauldron", "mcl_cauldrons:cauldron_3"},
+		}};
+		for (const auto &[palette, expected] : cases) {
+			const auto *actual = voxelibre_node_name(palette);
+			UASSERT(actual && std::string(actual) == expected);
+		}
+		UASSERT(voxelibre_node_name("nonexistent_palette_block") == nullptr);
 	}
 
 	void testNewRustBlocksHaveLuantiMappings()

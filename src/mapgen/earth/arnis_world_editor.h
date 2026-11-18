@@ -82,6 +82,11 @@ namespace fuel_stations
 class FuelIndex;
 }
 
+namespace element_processing::kerb_strips
+{
+class KerbStrips;
+}
+
 namespace water_depth
 {
 class BigWaterField;
@@ -176,6 +181,7 @@ struct WorldEditor
 	std::shared_ptr<std::mutex> laid_rails_mutex = std::make_shared<std::mutex>();
 	std::shared_ptr<const CoordinateBitmap> sealed_surface;
 	std::shared_ptr<const CoordinateBitmap> carriageway;
+	std::shared_ptr<const element_processing::kerb_strips::KerbStrips> kerb_strips;
 	std::shared_ptr<const CoordinateBitmap> clear_corridors;
 	std::shared_ptr<const stations::SparseCells> station_tree_clearance;
 	std::shared_ptr<const stations::TrackBedIndex> station_track_beds;
@@ -245,6 +251,12 @@ struct WorldEditor
 	{
 		carriageway = std::move(mask);
 	}
+	void set_kerb_strips(
+			std::shared_ptr<const element_processing::kerb_strips::KerbStrips> strips)
+	{
+		kerb_strips = std::move(strips);
+	}
+	void release_kerb_strips() { kerb_strips.reset(); }
 	void release_carriageway() { carriageway.reset(); }
 	void set_clear_corridors(std::shared_ptr<const CoordinateBitmap> mask)
 	{
