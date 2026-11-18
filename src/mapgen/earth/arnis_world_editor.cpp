@@ -1084,6 +1084,18 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 
 	if (!active_tile_overlay || !mg->writeTileOverlay(*active_tile_overlay, pos, block))
 		mg->vm->setNode(pos, block);
+	if (owns(x, z) && ((voxelibre::chest_id != CONTENT_IGNORE &&
+							   block.id() == voxelibre::chest_id) ||
+							  (voxelibre::bookshelf_id != CONTENT_IGNORE &&
+									  block.id() == voxelibre::bookshelf_id))) {
+		VoxeLibreGeneratedMetadata metadata;
+		metadata.pos = pos;
+		metadata.expected = block.id();
+		metadata.kind = block.id() == voxelibre::bookshelf_id
+								? VoxeLibreGeneratedMetadata::Kind::Bookshelf
+								: VoxeLibreGeneratedMetadata::Kind::Chest;
+		mg->queueVoxeLibreMetadata(active_tile_overlay, std::move(metadata));
+	}
 	written_cells.insert(key);
 	full_top_state_cells.erase(key);
 	block_properties_by_cell.erase(key);
@@ -1979,6 +1991,24 @@ void WorldEditor::place_wall_banner(const Block &block, int x, int y, int z,
 				banner, x, y, z, std::nullopt, std::nullopt) ||
 			!owns(x, z))
 		return;
+	if (mg && voxelibre::banner_id != CONTENT_IGNORE &&
+			block.id() == voxelibre::banner_id) {
+		const auto actual = get_block_absolute(x, y, z);
+		if (actual && actual->id() == voxelibre::banner_id) {
+			VoxeLibreGeneratedMetadata metadata;
+			metadata.pos = {
+					static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
+			metadata.expected = actual->id();
+			metadata.kind = VoxeLibreGeneratedMetadata::Kind::Banner;
+			metadata.color = base_color;
+			metadata.rotation = actual->getParam2() == 2   ? 12
+								: actual->getParam2() == 3 ? 4
+								: actual->getParam2() == 5 ? 8
+														   : 0;
+			metadata.patterns = patterns;
+			mg->queueVoxeLibreMetadata(active_tile_overlay, std::move(metadata));
+		}
+	}
 	if (banner_sink) {
 		banner_sink(x, y, z, facing, base_color, patterns);
 		return;

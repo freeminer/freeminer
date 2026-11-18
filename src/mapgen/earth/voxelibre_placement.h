@@ -9,6 +9,10 @@
 
 namespace arnis::voxelibre
 {
+inline content_t chest_id = CONTENT_IGNORE;
+inline content_t bookshelf_id = CONTENT_IGNORE;
+inline content_t banner_id = CONTENT_IGNORE;
+
 struct RootedSeagrass
 {
 	bool enabled = false;
@@ -45,8 +49,39 @@ inline std::optional<std::pair<std::string, u8>> node_state(
 	const auto facing = get("facing");
 	if (!facing.empty())
 		param2 = facing == "east" ? 1 : facing == "south" ? 2 : facing == "west" ? 3 : 0;
+	if (name == "mcl_books:chiseled_bookshelf") {
+		if (!facing.empty())
+			param2 = facing == "north"	? 2
+					 : facing == "east" ? 3
+					 : facing == "west" ? 1
+										: 0;
+		return std::pair{name, param2};
+	}
+	if (name == "mcl_lightning_rods:rod" || name == "mcl_end:end_rod") {
+		if (!facing.empty())
+			param2 = facing == "down"	 ? 20
+					 : facing == "east"	 ? 12
+					 : facing == "west"	 ? 16
+					 : facing == "north" ? 8
+					 : facing == "south" ? 4
+										 : 0;
+		return std::pair{name, param2};
+	}
+	if (name.starts_with("mcl_lush_caves:dripleaf_"))
+		return std::pair{name, param2};
 	const auto half = get("half");
 	const auto type = get("type");
+	if (name == "mcl_banners:hanging_banner") {
+		if (facing == "west")
+			param2 = 2;
+		else if (facing == "east")
+			param2 = 3;
+		else if (facing == "south")
+			param2 = 4;
+		else if (facing == "north")
+			param2 = 5;
+		return std::pair{name, param2};
+	}
 	if (name.starts_with("mcl_beds:bed_") &&
 			(name.ends_with("_bottom") || name.ends_with("_top"))) {
 		const auto part = get("part");

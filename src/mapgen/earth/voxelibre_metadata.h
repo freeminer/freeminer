@@ -9,7 +9,12 @@
 // Mapgen workers carry this payload to the server after their node writes merge.
 struct VoxeLibreGeneratedMetadata
 {
-	enum class Kind { Chest, Banner };
+	enum class Kind
+	{
+		Chest,
+		Bookshelf,
+		Banner
+	};
 	v3pos_t pos;
 	content_t expected = CONTENT_IGNORE;
 	Kind kind = Kind::Chest;

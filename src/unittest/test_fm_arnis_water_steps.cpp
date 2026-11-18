@@ -92,6 +92,9 @@ public:
 		auto bed = voxelibre::node_state(
 				"mcl_beds:bed_white_bottom", 0, {{"part", "head"}, {"facing", "west"}});
 		UASSERT(bed && bed->first == "mcl_beds:bed_white_top" && bed->second == 3);
+		auto banner = voxelibre::node_state(
+				"mcl_banners:hanging_banner", 0, {{"facing", "north"}});
+		UASSERT(banner && banner->second == 5);
 	}
 
 	void testVoxeLibreRootedSeagrass()
