@@ -274,4 +274,18 @@ if(NOT MSVC)
     set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} ${OTHER_FLAGS}")
 endif()
 
-# === fm === ^^^
+# Register each executable's complete legacy and Catch2 unit test suite.
+function(fm_register_unittests)
+    if(BUILD_UNITTESTS)
+        enable_testing()
+        foreach(test_target IN ITEMS ${PROJECT_NAME} ${PROJECT_NAME}server)
+            if(TARGET ${test_target})
+                get_target_property(test_target_type ${test_target} TYPE)
+                if(test_target_type STREQUAL "EXECUTABLE")
+                    add_test(NAME ${test_target}.unittests
+                        COMMAND ${test_target} --run-unittests)
+                endif()
+            endif()
+        endforeach()
+    endif()
+endfunction()

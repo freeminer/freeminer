@@ -1972,6 +1972,10 @@ void init(MapgenEarth *mg)
 			{"mesecons_pressureplates:pressure_plate_wood_off", "default:wood"});
 	OAK_STAIRS = g("oak_stairs", {"stairs:stair_wood", "stairs:stair_pine_wood"});
 	CHEST = g("chest", "default:chest");
+	const auto voxelibre_chest = node_def_manager->getId("mcl_chests:chest");
+	voxelibre::chest_id = g.usable(voxelibre_chest) && CHEST.id() == voxelibre_chest
+								  ? voxelibre_chest
+								  : CONTENT_IGNORE;
 	RED_CARPET = g("red_carpet", "wool:red");
 	ANVIL = g("anvil", "default:steelblock");
 	NOTE_BLOCK = g("note_block", "default:wood");
@@ -2027,6 +2031,19 @@ void init(MapgenEarth *mg)
 	CHISELLED_BOOKSHELF_EAST = prefer_arnis("chiseled_bookshelf", BOOKSHELF);
 	CHISELLED_BOOKSHELF_SOUTH = prefer_arnis("chiseled_bookshelf", BOOKSHELF);
 	CHISELLED_BOOKSHELF_WEST = prefer_arnis("chiseled_bookshelf", BOOKSHELF);
+	const auto mineclonia_bookshelf =
+			node_def_manager->getId("mcl_books:chiseled_bookshelf");
+	voxelibre::bookshelf_id =
+			g.usable(mineclonia_bookshelf) &&
+							CHISELLED_BOOKSHELF_NORTH.id() == mineclonia_bookshelf
+					? mineclonia_bookshelf
+					: CONTENT_IGNORE;
+	if (voxelibre::bookshelf_id != CONTENT_IGNORE) {
+		CHISELLED_BOOKSHELF_NORTH.setParam2(2);
+		CHISELLED_BOOKSHELF_EAST.setParam2(3);
+		CHISELLED_BOOKSHELF_SOUTH.setParam2(0);
+		CHISELLED_BOOKSHELF_WEST.setParam2(1);
+	}
 	DAMAGED_ANVIL = prefer_arnis("damaged_anvil", ANVIL);
 
 	CHAIN = g("chain",
@@ -2155,6 +2172,8 @@ void init(MapgenEarth *mg)
 	WAXED_EXPOSED_CUT_COPPER_STAIRS = g("waxed_exposed_cut_copper_stairs",
 			{"stairs:stair_copperblock", "stairs:stair_stonebrick"});
 	WHITE_WALL_BANNER = prefer_arnis("white_wall_banner", WHITE_WOOL);
+	const auto voxelibre_banner = node_def_manager->getId("mcl_banners:hanging_banner");
+	voxelibre::banner_id = g.usable(voxelibre_banner) ? voxelibre_banner : CONTENT_IGNORE;
 	BLUE_WALL_BANNER = prefer_arnis("blue_wall_banner", BLUE_WOOL);
 	BLACK_WALL_BANNER = prefer_arnis("black_wall_banner", BLACK_CONCRETE);
 	RED_WALL_BANNER = prefer_arnis("red_wall_banner", RED_WOOL);

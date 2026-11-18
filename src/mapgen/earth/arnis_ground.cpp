@@ -4,6 +4,8 @@
 #include "arnis-cpp/src/cache_root.h"
 #include "arnis-cpp/src/block_definitions.h"
 #include "arnis-cpp/src/climate.h"
+#include "arnis-cpp/src/survey/mosaic.h"
+#include "arnis-cpp/src/survey/plan.h"
 #include "arnis-cpp/src/elevation/cache.h"
 #include "arnis-cpp/src/elevation/selector.h"
 #include "arnis-cpp/src/overture.h"
@@ -528,6 +530,18 @@ Ground generate_ground_data(const Args &args_, const geographic::LLBBox &bbox,
 	ground.set_climate(frame.climate(bbox));
 
 	const bool earth = is_earth(args.body);
+	std::future<std::optional<survey::SurveyData>> survey_job;
+	if (earth) {
+		if (const auto features = args.lidar_features()) {
+			const auto survey_root =
+					cache_base.empty() ? survey::cache_root() : cache_base / "laser";
+			survey_job = std::async(std::launch::async,
+					[&, features = *features, survey_root, grid_width, grid_height] {
+						return survey::fetch_cached_survey_data(fetch_bbox, grid_width,
+								grid_height, features, args.lidar_max_mb, survey_root);
+					});
+		}
+	}
 	std::future<std::optional<canopy::CanopyData>> canopy_job;
 	if (earth && args.canopy_height) {
 		canopy_job = std::async(std::launch::async, [&, grid_width = grid_width,
@@ -710,6 +724,20 @@ Ground generate_ground_data(const Args &args_, const geographic::LLBBox &bbox,
 						std::move(*canopy_result), final_width, final_height);
 		} catch (const std::exception &e) {
 			std::clog << "Canopy data unavailable: " << e.what() << '\n';
+		}
+	}
+	if (survey_job.valid()) {
+		try {
+			auto survey_result = survey_job.get();
+			if (survey_result && frame.mercator)
+				survey_result->remap_rows_to_mercator(
+						fetch_bbox.max().lat(), fetch_bbox.min().lat());
+			if (survey_result && pad)
+				survey_result->crop(pad, pad, final_width, final_height);
+			if (survey_result)
+				ground.set_survey(std::move(*survey_result));
+		} catch (const std::exception &e) {
+			std::clog << "Cached survey data unavailable: " << e.what() << '\n';
 		}
 	}
 	if (earth)

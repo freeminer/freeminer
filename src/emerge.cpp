@@ -541,6 +541,18 @@ bool EmergeThread::pushBlock(v3bpos_t pos)
 
 void EmergeThread::cancelPendingItems()
 {
+	// fm: Deadlock free cancelnn
+	v3pos_t pos;
+	BlockEmergeData bedata;
+
+	while (popBlockEmerge(&pos, &bedata)) {
+		runCompletionCallbacks(pos, EMERGE_CANCELLED, bedata.callbacks);
+		bedata = {};
+	}
+	return;
+	// ===
+
+
 	MutexAutoLock queuelock(m_emerge->m_queue_mutex);
 
 	while (!m_block_queue.empty()) {
