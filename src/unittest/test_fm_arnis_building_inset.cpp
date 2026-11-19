@@ -66,16 +66,22 @@ public:
 		const auto cells = fill(nodes);
 		XZBBox bounds(0, 0, 50, 40);
 		arnis::CoordinateBitmap footprints(bounds);
-		for (const auto &[x, z] : cells)
-			footprints.set(x, z);
+		// Match Rust's bitmap_with_rect fixtures: footprints include outline
+		// cells as well as the flood-filled interior.
+		for (int x = 10; x <= 22; ++x)
+			for (int z = 10; z <= 22; ++z)
+				footprints.set(x, z);
 		for (int x = 22; x <= 32; ++x)
-			for (int z = 11; z < 22; ++z)
+			for (int z = 10; z <= 22; ++z)
 				footprints.set(x, z);
 		const auto inset = arnis::building_inset::inset_outline(nodes, cells, footprints);
 		UASSERT(inset.has_value());
-		UASSERT(inset->nodes.front().x == 11 && inset->nodes.front().z == 11);
+		UASSERT(inset->nodes.size() == 5);
+		UASSERT(inset->nodes[0].x == 11 && inset->nodes[0].z == 11);
 		UASSERT(inset->nodes[1].x == 22 && inset->nodes[1].z == 11);
 		UASSERT(inset->nodes[2].x == 22 && inset->nodes[2].z == 21);
+		UASSERT(inset->nodes[3].x == 11 && inset->nodes[3].z == 21);
+		UASSERT(inset->nodes[4].x == 11 && inset->nodes[4].z == 11);
 	}
 };
 
