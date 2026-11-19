@@ -183,6 +183,8 @@ struct WorldEditor
 	std::shared_ptr<const CoordinateBitmap> carriageway;
 	std::shared_ptr<const element_processing::kerb_strips::KerbStrips> kerb_strips;
 	std::shared_ptr<const CoordinateBitmap> clear_corridors;
+	// OSM water and a margin kept clear by survey-derived trees.
+	std::shared_ptr<const CoordinateBitmap> tree_keep_clear;
 	std::shared_ptr<const stations::SparseCells> station_tree_clearance;
 	std::shared_ptr<const stations::TrackBedIndex> station_track_beds;
 	std::shared_ptr<const stations::TunnelPinIndex> station_tunnel_pins;
@@ -262,6 +264,8 @@ struct WorldEditor
 	{
 		clear_corridors = std::move(mask);
 	}
+	void set_tree_keep_clear(std::shared_ptr<const CoordinateBitmap> mask);
+	bool tree_keep_clear_any(int x, int z, int radius = 0) const;
 	void set_station_tree_clearance(std::shared_ptr<const stations::SparseCells> mask)
 	{
 		station_tree_clearance = std::move(mask);
@@ -475,6 +479,9 @@ struct WorldEditor
 	// Track hedge cells so later area cleanup (for example sports-pitch clearing)
 	// does not erase a living boundary that was emitted by the barrier pass.
 	std::unordered_set<std::pair<int, int>, XZCellHash> hedge_columns;
+	// Track mapped walls, railings and fences so terrain decoration can avoid
+	// planting through their footprints after tile results are merged.
+	std::unordered_set<std::pair<int, int>, XZCellHash> barrier_columns;
 	// Claim each deterministic regional-tree trunk slot once per tile editor, as
 	// in Rust, so several ground cells snapping to one schematic do not stamp it twice.
 	std::unordered_set<std::pair<int, int>, XZCellHash> claimed_tree_slots;
@@ -809,6 +816,8 @@ struct WorldEditor
 	}
 	void register_hedge(int x, int z) { hedge_columns.emplace(x, z); }
 	bool is_hedge(int x, int z) const { return hedge_columns.contains({x, z}); }
+	void register_barrier(int x, int z) { barrier_columns.emplace(x, z); }
+	bool is_barrier(int x, int z) const { return barrier_columns.contains({x, z}); }
 	bool claim_tree_slot(int x, int z) { return claimed_tree_slots.emplace(x, z).second; }
 	bool signage_enabled() const { return map_decals && bool(decal_registry); }
 	bool place_sign_node(Block sign, int x, int y, int z, std::int8_t param2,

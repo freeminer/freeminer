@@ -887,6 +887,7 @@ arnis::Args earth_arnis_args()
 	read_bool("garden_detail", arnis.garden_detail);
 	read_bool("measured_trees", arnis.measured_trees);
 	read_bool("measured_heights", arnis.measured_heights);
+	read_bool("measured_roofs", arnis.measured_roofs);
 	{
 		std::optional<std::uint64_t> max_mb;
 		read_optional_u64("lidar_max_mb", max_mb);

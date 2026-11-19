@@ -75,13 +75,17 @@ public:
 			for (int z = 10; z <= 22; ++z)
 				footprints.set(x, z);
 		const auto inset = arnis::building_inset::inset_outline(nodes, cells, footprints);
-		UASSERT(inset.has_value());
-		UASSERT(inset->nodes.size() == 5);
-		UASSERT(inset->nodes[0].x == 11 && inset->nodes[0].z == 11);
-		UASSERT(inset->nodes[1].x == 22 && inset->nodes[1].z == 11);
-		UASSERT(inset->nodes[2].x == 22 && inset->nodes[2].z == 21);
-		UASSERT(inset->nodes[3].x == 11 && inset->nodes[3].z == 21);
-		UASSERT(inset->nodes[4].x == 11 && inset->nodes[4].z == 11);
+		UTEST(inset.has_value(), "shared party wall produced no inset");
+		UTEST(inset->nodes.size() == 5, "expected 5 inset vertices, got %zu",
+				inset->nodes.size());
+		const std::pair<int, int> expected[]{
+				{11, 11}, {22, 11}, {22, 21}, {11, 21}, {11, 11}};
+		for (std::size_t i = 0; i < std::size(expected); ++i)
+			UTEST(inset->nodes[i].x == expected[i].first &&
+							inset->nodes[i].z == expected[i].second,
+					"party wall inset vertex %zu is (%d,%d), expected (%d,%d)", i,
+					inset->nodes[i].x, inset->nodes[i].z, expected[i].first,
+					expected[i].second);
 	}
 };
 
