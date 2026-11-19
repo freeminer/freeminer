@@ -31,6 +31,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include <string>
 
 #include "earth/hgt.h"
+#include "earth/voxelibre_metadata.h"
 #include "fm_earth_projection.h"
 #include "irrlichttypes.h"
 #include "mapgen/mapgen_v7.h"
@@ -153,6 +154,8 @@ public:
 			std::string texture, int map_id, s8 facing, s8 rotation, bool glow);
 	bool queueGeneratedSchemEntity(std::optional<TileOverlayId> tile_id,
 			const v3pos_t &pos, const std::vector<std::uint8_t> &nbt);
+	bool queueVoxeLibreMetadata(
+			std::optional<TileOverlayId> tile_id, VoxeLibreGeneratedMetadata metadata);
 	struct TileWriteKey
 	{
 		pos_t x = 0, y = 0, z = 0;
@@ -194,6 +197,7 @@ public:
 		std::vector<Sign> signs;
 		std::vector<Decal> decals;
 		std::vector<SchemEntity> schematic_entities;
+		std::vector<VoxeLibreGeneratedMetadata> voxelibre_metadata;
 	};
 	std::mutex tile_overlay_mutex;
 	std::mutex tile_overlay_merge_mutex;

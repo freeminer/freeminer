@@ -4,6 +4,8 @@
 #include "arnis-cpp/src/cache_root.h"
 #include "arnis-cpp/src/block_definitions.h"
 #include "arnis-cpp/src/climate.h"
+#include "arnis-cpp/src/survey/mosaic.h"
+#include "arnis-cpp/src/survey/plan.h"
 #include "arnis-cpp/src/elevation/cache.h"
 #include "arnis-cpp/src/elevation/selector.h"
 #include "arnis-cpp/src/overture.h"
@@ -528,6 +530,18 @@ Ground generate_ground_data(const Args &args_, const geographic::LLBBox &bbox,
 	ground.set_climate(frame.climate(bbox));
 
 	const bool earth = is_earth(args.body);
+	std::future<std::optional<survey::SurveyData>> survey_job;
+	if (earth) {
+		if (const auto features = args.lidar_features()) {
+			const auto survey_root =
+					cache_base.empty() ? survey::cache_root() : cache_base / "laser";
+			survey_job = std::async(std::launch::async,
+					[&, features = *features, survey_root, grid_width, grid_height] {
+						return survey::fetch_cached_survey_data(fetch_bbox, grid_width,
+								grid_height, features, args.lidar_max_mb, survey_root);
+					});
+		}
+	}
 	std::future<std::optional<canopy::CanopyData>> canopy_job;
 	if (earth && args.canopy_height) {
 		canopy_job = std::async(std::launch::async, [&, grid_width = grid_width,
@@ -710,6 +724,20 @@ Ground generate_ground_data(const Args &args_, const geographic::LLBBox &bbox,
 						std::move(*canopy_result), final_width, final_height);
 		} catch (const std::exception &e) {
 			std::clog << "Canopy data unavailable: " << e.what() << '\n';
+		}
+	}
+	if (survey_job.valid()) {
+		try {
+			auto survey_result = survey_job.get();
+			if (survey_result && frame.mercator)
+				survey_result->remap_rows_to_mercator(
+						fetch_bbox.max().lat(), fetch_bbox.min().lat());
+			if (survey_result && pad)
+				survey_result->crop(pad, pad, final_width, final_height);
+			if (survey_result)
+				ground.set_survey(std::move(*survey_result));
+		} catch (const std::exception &e) {
+			std::clog << "Cached survey data unavailable: " << e.what() << '\n';
 		}
 	}
 	if (earth)
@@ -981,6 +1009,7 @@ void Ground::set_canopy_data(
 	canopy_data = std::move(data);
 	canopy_world_width = world_width;
 	canopy_world_height = world_height;
+	apply_measured_canopy();
 }
 void Ground::set_canopy_data(
 		const std::vector<std::uint8_t> &grid, std::size_t width, std::size_t height)
@@ -1166,6 +1195,99 @@ std::optional<double> Ground::canopy_fraction(const XZPoint &coord, int spacing)
 	return measured ? std::optional<double>(double(wooded) / double(measured))
 					: std::nullopt;
 }
+
+namespace
+{
+std::pair<std::size_t, std::size_t> survey_index_for(
+		const Ground &ground, const survey::SurveyData &data, const XZPoint &coord)
+{
+	const auto [world_width, world_height] = ground.world_dims();
+	const double xr = std::clamp(
+			double(coord.x) / double(std::max<std::size_t>(1, world_width - 1)), 0.0,
+			1.0);
+	const double zr = std::clamp(
+			double(coord.z) / double(std::max<std::size_t>(1, world_height - 1)), 0.0,
+			1.0);
+	return {std::min<std::size_t>(
+					std::llround(xr * double(data.width - 1)), data.width - 1),
+			std::min<std::size_t>(
+					std::llround(zr * double(data.height - 1)), data.height - 1)};
+}
+} // namespace
+
+void Ground::set_survey(std::optional<survey::SurveyData> data)
+{
+	if (data && data->empty())
+		data.reset();
+	survey_data = std::move(data);
+	apply_measured_canopy();
+}
+
+std::optional<survey::Cell> Ground::survey_cell(const XZPoint &coord) const
+{
+	if (!has_survey())
+		return std::nullopt;
+	return laser_cell(coord);
+}
+
+std::optional<survey::Cell> Ground::laser_cell(const XZPoint &coord) const
+{
+	if (!has_laser())
+		return std::nullopt;
+	const auto [x, z] = survey_index_for(*this, *survey_data, coord);
+	return survey_data->at_any(x, z);
+}
+
+std::optional<std::array<std::uint8_t, 5>> Ground::survey_raw(const XZPoint &coord) const
+{
+	if (!has_laser())
+		return std::nullopt;
+	const auto [x, z] = survey_index_for(*this, *survey_data, coord);
+	return survey_data->raw_at(x, z);
+}
+
+void Ground::rotate_survey(std::vector<std::array<std::uint8_t, 5>> cells,
+		std::size_t width, std::size_t height)
+{
+	if (survey_data)
+		survey_data->regrid(std::move(cells), width, height);
+}
+
+void Ground::apply_measured_canopy()
+{
+	if (!laser_trees_wanted())
+		return;
+	const auto width = survey_data->width;
+	const auto height = survey_data->height;
+	if (canopy_data && (canopy_data->width != width || canopy_data->height != height))
+		return;
+	const auto [world_w, world_h] = world_dims();
+	std::vector<std::uint8_t> grid(width * height, canopy::CANOPY_NODATA);
+	if (canopy_data)
+		for (std::size_t z = 0; z < height; ++z)
+			for (std::size_t x = 0; x < width; ++x)
+				grid[z * width + x] = canopy_data->at(x, z);
+	std::size_t trees = 0;
+	for (std::size_t z = 0; z < height; ++z) {
+		for (std::size_t x = 0; x < width; ++x) {
+			const auto cell = survey_data->at_any(x, z);
+			if (!cell)
+				continue;
+			if (cell->kind == survey::Kind::Tree) {
+				++trees;
+				grid[z * width + x] = static_cast<std::uint8_t>(
+						std::clamp(std::lround(cell->height * 0.85f), 3l, 60l));
+			} else {
+				grid[z * width + x] = 0;
+			}
+		}
+	}
+	canopy_data.emplace(std::move(grid), width, height);
+	canopy_world_width = world_w ? world_w : width;
+	canopy_world_height = world_h ? world_h : height;
+	std::cout << "Measured trees: " << trees << " canopy blocks from the laser scans\n";
+}
+
 double Ground::snow_line_meters(double latitude_degrees)
 {
 	const auto latitude = std::min(90.0, std::abs(latitude_degrees));

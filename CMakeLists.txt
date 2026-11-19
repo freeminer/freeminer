@@ -64,7 +64,7 @@ endif()
 if((WIN32 AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU") OR APPLE)
 	set(DEFAULT_ENABLE_LTO FALSE)
 endif()
-	set(DEFAULT_ENABLE_LTO FALSE)
+	set(DEFAULT_ENABLE_LTO FALSE)	
 set(ENABLE_LTO ${DEFAULT_ENABLE_LTO} CACHE BOOL "Use Link Time Optimization")
 
 set(BUILD_WITH_TRACY FALSE CACHE BOOL
@@ -327,6 +327,10 @@ list(TRANSFORM BUILTIN_SRCS
 # Subdirectories
 # Be sure to add all relevant definitions above this
 add_subdirectory(src)
+
+# fm:
+fm_register_unittests()
+# ===
 
 # Package generation
 

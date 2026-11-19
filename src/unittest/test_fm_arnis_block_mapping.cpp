@@ -2,6 +2,10 @@
 
 #include "mapgen/earth/arnis_block.h"
 #include "mapgen/earth/arnis_world_editor.h"
+#include "mapgen/earth/voxelibre_nodes.h"
+#include "mapgen/earth/voxelibre_metadata_server.h"
+#include "mapgen/earth/voxelibre_placement.h"
+#include "itemdef.h"
 #include "mapgen/earth/arnis-cpp/src/bedrock_block_map.h"
 #include "mapgen/earth/arnis-cpp/src/luanti_block_map.h"
 #include "mapgen/earth/arnis-cpp/src/world_editor/common.h"
@@ -58,6 +62,98 @@ public:
 		TEST(testGenericSnowBlockDiffersFromSnowLayer);
 		TEST(testBedrockHoppersStartUnlocked);
 		TEST(testNestedBlockPropertyValuesSurviveSectionsAndPalettePacking);
+		TEST(testVoxeLibreRegisteredFamilies);
+		TEST(testVoxeLibreChestAndBannerMetadata);
+		TEST(testMinecloniaNodes);
+	}
+
+	void testMinecloniaNodes()
+	{
+		const std::array<std::pair<const char *, const char *>, 11> cases{{
+				{"moss_block", "mcl_lush_caves:moss"},
+				{"moss_carpet", "mcl_lush_caves:moss_carpet"},
+				{"azalea_leaves", "mcl_trees:leaves_azalea"},
+				{"flowering_azalea_leaves", "mcl_trees:leaves_azalea_flowering"},
+				{"big_dripleaf", "mcl_lush_caves:dripleaf_big"},
+				{"big_dripleaf_stem", "mcl_lush_caves:dripleaf_big_stem"},
+				{"small_dripleaf_lower", "mcl_lush_caves:dripleaf_small_stem"},
+				{"small_dripleaf_upper", "mcl_lush_caves:dripleaf_small"},
+				{"chiseled_bookshelf", "mcl_books:chiseled_bookshelf"},
+				{"lightning_rod", "mcl_lightning_rods:rod"},
+				{"end_rod", "mcl_end:end_rod"},
+		}};
+		for (const auto &[palette, node] : cases)
+			UASSERT(std::string(voxelibre_node_name(palette)) == node);
+		using namespace arnis;
+		const auto shelf = voxelibre::node_state(
+				"mcl_books:chiseled_bookshelf", 0, {{"facing", "north"}});
+		UASSERT(shelf && shelf->second == 2);
+		const auto rod =
+				voxelibre::node_state("mcl_lightning_rods:rod", 0, {{"facing", "east"}});
+		UASSERT(rod && rod->second == 12);
+		const auto leaf = voxelibre::node_state(
+				"mcl_lush_caves:dripleaf_big", 0, {{"facing", "west"}});
+		UASSERT(leaf && leaf->second == 3);
+		std::unique_ptr<IWritableItemDefManager> idef(createItemDefManager());
+		VoxeLibreGeneratedMetadata record;
+		record.kind = VoxeLibreGeneratedMetadata::Kind::Bookshelf;
+		NodeMetadata meta(idef.get());
+		voxelibre_metadata::initialize(meta, idef.get(), record);
+		UASSERT(meta.getInventory()->getList("main"));
+		UASSERT(meta.getInventory()->getList("main")->getSize() == 6);
+	}
+
+	void testVoxeLibreChestAndBannerMetadata()
+	{
+		std::unique_ptr<IWritableItemDefManager> idef(createItemDefManager());
+		VoxeLibreGeneratedMetadata record;
+		NodeMetadata chest(idef.get());
+		voxelibre_metadata::initialize(chest, idef.get(), record);
+		UASSERT(chest.getInventory()->getList("main"));
+		UASSERT(chest.getInventory()->getList("main")->getSize() == 27);
+		UASSERT(chest.getInventory()->getList("input")->getSize() == 1);
+		record.kind = VoxeLibreGeneratedMetadata::Kind::Banner;
+		record.color = "light_gray";
+		record.rotation = 12;
+		record.patterns = {{"red", "minecraft:triangle_top"},
+				{"green", "minecraft:straight_cross"}, {"black", "unknown"}};
+		NodeMetadata banner(idef.get());
+		voxelibre_metadata::initialize(banner, idef.get(), record);
+		const auto *list = banner.getInventory()->getList("banner");
+		UASSERT(list && list->getSize() == 1);
+		const auto &item = list->getItem(0);
+		UASSERT(item.name == "mcl_banners:banner_item_silver" && item.count == 1);
+		UASSERT(item.metadata.getString("layers") ==
+				"return {{pattern=\"triangle_top\",color=\"unicolor_red\"},"
+				"{pattern=\"straight_cross\",color=\"unicolor_dark_green\"},}");
+		UASSERT(banner.getString("rotation_level") == "12");
+		UASSERT(std::string(voxelibre_node_name("chest")) == "mcl_chests:chest");
+		UASSERT(std::string(voxelibre_node_name("red_wall_banner")) ==
+				"mcl_banners:hanging_banner");
+	}
+
+	void testVoxeLibreRegisteredFamilies()
+	{
+		const std::array<std::pair<const char *, const char *>, 13> cases{{
+				{"cherry_log", "mcl_cherry_blossom:cherrytree"},
+				{"cherry_leaves", "mcl_cherry_blossom:cherryleaves"},
+				{"cherry_planks", "mcl_cherry_blossom:cherrywood"},
+				{"cherry_stairs", "mcl_stairs:stair_cherrywood"},
+				{"cherry_slab", "mcl_stairs:slab_cherrywood"},
+				{"bamboo_slab", "mcl_stairs:slab_bamboo_plank"},
+				{"iron_ore", "mcl_core:stone_with_iron"},
+				{"deepslate_diamond_ore", "mcl_deepslate:deepslate_with_diamond"},
+				{"carrots", "mcl_farming:carrot"},
+				{"redstone_torch", "mesecons_torch:mesecon_torch_on"},
+				{"light_gray_wool", "mcl_wool:silver"},
+				{"smoker", "mcl_smoker:smoker"},
+				{"water_cauldron", "mcl_cauldrons:cauldron_3"},
+		}};
+		for (const auto &[palette, expected] : cases) {
+			const auto *actual = voxelibre_node_name(palette);
+			UASSERT(actual && std::string(actual) == expected);
+		}
+		UASSERT(voxelibre_node_name("nonexistent_palette_block") == nullptr);
 	}
 
 	void testNewRustBlocksHaveLuantiMappings()

@@ -6,6 +6,7 @@
 #include "mapgen/earth/arnis-cpp/src/water_detail.h"
 #include "mapgen/earth/arnis-cpp/src/water_steps.h"
 #include "mapgen/earth/arnis_world_editor.h"
+#include "mapgen/earth/voxelibre_placement.h"
 
 #include <cstdint>
 #include <limits>
@@ -52,6 +53,76 @@ public:
 		TEST(testCarveDepthEstimateCapsLargeWaterBodies);
 		TEST(testBoreCrossingsReserveConfiguredCarveDepth);
 		TEST(testScaledWaterCrossingParsesLayerLikeRust);
+		TEST(testVoxeLibreRootedSeagrass);
+		TEST(testVoxeLibreRootedOceanAndStates);
+	}
+
+	void testVoxeLibreRootedOceanAndStates()
+	{
+		using namespace arnis;
+		WorldEditor editor;
+		editor.enable_standalone_storage();
+		voxelibre::RootedOcean nodes;
+		nodes.enabled = nodes.kelp_enabled = true;
+		nodes.water = Block{371};
+		nodes.substrates[0] = Block{372};
+		nodes.kelp[0] = Block{373};
+		editor.set_block_absolute(nodes.substrates[0], 0, 0, 0);
+		for (int y = 1; y <= 3; ++y)
+			editor.set_block_absolute(nodes.water, 0, y, 0);
+		voxelibre::place_kelp(editor, nodes, 0, 0, 0, 3);
+		UASSERT(editor.get_block_absolute(0, 0, 0)->id() == 373);
+		UASSERT(editor.get_block_absolute(0, 0, 0)->getParam2() == 48);
+		UASSERT(editor.get_block_absolute(0, 3, 0)->id() == 371);
+		editor.set_block_absolute(Block{374}, 1, 0, 0);
+		editor.set_block_absolute(nodes.water, 1, 1, 0);
+		UASSERT(voxelibre::place_rooted(editor, Block{375}, 4, nodes.water, 1, 0, 0));
+		UASSERT(editor.get_block_absolute(1, 0, 0)->getParam2() == 4);
+		UASSERT(editor.get_block_absolute(1, 1, 0)->id() == 371);
+		auto slab = voxelibre::node_state("mcl_stairs:slab_wood", 0, {{"type", "top"}});
+		UASSERT(slab && slab->first == "mcl_stairs:slab_wood_top");
+		auto door = voxelibre::node_state("mcl_doors:birch_door_b_1", 0,
+				{{"half", "upper"}, {"hinge", "right"}, {"facing", "east"},
+						{"open", "true"}});
+		UASSERT(door && door->first == "mcl_doors:birch_door_t_4" && door->second == 0);
+		auto trap = voxelibre::node_state("mcl_doors:birch_trapdoor", 0,
+				{{"half", "top"}, {"facing", "south"}, {"open", "true"}});
+		UASSERT(trap && trap->first == "mcl_doors:birch_trapdoor_open" &&
+				trap->second == 22);
+		auto bed = voxelibre::node_state(
+				"mcl_beds:bed_white_bottom", 0, {{"part", "head"}, {"facing", "west"}});
+		UASSERT(bed && bed->first == "mcl_beds:bed_white_top" && bed->second == 3);
+		auto banner = voxelibre::node_state(
+				"mcl_banners:hanging_banner", 0, {{"facing", "north"}});
+		UASSERT(banner && banner->second == 5);
+	}
+
+	void testVoxeLibreRootedSeagrass()
+	{
+		using namespace arnis;
+		voxelibre::RootedSeagrass nodes;
+		nodes.enabled = true;
+		nodes.water = Block{321};
+		WorldEditor editor;
+		editor.enable_standalone_storage();
+		for (int i = 0; i < 4; ++i) {
+			nodes.substrates[i] = Block{static_cast<content_t>(330 + i)};
+			nodes.plants[i] = Block{static_cast<content_t>(340 + i)};
+			editor.set_block_absolute(nodes.substrates[i], i, 0, 0);
+			editor.set_block_absolute(nodes.water, i, 1, 0);
+			voxelibre::place_seagrass(editor, nodes, i, 0, 0);
+			const auto bed = editor.get_block_absolute(i, 0, 0);
+			const auto water = editor.get_block_absolute(i, 1, 0);
+			UASSERT(bed && bed->id() == nodes.plants[i].id() && bed->getParam2() == 3);
+			UASSERT(water && water->id() == nodes.water.id());
+		}
+		editor.set_block_absolute(nodes.substrates[0], 5, 0, 0);
+		voxelibre::place_seagrass(editor, nodes, 5, 0, 0);
+		UASSERT(editor.get_block_absolute(5, 0, 0)->id() == nodes.substrates[0].id());
+		editor.set_block_absolute(Block{350}, 6, 0, 0);
+		editor.set_block_absolute(nodes.water, 6, 1, 0);
+		voxelibre::place_seagrass(editor, nodes, 6, 0, 0);
+		UASSERT(editor.get_block_absolute(6, 0, 0)->id() == 350);
 	}
 
 	void testScaledWaterCrossingParsesLayerLikeRust()

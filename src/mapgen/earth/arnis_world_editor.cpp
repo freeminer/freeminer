@@ -1,4 +1,5 @@
 #include "arnis_world_editor.h"
+#include "voxelibre_placement.h"
 #include "map.h"
 #include "emerge.h"
 #include "mapgen/mapgen_earth.h"
@@ -276,6 +277,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.walk_probe = walk_probe;
 	worker.sealed_surface = sealed_surface;
 	worker.carriageway = carriageway;
+	worker.kerb_strips = kerb_strips;
 	worker.clear_corridors = clear_corridors;
 	worker.station_tree_clearance = station_tree_clearance;
 	worker.station_track_beds = station_track_beds;
@@ -1082,6 +1084,18 @@ bool WorldEditor::try_set_block_absolute(const Block &block, int x, int y, int z
 
 	if (!active_tile_overlay || !mg->writeTileOverlay(*active_tile_overlay, pos, block))
 		mg->vm->setNode(pos, block);
+	if (owns(x, z) && ((voxelibre::chest_id != CONTENT_IGNORE &&
+							   block.id() == voxelibre::chest_id) ||
+							  (voxelibre::bookshelf_id != CONTENT_IGNORE &&
+									  block.id() == voxelibre::bookshelf_id))) {
+		VoxeLibreGeneratedMetadata metadata;
+		metadata.pos = pos;
+		metadata.expected = block.id();
+		metadata.kind = block.id() == voxelibre::bookshelf_id
+								? VoxeLibreGeneratedMetadata::Kind::Bookshelf
+								: VoxeLibreGeneratedMetadata::Kind::Chest;
+		mg->queueVoxeLibreMetadata(active_tile_overlay, std::move(metadata));
+	}
 	written_cells.insert(key);
 	full_top_state_cells.erase(key);
 	block_properties_by_cell.erase(key);
@@ -1112,7 +1126,20 @@ bool WorldEditor::try_set_block_with_properties_absolute(const BlockWithProperti
 		const std::optional<std::vector<Block>> &variants,
 		const std::optional<std::vector<Block>> &replacements)
 {
-	if (!try_set_block_absolute(bwp.block, x, y, z, variants, replacements))
+	Block actual = bwp.block;
+	if (mg && mg->m_emerge && mg->m_emerge->ndef && !bwp.property_values().empty()) {
+		const auto *ndef = mg->m_emerge->ndef;
+		const auto &name = ndef->get(actual.id()).name;
+		if (const auto state = voxelibre::node_state(
+					name, actual.getParam2(), bwp.property_values())) {
+			const auto id = ndef->getId(state->first);
+			if (id != CONTENT_IGNORE && id != CONTENT_UNKNOWN && id != CONTENT_AIR) {
+				actual.setContent(id);
+				actual.setParam2(state->second);
+			}
+		}
+	}
+	if (!try_set_block_absolute(actual, x, y, z, variants, replacements))
 		return false;
 	const auto key =
 			std::tuple{static_cast<int>(x), static_cast<int>(y), static_cast<int>(z)};
@@ -1964,6 +1991,24 @@ void WorldEditor::place_wall_banner(const Block &block, int x, int y, int z,
 				banner, x, y, z, std::nullopt, std::nullopt) ||
 			!owns(x, z))
 		return;
+	if (mg && voxelibre::banner_id != CONTENT_IGNORE &&
+			block.id() == voxelibre::banner_id) {
+		const auto actual = get_block_absolute(x, y, z);
+		if (actual && actual->id() == voxelibre::banner_id) {
+			VoxeLibreGeneratedMetadata metadata;
+			metadata.pos = {
+					static_cast<pos_t>(x), static_cast<pos_t>(y), static_cast<pos_t>(z)};
+			metadata.expected = actual->id();
+			metadata.kind = VoxeLibreGeneratedMetadata::Kind::Banner;
+			metadata.color = base_color;
+			metadata.rotation = actual->getParam2() == 2   ? 12
+								: actual->getParam2() == 3 ? 4
+								: actual->getParam2() == 5 ? 8
+														   : 0;
+			metadata.patterns = patterns;
+			mg->queueVoxeLibreMetadata(active_tile_overlay, std::move(metadata));
+		}
+	}
 	if (banner_sink) {
 		banner_sink(x, y, z, facing, base_color, patterns);
 		return;
