@@ -1610,7 +1610,15 @@ PlayerSAO *Server::StageTwoClientInit(session_t peer_id)
 
 	/* Add object to environment */
 	PlayerSAO *playersao = sao.get();
+	const auto addret =
 	m_env->addActiveObject(std::move(sao));
+	// fm: Handle failed player object registration.
+	if (!addret) {
+		m_env->removePlayer(player);
+		DenyAccess(peer_id, SERVER_ACCESSDENIED_SERVER_FAIL);
+		return nullptr;
+	}
+	// ===
 
 	if (playersao->isNewPlayer())
 		m_script->on_newplayer(playersao);
