@@ -84,6 +84,7 @@ $0 -mg_name=earth -mg_earth='{"scale":{"z":10000, "y":100, "x":10000}}' bot
 $0 -mg_name=earth -mg_earth='{"center":{"z":27.9878279,"y":0,"x":86.923833}}' -static_spawnpoint='(130,8842,56)' bot  # Everest
 $0 -mg_name=earth -mg_earth='{"center":{"z":22.28422,"x":114.15996,"y":0} }' bot  # HongKong
 $0 -mg_name=earth -static_spawnpoint='(12709494,35,2484615)' bot  # HongKong
+$0 -mg_name=earth -mg_earth='{"center":{"z":22.28422,"x":114.15996,"y":0} }' -static_spawnpoint='(0,50,0)' -noclip=1 -free_move=1 -continuous_forward=1 --gameid=VoxeLibre bot --autoexit=600
 
 $0 ---cmake_minetest=1 ---build_name=_minetest ----headless ----headless_optimize --address=cool.server.org --port=30001 ---clients_num=25 clients
 
