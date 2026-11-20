@@ -110,11 +110,12 @@ size_t multi_http_to_file_cdn(const std::string &dir, const std::string &name,
 		std::vector<std::string> links, const std::string &path)
 {
 	links.insert(links.begin(),
-#if defined(__EMSCRIPTEN__)
-			"/"
-#else
+// Should work directly with emscripten_fetch
+// #if defined(__EMSCRIPTEN__)
+// 			"/"
+// #else
 			"https://cdn.freeminer.org/"
-#endif
+// #endif
 					+ dir + "/" + name);
 	return multi_http_to_file(name, links, path);
 }

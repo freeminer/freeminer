@@ -30,6 +30,8 @@
 namespace arnis
 {
 
+class CoordinateBitmap;
+
 namespace overture
 {
 struct OvertureData;
@@ -200,6 +202,7 @@ struct Ground
 	{
 		return has_laser() && survey_data->features.heights;
 	}
+	bool laser_roofs_wanted() const { return has_laser() && survey_data->features.roofs; }
 	bool laser_trees_wanted() const { return has_laser() && survey_data->features.trees; }
 	void set_survey(std::optional<survey::SurveyData> data);
 	std::optional<survey::Cell> survey_cell(const XZPoint &coord) const;
@@ -247,10 +250,14 @@ struct Ground
 	void set_elevation_enabled(bool enabled) { elevation_enabled = enabled; }
 	void clear_elevation_data();
 	void set_world_dims(std::size_t world_width, std::size_t world_height);
-	void apply_osm_water_override(
-			const std::vector<ProcessedElement> &elements, const XZBBox &bbox);
+	void apply_osm_water_override(const std::vector<ProcessedElement> &elements,
+			const XZBBox &bbox, double scale = 1.0,
+			std::optional<int> channel_width_cap = std::nullopt,
+			const CoordinateBitmap *roads_at_grade = nullptr);
 	void apply_osm_land_override(const std::vector<ProcessedElement> &elements,
-			const XZBBox &bbox, double scale);
+			const XZBBox &bbox, double scale,
+			std::optional<int> channel_width_cap = std::nullopt,
+			const CoordinateBitmap *roads_at_grade = nullptr);
 	void finish_land_cover(GenerationMode mode);
 	void mark_beaches();
 	void apply_bridge_land_cover_repair(const std::vector<ProcessedElement> &elements,
