@@ -69,15 +69,19 @@ public:
 
 	void testStreamLineHasShallowBanks()
 	{
-		const auto stream =
-				way(1, {{100, 20}, {100, 180}}, tags({{"waterway", "stream"}}));
-		const auto field = build({ProcessedElement(stream)}, Ground::new_flat(0));
-		const std::vector<std::optional<int>> expected{
-				std::nullopt, 0, 1, 1, 1, 0, std::nullopt};
-		std::vector<std::optional<int>> actual;
-		for (int x = 97; x <= 103; ++x)
-			actual.push_back(field.depth_override(x, 100));
-		UASSERT(actual == expected);
+		const auto check = [&](tags_t stream_tags,
+								   const std::vector<std::optional<int>> &expected) {
+			const auto stream = way(1, {{100, 20}, {100, 180}}, std::move(stream_tags));
+			const auto field = build({ProcessedElement(stream)}, Ground::new_flat(0));
+			std::vector<std::optional<int>> actual;
+			for (int x = 97; x <= 103; ++x)
+				actual.push_back(field.depth_override(x, 100));
+			UASSERT(actual == expected);
+		};
+		check(tags({{"waterway", "stream"}}),
+				{std::nullopt, std::nullopt, 0, 1, 0, std::nullopt, std::nullopt});
+		check(tags({{"waterway", "stream"}, {"width", "5"}}),
+				{std::nullopt, 0, 1, 1, 1, 0, std::nullopt});
 	}
 
 	void testRiverFieldCrossesSparseTileBoundaries()
