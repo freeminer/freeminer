@@ -887,6 +887,7 @@ arnis::Args earth_arnis_args()
 	read_bool("garden_detail", arnis.garden_detail);
 	read_bool("measured_trees", arnis.measured_trees);
 	read_bool("measured_heights", arnis.measured_heights);
+	read_bool("measured_roofs", arnis.measured_roofs);
 	{
 		std::optional<std::uint64_t> max_mb;
 		read_optional_u64("lidar_max_mb", max_mb);
@@ -1393,6 +1394,7 @@ struct CachedArnisExtract
 			EarthHorizontalKeyHash>
 			chunks;
 	std::vector<arnis::ProcessedElement> elements;
+	arnis::overture::OvertureHints overture_hints;
 	std::vector<EarthElementBounds> element_bounds;
 	std::unique_ptr<arnis::PreparedBuildingData> prepared_buildings;
 	std::shared_ptr<arnis::mapillary::FacadeJob> facade_job;
@@ -1541,7 +1543,8 @@ void generate_cached_arnis(
 	// fm: Consume the shared profiles by unmodified OSM way ID.
 	if (!arnis::generate_world(editor, chunk.elements, args, *chunk.flood_fill_cache,
 				*chunk.building_footprints, true, tile.prepared_buildings.get(),
-				tile.facade_job.get(), std::nullopt, tile.shared_bridges.get()))
+				tile.facade_job.get(), std::nullopt, tile.shared_bridges.get(),
+				&tile.overture_hints))
 		// ===
 		errorstream << "Earth: Arnis world generation failed; check generation options "
 					   "and provider configuration\n";
@@ -1727,11 +1730,15 @@ public:
 									node.z = position.Y;
 								}
 							}
-							const auto [enriched, added] =
-									overture.merge_into(cached.elements);
-							if (enriched || added)
-								actionstream << "Earth: Overture enriched " << enriched
-											 << " OSM building(s), added " << added
+							cached.overture_hints = std::move(overture.hints);
+							auto unique = arnis::overture::deduplicate_against_osm(
+									std::move(overture.elements), cached.elements);
+							const auto added = unique.size();
+							cached.elements.insert(cached.elements.end(),
+									std::make_move_iterator(unique.begin()),
+									std::make_move_iterator(unique.end()));
+							if (added)
+								actionstream << "Earth: Overture added " << added
 											 << " footprint(s)\n";
 						} catch (const std::exception &e) {
 							errorstream

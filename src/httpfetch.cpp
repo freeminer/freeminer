@@ -4,6 +4,7 @@
 
 #if defined(__EMSCRIPTEN__)
 #include <emscripten/fetch.h>
+#include <emscripten/emscripten.h>
 #endif
 
 #include "httpfetch.h"
@@ -175,7 +176,255 @@ bool httpfetch_async_get(u64 caller, HTTPFetchResult &fetch_result)
 	return true;
 }
 
-#if USE_CURL
+#if defined(__EMSCRIPTEN__)
+
+/*
+	Emscripten / WebAssembly HTTP backend using emscripten_fetch
+*/
+
+#include <emscripten/fetch.h>
+#include <atomic>
+#include <mutex>
+#include <unordered_set>
+#include <vector>
+#include <string>
+#include <cstring>
+
+namespace {
+
+struct EmscriptenFetchContext {
+	HTTPFetchRequest request;
+	std::string request_body;
+	std::vector<std::string> header_strings;
+	std::vector<const char*> header_ptrs;
+	std::atomic<bool> cancelled{false};
+};
+
+std::mutex g_em_fetch_mutex;
+std::unordered_map<u64, std::unordered_set<EmscriptenFetchContext*>> g_active_fetches_by_caller;
+
+void on_em_fetch_success(emscripten_fetch_t *fetch)
+{
+	auto *ctx = static_cast<EmscriptenFetchContext*>(fetch->userData);
+	if (!ctx) {
+		emscripten_fetch_close(fetch);
+		return;
+	}
+
+	bool was_cancelled = ctx->cancelled.load();
+	if (!was_cancelled) {
+		HTTPFetchResult result(ctx->request);
+		result.succeeded = (fetch->status >= 200 && fetch->status < 300);
+		result.response_code = fetch->status;
+		result.timeout = false;
+		if (fetch->data && fetch->numBytes > 0) {
+			result.data.assign(fetch->data, fetch->numBytes);
+		}
+		httpfetch_deliver_result(result);
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(g_em_fetch_mutex);
+		auto it = g_active_fetches_by_caller.find(ctx->request.caller);
+		if (it != g_active_fetches_by_caller.end()) {
+			it->second.erase(ctx);
+			if (it->second.empty())
+				g_active_fetches_by_caller.erase(it);
+		}
+	}
+
+	delete ctx;
+	emscripten_fetch_close(fetch);
+}
+
+void on_em_fetch_error(emscripten_fetch_t *fetch)
+{
+	auto *ctx = static_cast<EmscriptenFetchContext*>(fetch->userData);
+	if (!ctx) {
+		emscripten_fetch_close(fetch);
+		return;
+	}
+
+	bool was_cancelled = ctx->cancelled.load();
+	if (!was_cancelled) {
+		if (!ctx->request.quiet) {
+			warningstream << "httpfetch: failed to fetch " << ctx->request.url
+				<< " (HTTP status " << fetch->status << ", "
+				<< (fetch->statusText[0] ? fetch->statusText : "network/CORS/timeout error")
+				<< ")" << std::endl;
+		}
+		HTTPFetchResult result(ctx->request);
+		result.succeeded = false;
+		result.response_code = fetch->status;
+		result.timeout = (fetch->status == 0);
+		if (fetch->data && fetch->numBytes > 0) {
+			result.data.assign(fetch->data, fetch->numBytes);
+		}
+		httpfetch_deliver_result(result);
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(g_em_fetch_mutex);
+		auto it = g_active_fetches_by_caller.find(ctx->request.caller);
+		if (it != g_active_fetches_by_caller.end()) {
+			it->second.erase(ctx);
+			if (it->second.empty())
+				g_active_fetches_by_caller.erase(it);
+		}
+	}
+
+	delete ctx;
+	emscripten_fetch_close(fetch);
+}
+
+} // namespace
+
+void httpfetch_init(int parallel_limit)
+{
+}
+
+void httpfetch_cleanup()
+{
+	std::lock_guard<std::mutex> lock(g_em_fetch_mutex);
+	for (auto &pair : g_active_fetches_by_caller) {
+		for (auto *ctx : pair.second) {
+			ctx->cancelled.store(true);
+		}
+	}
+	g_active_fetches_by_caller.clear();
+}
+
+void httpfetch_async(const HTTPFetchRequest &fetch_request)
+{
+	auto *ctx = new EmscriptenFetchContext();
+	ctx->request = fetch_request;
+
+	const bool has_request_body = (fetch_request.method != HTTP_GET && fetch_request.method != HTTP_HEAD);
+	if (has_request_body) {
+		if (!fetch_request.raw_data.empty()) {
+			ctx->request_body = fetch_request.raw_data;
+		} else if (!fetch_request.fields.empty()) {
+			for (const auto &field : fetch_request.fields) {
+				if (!ctx->request_body.empty())
+					ctx->request_body += "&";
+				ctx->request_body += urlencode(field.first);
+				ctx->request_body += "=";
+				ctx->request_body += urlencode(field.second);
+			}
+		}
+	}
+
+	if (!fetch_request.useragent.empty()) {
+		ctx->header_strings.push_back("User-Agent");
+		ctx->header_strings.push_back(fetch_request.useragent);
+	}
+	if (has_request_body && !fetch_request.fields.empty() && !fetch_request.multipart) {
+		ctx->header_strings.push_back("Content-Type");
+		ctx->header_strings.push_back("application/x-www-form-urlencoded");
+	}
+	for (const auto &s : fetch_request.extra_headers) {
+		auto colon = s.find(':');
+		if (colon != std::string::npos) {
+			std::string key = trim(s.substr(0, colon));
+			std::string val = trim(s.substr(colon + 1));
+			if (!key.empty() && !val.empty()) {
+				ctx->header_strings.push_back(key);
+				ctx->header_strings.push_back(val);
+			}
+		}
+	}
+
+	for (const auto &str : ctx->header_strings) {
+		ctx->header_ptrs.push_back(str.c_str());
+	}
+	ctx->header_ptrs.push_back(nullptr);
+
+	emscripten_fetch_attr_t attr;
+	emscripten_fetch_attr_init(&attr);
+
+	switch (fetch_request.method) {
+	case HTTP_GET: strcpy(attr.requestMethod, "GET"); break;
+	case HTTP_HEAD: strcpy(attr.requestMethod, "HEAD"); break;
+	case HTTP_POST: strcpy(attr.requestMethod, "POST"); break;
+	case HTTP_PUT: strcpy(attr.requestMethod, "PUT"); break;
+	case HTTP_PATCH: strcpy(attr.requestMethod, "PATCH"); break;
+	case HTTP_DELETE: strcpy(attr.requestMethod, "DELETE"); break;
+	default: strcpy(attr.requestMethod, "GET"); break;
+	}
+
+	// Use the network directly instead of consulting Emscripten's IndexedDB cache.
+	attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY | EMSCRIPTEN_FETCH_REPLACE;
+	attr.timeoutMSecs = fetch_request.timeout > 0 ? fetch_request.timeout : 30000;
+	attr.userData = ctx;
+	attr.onsuccess = on_em_fetch_success;
+	attr.onerror = on_em_fetch_error;
+
+	if (ctx->header_ptrs.size() > 1)
+		attr.requestHeaders = ctx->header_ptrs.data();
+
+	if (!ctx->request_body.empty()) {
+		attr.requestData = ctx->request_body.data();
+		attr.requestDataSize = ctx->request_body.size();
+	}
+
+	{
+		std::lock_guard<std::mutex> lock(g_em_fetch_mutex);
+		g_active_fetches_by_caller[fetch_request.caller].insert(ctx);
+	}
+
+	if (!emscripten_fetch(&attr, fetch_request.url.c_str())) {
+		{
+			std::lock_guard<std::mutex> lock(g_em_fetch_mutex);
+			auto it = g_active_fetches_by_caller.find(fetch_request.caller);
+			if (it != g_active_fetches_by_caller.end()) {
+				it->second.erase(ctx);
+				if (it->second.empty())
+					g_active_fetches_by_caller.erase(it);
+			}
+		}
+		if (!ctx->cancelled.load()) {
+			warningstream << "httpfetch: unable to start fetch " << fetch_request.url << std::endl;
+			httpfetch_deliver_result(HTTPFetchResult(fetch_request));
+		}
+		delete ctx;
+	}
+}
+
+static void httpfetch_request_clear(u64 caller)
+{
+	std::lock_guard<std::mutex> lock(g_em_fetch_mutex);
+	auto it = g_active_fetches_by_caller.find(caller);
+	if (it != g_active_fetches_by_caller.end()) {
+		for (auto *ctx : it->second) {
+			ctx->cancelled.store(true);
+		}
+		g_active_fetches_by_caller.erase(it);
+	}
+}
+
+bool httpfetch_sync_interruptible(const HTTPFetchRequest &fetch_request,
+		HTTPFetchResult &fetch_result, long interval)
+{
+	HTTPFetchRequest req = fetch_request;
+	req.caller = httpfetch_caller_alloc_secure();
+	httpfetch_async(req);
+	const Thread *thread = Thread::getCurrentThread();
+	do {
+		if (thread && thread->stopRequested()) {
+			httpfetch_caller_free(req.caller);
+			fetch_result = HTTPFetchResult(fetch_request);
+			return false;
+		}
+		// Fetch callbacks run on this worker's event loop. A blocking sleep
+		// prevents them from delivering the result we are waiting for.
+		emscripten_sleep(interval > 0 ? interval : 1);
+	} while (!httpfetch_async_get(req.caller, fetch_result));
+	httpfetch_caller_free(req.caller);
+	return true;
+}
+
+
+#elif USE_CURL
 #include <curl/curl.h>
 #ifndef _WIN32
 #include <sys/utsname.h>

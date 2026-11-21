@@ -1401,28 +1401,31 @@ void Ground::set_world_dims(std::size_t world_width, std::size_t world_height)
 	this->world_width = world_width;
 	this->world_height = world_height;
 }
-void Ground::apply_osm_water_override(
-		const std::vector<ProcessedElement> &elements, const XZBBox &bbox)
+void Ground::apply_osm_water_override(const std::vector<ProcessedElement> &elements,
+		const XZBBox &bbox, double scale, std::optional<int> channel_width_cap,
+		const CoordinateBitmap *roads_at_grade)
 {
 	if (!land_cover)
 		return;
 	if (elevation_grid.empty()) {
 		const auto [world_width, world_height] = world_dims();
-		land_cover::mark_inland_water(
-				*land_cover, world_width, world_height, elements, bbox);
+		land_cover::mark_inland_water(*land_cover, world_width, world_height, elements,
+				bbox, scale, channel_width_cap, roads_at_grade);
 		return;
 	}
 	land_cover::apply_osm_water_override(*land_cover, elevation_grid,
-			elevation_world_width, elevation_world_height, elements, bbox);
+			elevation_world_width, elevation_world_height, elements, bbox, scale,
+			channel_width_cap, roads_at_grade);
 }
-void Ground::apply_osm_land_override(
-		const std::vector<ProcessedElement> &elements, const XZBBox &bbox, double scale)
+void Ground::apply_osm_land_override(const std::vector<ProcessedElement> &elements,
+		const XZBBox &bbox, double scale, std::optional<int> channel_width_cap,
+		const CoordinateBitmap *roads_at_grade)
 {
 	if (!land_cover)
 		return;
 	const auto [world_width, world_height] = world_dims();
-	land_cover::apply_osm_land_override(
-			*land_cover, world_width, world_height, elements, bbox, scale);
+	land_cover::apply_osm_land_override(*land_cover, world_width, world_height, elements,
+			bbox, scale, channel_width_cap, roads_at_grade);
 }
 void Ground::mark_beaches()
 {

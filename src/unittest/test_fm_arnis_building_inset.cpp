@@ -66,16 +66,26 @@ public:
 		const auto cells = fill(nodes);
 		XZBBox bounds(0, 0, 50, 40);
 		arnis::CoordinateBitmap footprints(bounds);
-		for (const auto &[x, z] : cells)
-			footprints.set(x, z);
+		// Match Rust's bitmap_with_rect fixtures: footprints include outline
+		// cells as well as the flood-filled interior.
+		for (int x = 10; x <= 22; ++x)
+			for (int z = 10; z <= 22; ++z)
+				footprints.set(x, z);
 		for (int x = 22; x <= 32; ++x)
-			for (int z = 11; z < 22; ++z)
+			for (int z = 10; z <= 22; ++z)
 				footprints.set(x, z);
 		const auto inset = arnis::building_inset::inset_outline(nodes, cells, footprints);
-		UASSERT(inset.has_value());
-		UASSERT(inset->nodes.front().x == 11 && inset->nodes.front().z == 11);
-		UASSERT(inset->nodes[1].x == 22 && inset->nodes[1].z == 11);
-		UASSERT(inset->nodes[2].x == 22 && inset->nodes[2].z == 21);
+		UTEST(inset.has_value(), "shared party wall produced no inset");
+		UTEST(inset->nodes.size() == 5, "expected 5 inset vertices, got %zu",
+				inset->nodes.size());
+		const std::pair<int, int> expected[]{
+				{11, 11}, {22, 11}, {22, 21}, {11, 21}, {11, 11}};
+		for (std::size_t i = 0; i < std::size(expected); ++i)
+			UTEST(inset->nodes[i].x == expected[i].first &&
+							inset->nodes[i].z == expected[i].second,
+					"party wall inset vertex %zu is (%d,%d), expected (%d,%d)", i,
+					inset->nodes[i].x, inset->nodes[i].z, expected[i].first,
+					expected[i].second);
 	}
 };
 

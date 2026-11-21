@@ -40,6 +40,17 @@ bool WorldEditor::in_clear_corridor(int x, int z) const
 		   (station_tree_clearance && station_tree_clearance->contains(x, z));
 }
 
+void WorldEditor::set_tree_keep_clear(std::shared_ptr<const CoordinateBitmap> mask)
+{
+	tree_keep_clear = std::move(mask);
+}
+
+bool WorldEditor::tree_keep_clear_any(int x, int z, int radius) const
+{
+	return tree_keep_clear &&
+		   tree_keep_clear->any_in(x - radius, z - radius, x + radius, z + radius);
+}
+
 std::optional<int> WorldEditor::station_track_bed(std::uint64_t way, int x, int z) const
 {
 	return station_track_beds ? station_track_beds->get(way, x, z) : std::nullopt;
@@ -279,6 +290,7 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.carriageway = carriageway;
 	worker.kerb_strips = kerb_strips;
 	worker.clear_corridors = clear_corridors;
+	worker.tree_keep_clear = tree_keep_clear;
 	worker.station_tree_clearance = station_tree_clearance;
 	worker.station_track_beds = station_track_beds;
 	worker.station_surface_levels = station_surface_levels;
@@ -405,6 +417,13 @@ bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, 
 			lamp_columns.push_back(cell);
 	}
 	worker.lamp_columns.clear();
+	for (const auto &cell : worker.barrier_columns) {
+		const auto &[x, z] = cell;
+		const bool owned = x >= min_x && x <= max_x && z >= min_z && z <= max_z;
+		if (owned)
+			barrier_columns.insert(cell);
+	}
+	worker.barrier_columns.clear();
 	for (auto &[cell, block] : worker.support_columns)
 		support_columns.insert_or_assign(cell, std::move(block));
 	frame_cells.insert(worker.frame_cells.begin(), worker.frame_cells.end());
