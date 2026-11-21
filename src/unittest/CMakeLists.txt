@@ -59,6 +59,7 @@ if(USE_OSMIUM)
 endif()
 
 list(APPEND unittest_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_mod_dependencies.cpp
 	# ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_gravity.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_weather.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_indev.cpp
