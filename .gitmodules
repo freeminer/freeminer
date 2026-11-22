@@ -43,3 +43,6 @@
 [submodule "src/external/usrsctp"]
 	path = src/external/usrsctp
 	url = https://github.com/freeminer/usrsctp.git
+[submodule "mods/freeminer"]
+	path = mods/freeminer
+	url = https://github.com/freeminer/mod-freeminer.git

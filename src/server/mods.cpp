@@ -7,6 +7,9 @@
 #include "log.h"
 #include "scripting_server.h"
 #include "content/subgames.h"
+// fm: automatically load installed dependencies
+#include "content/fm_mod_dependencies.h"
+// ===
 #include "porting.h"
 
 /**
@@ -24,6 +27,10 @@ ServerModManager::ServerModManager(const std::string &worldpath, SubgameSpec gam
 	// Load normal mods
 	std::string worldmt = worldpath + DIR_DELIM + "world.mt";
 	configuration.addModsFromConfig(worldmt, gamespec.addon_mods_paths);
+	// fm: include installed dependencies before sorting
+	configuration.addMods(fm_select_dependency_mods(configuration.getUnsatisfiedMods(),
+			gamespec.addon_mods_paths, worldmt));
+	// ===
 	configuration.checkConflictsAndDeps();
 }
 
