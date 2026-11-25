@@ -1,0 +1,34 @@
+#pragma once
+
+// The CPU algebra source uses QString only to format diagnostic vectors.
+#include <sstream>
+class MBQString
+{
+public:
+	MBQString(const char *value) : text(value) {}
+	static MBQString number(double value)
+	{
+		std::ostringstream stream;
+		stream << value;
+		return MBQString(stream.str());
+	}
+	template <typename... Args>
+	MBQString arg(const Args &...args) const
+	{
+		MBQString result = *this;
+		int index = 1;
+		(result.replace(index++, args), ...);
+		return result;
+	}
+	std::string toStdString() const { return text; }
+
+private:
+	explicit MBQString(std::string value) : text(std::move(value)) {}
+	void replace(int index, const MBQString &value)
+	{
+		auto pos = text.find('%' + std::to_string(index));
+		if (pos != std::string::npos)
+			text.replace(pos, 2, value.text);
+	}
+	std::string text;
+};

@@ -22,26 +22,6 @@ local cb_caverns = { "caverns", fgettext("Caverns"),
 	fgettext("Very large caverns deep in the underground") }
 
 local flag_checkboxes = {
-	indev = {
-		{ "trees", fgettext("Trees and jungle grass") },
-		{ "flat", fgettext("Flat terrain") },
-		{ "mudflow", fgettext("Mud flow"), fgettext("Terrain surface erosion") },
-		{ "floatlands", fgettext("Floatlands (experimental)"),
-		fgettext("Floating landmasses in the sky") },
-		-- Biome settings are in mgv6_biomes below
-	},
-	math = {
-		cb_caverns,
-		{ "ridges", fgettext("Rivers"), fgettext("Sea level rivers") },
-		{ "mountains", fgettext("Mountains") },
-		{ "floatlands", fgettext("Floatlands (experimental)"),
-		fgettext("Floating landmasses in the sky") },
-	},
-	earth = {
-		cb_caverns,
-		--{ "floatlands", fgettext("Floatlands (experimental)"), fgettext("Floating landmasses in the sky") },
-	},
-
 	v5 = {
 		cb_caverns,
 	},
@@ -84,6 +64,9 @@ local flag_checkboxes = {
 		-- Biome settings are in mgv6_biomes below
 	},
 }
+-- fm:
+fm_create_world_flags(flag_checkboxes, cb_caverns)
+-- ===
 
 local mgv6_biomes = {
 	{
@@ -104,10 +87,6 @@ local function create_world_formspec(dialogdata)
 
 	local current_mg = dialogdata.mg
 	local mapgens = core.get_mapgen_names()
-
---[[
-	pkgmgr.update_gamelist()
-]]
 
 	local flags = dialogdata.flags
 
@@ -237,18 +216,11 @@ local function create_world_formspec(dialogdata)
 			end
 		end
 
--- fm:
-		if mg_preset[mapgen] then
-			y = y + 0.2
-			form = form .. "label[0,"..(y+0.1)..";" .. fgettext("Preset") .. "]"
-			y = y + 0.5
-			form = form .. "dropdown[0,"..y..";6.3;mg_preset;"
-			for _, preset in ipairs(mg_preset[mapgen]) do
-				form = form .. preset.name .. ","
-			end
-			form = form .. ";" .. "]"
-		end
--- ===
+		-- fm:
+		local preset_form
+		preset_form, y = fm_create_world_presets(mapgen, y, dialogdata)
+		form = form .. preset_form
+		-- ===
 
 		if mapgen ~= "v6" then
 			-- No special treatment
@@ -308,15 +280,9 @@ local function create_world_formspec(dialogdata)
 		label_spflags = "label[0,"..y_start..";" .. fgettext("Mapgen-specific flags") .. "]"
 	end
 
-	local voxel_earth_fields = ""
-	local devtest_y = 3.5
-	if current_mg == "voxel_earth" then
-		voxel_earth_fields =
-			"field[0.3,4.1;6,0.5;te_voxel_earth_api_key;" ..
-			fgettext("Voxel Earth API key") ..
-			";" .. core.formspec_escape(dialogdata.voxel_earth_api_key or "") .. "]"
-		devtest_y = 5.0
-	end
+	-- fm:
+	local fm_fields, devtest_y = fm_create_world_fields(current_mg, dialogdata)
+	-- ===
 
 	local retval =
 		"size[12.25,7.4,true]" ..
@@ -340,7 +306,7 @@ local function create_world_formspec(dialogdata)
 	retval = retval ..
 		"label[0,2;" .. fgettext("Mapgen") .. "]"..
 		"dropdown[0,2.5;6.3;dd_mapgen;" .. mglist .. ";" .. selindex .. "]" ..
-		voxel_earth_fields
+		fm_fields
 
 	-- Warning when making a devtest world
 	if game.id == "devtest" then
@@ -385,6 +351,9 @@ local function create_world_buttonhandler(this, fields)
 
 	if fields["world_create_confirm"] or
 		fields["key_enter"] then
+		-- fm:
+		if not fm_create_world_validate(this, fields) then return true end
+		-- ===
 
 		if fields["key_enter"] then
 			-- HACK: This timestamp prevents double-triggering when pressing Enter on an input box
@@ -423,18 +392,12 @@ local function create_world_buttonhandler(this, fields)
 		if message == nil then
 			this.data.seed = fields["te_seed"] or ""
 			this.data.mg = fields["dd_mapgen"]
-			this.data.voxel_earth_api_key =
-				fields["te_voxel_earth_api_key"] or this.data.voxel_earth_api_key
 
 			-- actual names as used by engine
 			local settings = {
 				fixed_map_seed = this.data.seed,
 				mg_name = this.data.mg,
 				mg_flags = table_to_flags(this.data.flags.main),
-
-				mgindev_spflags = table_to_flags(this.data.flags.indev),
-				mgmath_spflags = table_to_flags(this.data.flags.math),
-
 				mgv5_spflags = table_to_flags(this.data.flags.v5),
 				mgv6_spflags = table_to_flags(this.data.flags.v6),
 				mgv7_spflags = table_to_flags(this.data.flags.v7),
@@ -444,25 +407,9 @@ local function create_world_buttonhandler(this, fields)
 				mgflat_spflags = table_to_flags(this.data.flags.flat),
 			}
 
-			if settings.mg_name == "voxel_earth" and
-					this.data.voxel_earth_api_key ~= "" then
-				settings.voxel_earth_api_key = this.data.voxel_earth_api_key
-			end
-
--- fm:
-			if fields["mg_preset"] and mg_preset[settings.mg_name] then
-				for _, preset in ipairs(mg_preset[settings.mg_name]) do
-					if preset.name == fields["mg_preset"] then
-						for opt, val in pairs(preset) do
-							if opt ~= "name" then
-								settings[opt] = val;
-							end
-						end
-						break;
-					end
-				end
-			end
--- ===
+			-- fm:
+			fm_create_world_settings(this, fields, settings, table_to_flags)
+			-- ===
 
 			message = core.create_world(worldname, game.id, settings)
 		end
@@ -480,11 +427,13 @@ local function create_world_buttonhandler(this, fields)
 		return true
 	end
 
-	this.data.worldname = fields["te_world_name"]
-	this.data.seed = fields["te_seed"] or ""
-	if fields["te_voxel_earth_api_key"] ~= nil then
-		this.data.voxel_earth_api_key = fields["te_voxel_earth_api_key"]
-	end
+	-- fm: Dropdown events send only the changed field.
+	this.data.worldname = fields["te_world_name"] or this.data.worldname
+	this.data.seed = fields["te_seed"] or this.data.seed
+	-- ===
+	-- fm:
+	if fm_create_world_event(this, fields) then return true end
+	-- ===
 
 	if fields["games"] then
 		local gameindex = core.get_textlist_index("games")
@@ -539,13 +488,8 @@ function create_create_world_dlg()
 		worldname = "",
 		-- settings the world is created with:
 		seed = core.settings:get("fixed_map_seed") or "",
-		voxel_earth_api_key = core.settings:get("voxel_earth_api_key") or "",
 		flags = {
 			main = core.settings:get_flags("mg_flags"),
-
-			indev = core.settings:get_flags("mgindev_spflags"),
-			math = core.settings:get_flags("mgmath_spflags"),
-			earth = core.settings:get_flags("mgearth_spflags"),
 
 			v5 = core.settings:get_flags("mgv5_spflags"),
 			v6 = core.settings:get_flags("mgv6_spflags"),
@@ -556,6 +500,10 @@ function create_create_world_dlg()
 			flat = core.settings:get_flags("mgflat_spflags"),
 		}
 	}
+
+	-- fm:
+	fm_create_world_init(retval.data)
+	-- ===
 
 	return retval
 end
