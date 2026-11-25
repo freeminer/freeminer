@@ -27,13 +27,14 @@ public:
 		// populated from the loaded game, which is absent in these unit tests.
 		struct PaletteFixture
 		{
-			std::array<std::pair<Block *, content_t>, 12> entries{
+			std::array<std::pair<Block *, content_t>, 14> entries{
 					{{&STONE, 84}, {&KELP, 66}, {&OAK_STAIRS, 144}, {&FLOWER_POT, 235},
 							{&POTTED_RED_TULIP, 246}, {&POTTED_DANDELION, 247},
 							{&POTTED_BLUE_ORCHID, 248}, {&HOPPER, 284},
 							{&CHISELED_SANDSTONE, 516}, {&CUT_SANDSTONE, 517},
-							{&RAW_GOLD_BLOCK, 518}, {&BARRIER, 527}}};
-			std::array<Block, 12> saved;
+							{&RAW_GOLD_BLOCK, 518}, {&BARRIER, 527}, {&LIME_WOOL, 528},
+							{&LIME_CONCRETE_POWDER, 529}}};
+			std::array<Block, 14> saved;
 			Block lapis = LAPIS_BLOCK;
 			PaletteFixture()
 			{
@@ -166,6 +167,9 @@ public:
 		UASSERT(std::string(to_luanti_node(RAW_GOLD_BLOCK).name) ==
 				"mcl_raw_ores:raw_gold_block");
 		UASSERT(std::string(to_luanti_node(LAPIS_BLOCK).name) == "mcl_core:lapisblock");
+		UASSERT(std::string(to_luanti_node(LIME_WOOL).name) == "mcl_wool:lime");
+		UASSERT(std::string(to_luanti_node(LIME_CONCRETE_POWDER).name) ==
+				"mcl_colorblocks:concrete_powder_lime");
 	}
 
 	void testLuantiDirectionalBlockStates()

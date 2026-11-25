@@ -54,6 +54,7 @@ public:
 		TEST(testWaterGuardUsesStableNearestSeedTieBreak);
 		TEST(testBuildingInAreaHoleDoesNotInheritAreaUse);
 		TEST(testMissingLanduseTagRetainsRustPredicateSemantics);
+		TEST(testGolfRelationWithWaterTagUsesWaterClassification);
 		TEST(testOpenRideOutlineSuppressesContainedBuildingPart);
 		TEST(testListedNonResidentialPartRelationDoesNotInheritHousing);
 		TEST(testHousingPartRelationUsesHousingStoreyHeight);
@@ -581,6 +582,18 @@ public:
 		metadata_only.emplace("name", "Unclassified ring");
 		UASSERT(!arnis::osm_parser::repeats_relation_area_tags(
 				metadata_only, water_relation));
+	}
+
+	void testGolfRelationWithWaterTagUsesWaterClassification()
+	{
+		arnis::tags_t golf_area;
+		golf_area.emplace("golf", "green");
+		UASSERT(arnis::element_processing::relation_area(golf_area) ==
+				arnis::element_processing::RelationArea::Golf);
+
+		golf_area.emplace("water", "pond");
+		UASSERT(arnis::element_processing::relation_area(golf_area) ==
+				arnis::element_processing::RelationArea::Water);
 	}
 
 	void testBuildingPartCoverageMatchesRust()

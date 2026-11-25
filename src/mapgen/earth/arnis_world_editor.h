@@ -28,6 +28,7 @@
 #include "arnis-cpp/src/args.h"
 #include "arnis-cpp/src/bedrock_addon.h"
 #include "arnis-cpp/src/water_probe.h"
+#include "arnis-cpp/src/fm_garden_land.h"
 #include "arnis-cpp/src/decals/registry.h"
 #include "arnis-cpp/src/trees/tree_library.h"
 #include "mapgen/earth/arnis_projection_frame.h"
@@ -180,7 +181,12 @@ struct WorldEditor
 			std::make_shared<std::vector<std::tuple<int, int, int>>>();
 	std::shared_ptr<std::mutex> laid_rails_mutex = std::make_shared<std::mutex>();
 	std::shared_ptr<const CoordinateBitmap> sealed_surface;
+	std::shared_ptr<const CoordinateBitmap> water_areas;
+	std::shared_ptr<const GardenLand> garden_land;
+	std::shared_ptr<GroundMarks> ground_marks;
 	std::shared_ptr<const CoordinateBitmap> carriageway;
+	// Surveyed paved/bare ground under at-grade tracks is ballast, not terrain.
+	std::shared_ptr<const CoordinateBitmap> rail_bed;
 	std::shared_ptr<const element_processing::kerb_strips::KerbStrips> kerb_strips;
 	std::shared_ptr<const CoordinateBitmap> clear_corridors;
 	// OSM water and a margin kept clear by survey-derived trees.
@@ -249,10 +255,41 @@ struct WorldEditor
 	{
 		sealed_surface = std::move(mask);
 	}
+	void set_garden_land(std::shared_ptr<const GardenLand> land)
+	{
+		garden_land = std::move(land);
+	}
+	void mark_ground(GroundMark kind, int x, int z)
+	{
+		if (ground_marks)
+			ground_marks->set(kind, x, z);
+	}
+	void init_ground_marks(const XZBBox &bbox)
+	{
+		ground_marks = std::make_shared<GroundMarks>(bbox);
+	}
+	bool ground_mark(GroundMark kind, int x, int z) const
+	{
+		return ground_marks && ground_marks->contains(kind, x, z);
+	}
+	bool is_lawn(int x, int z) const
+	{
+		return ground_mark(GroundMark::Lawn, x, z) &&
+			   !ground_mark(GroundMark::Wild, x, z);
+	}
 	void set_carriageway(std::shared_ptr<const CoordinateBitmap> mask)
 	{
 		carriageway = std::move(mask);
 	}
+	void set_water_areas(std::shared_ptr<const CoordinateBitmap> mask)
+	{
+		water_areas = std::move(mask);
+	}
+	void set_rail_bed(std::shared_ptr<const CoordinateBitmap> mask)
+	{
+		rail_bed = std::move(mask);
+	}
+	bool on_rail_bed(int x, int z) const;
 	void set_kerb_strips(
 			std::shared_ptr<const element_processing::kerb_strips::KerbStrips> strips)
 	{
@@ -287,7 +324,11 @@ struct WorldEditor
 	void release_sealed_surface()
 	{
 		sealed_surface.reset();
+		water_areas.reset();
+		garden_land.reset();
+		ground_marks.reset();
 		clear_corridors.reset();
+		rail_bed.reset();
 		station_tree_clearance.reset();
 		station_track_beds.reset();
 		station_tunnel_pins.reset();
@@ -1127,6 +1168,12 @@ struct WorldEditor
 	std::pair<int, int> get_max_coords() const;
 	int get_absolute_y(int x, int y, int z) const;
 	int get_ground_level(int x, int z) const;
+	// Rust-compatible terrain relief scale; absent without sampled elevation or
+	// when the terrain top is softened and therefore no longer affine.
+	std::optional<double> elevation_blocks_per_meter() const;
+	// Ground's effective vertical scale; defaults to one block per metre when
+	// no elevation-backed ground is attached, matching WorldEditor in Rust.
+	double ground_blocks_per_meter() const;
 	// Rust-compatible name for the ground Y already assigned by a road, track,
 	// or cut at this column. Keep road_surface_y for existing Freeminer callers.
 	std::optional<int> surface_override(int x, int z) const;
