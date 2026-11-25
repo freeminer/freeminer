@@ -2,6 +2,9 @@ file(GLOB unittest_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 # fm:
 list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_multi.cpp)
+if(MANDELBULBER2_DIR)
+	list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_mandelbulber2.cpp)
+endif()
 
 # ENet payload ownership and worker wakeup regressions.
 if(USE_ENET)

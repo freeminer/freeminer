@@ -26,11 +26,7 @@ along with Freeminer.  If not, see <http://www.gnu.org/licenses/>.
 #include "irrlichttypes.h"
 #include "mapgen/mapgen.h"
 #include "mapgen/mapgen_v7.h"
-
-#if USE_MANDELBULBER
-#define MANDELBULBER_EMBEDDED
-#include "mandelbulber/fractal.h"
-#endif
+#include "mandelbulber2.h"
 
 struct MapgenMathParams : public MapgenV7Params
 {
@@ -40,11 +36,6 @@ struct MapgenMathParams : public MapgenV7Params
 
 	Json::Value params;
 
-#if USE_MANDELBULBER
-	sFractal par;
-	enumCalculationMode mode;
-#endif
-
 	void readParams(const Settings *settings) override;
 	void writeParams(Settings *settings) const override;
 	void setDefaultSettings(Settings *settings) override;
@@ -53,6 +44,7 @@ struct MapgenMathParams : public MapgenV7Params
 class MapgenMath : public MapgenV7
 {
 public:
+	std::unique_ptr<FmMandelbulber2> mandelbulber2;
 	MapgenMathParams *mg_params;
 
 	MapgenType getType() const override { return MAPGEN_MATH; }
@@ -81,7 +73,9 @@ public:
 	double (*func)(double, double, double, double, int, int);
 	MapNode layers_get(float value, float max);
 	std::pair<bool, double> calc_point(pos_t x, pos_t y, pos_t z);
-	bool visible(const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step) override;
-	MapNode visible_content(const v3pos_t &p, bool use_weather, block_step_t step) override;
+	bool visible(
+			const v3pos_t &p, std::optional<pos_t> surface_y, block_step_t step) override;
+	MapNode visible_content(
+			const v3pos_t &p, bool use_weather, block_step_t step) override;
 	bool surface_2d() override { return false; };
 };

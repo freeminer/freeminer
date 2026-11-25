@@ -205,6 +205,8 @@ Block YELLOW_CONCRETE;
 Block YELLOW_FLOWER;
 Block YELLOW_WOOL;
 Block LIME_CONCRETE;
+Block LIME_WOOL;
+Block LIME_CONCRETE_POWDER;
 Block CYAN_WOOL;
 Block GRAY_WOOL;
 Block BLUE_CONCRETE;
@@ -1260,6 +1262,10 @@ void init(MapgenEarth *mg)
 	YELLOW_WOOL = g("yellow_wool", "wool:yellow");
 	LIME_CONCRETE = g("lime_concrete",
 			{"wool:green", "wool:yellow", "basic_materials:concrete_block"});
+	LIME_WOOL = g("lime_wool", {"mcl_wool:lime", "wool:green", "wool:lime"});
+	LIME_CONCRETE_POWDER = g("lime_concrete_powder",
+			{"mcl_colorblocks:concrete_powder_lime", "basic_materials:concrete_block",
+					"default:stone"});
 	CYAN_WOOL = g("cyan_wool", "wool:cyan");
 	GRAY_WOOL = g("gray_wool",
 			{"wool:grey", "wool:gray", "wool:light_grey", "wool:light_gray"});

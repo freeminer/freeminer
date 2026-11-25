@@ -346,6 +346,9 @@ struct GroundFrame
 	std::optional<projection::WebMercatorProjection> mercator;
 	std::size_t pad_blocks = 0;
 	elevation::AffinePolicy affine{};
+	// Whole One World job bounds: per-run climate, snow line and tree-pack
+	// selection must agree across every independently generated piece.
+	std::optional<geographic::LLBBox> anchor;
 
 	static GroundFrame local();
 	static GroundFrame from_args(const Args &, const geographic::LLBBox &);

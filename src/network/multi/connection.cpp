@@ -263,6 +263,9 @@ std::string_view ConnectionMulti::getProtocolName(session_t peer_id)
 
 bool ConnectionMulti::ReceiveTimeoutMs(NetworkPacket *pkt, u32 timeout_ms)
 {
+	// Receive APIs treat pkt as an output parameter. Callers may reuse the same
+	// packet across polls; clear the previous datagram before trying a backend.
+	pkt->clear();
 	if (!m_serving) {
 		if (auto *connection = getConnection(connected_to))
 			return connection->ReceiveTimeoutMs(pkt, timeout_ms);

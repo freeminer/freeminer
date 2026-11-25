@@ -153,6 +153,31 @@ public:
 		// Rust maps this structure-only palette alias to smooth sandstone too.
 		UASSERT(arnis::structures::resolve_schem_block("minecraft:cut_sandstone") ==
 				arnis::SMOOTH_SANDSTONE);
+		// Keep the current Rust landmark schematic palette additions available to
+		// C++ landmark models as well (including the invisible light block).
+		const std::array<std::pair<const char *, arnis::Block>, 19> landmark_blocks{{
+				{"brown_mushroom_block", arnis::BROWN_MUSHROOM_BLOCK},
+				{"light_gray_stained_glass", arnis::LIGHT_GRAY_STAINED_GLASS},
+				{"gold_block", arnis::GOLD_BLOCK},
+				{"granite", arnis::GRANITE},
+				{"polished_granite", arnis::POLISHED_GRANITE},
+				{"polished_granite_slab", arnis::POLISHED_GRANITE_SLAB},
+				{"grass_block", arnis::GRASS_BLOCK},
+				{"lime_concrete", arnis::LIME_CONCRETE},
+				{"lime_wool", arnis::LIME_WOOL},
+				{"light", arnis::LIGHT},
+				{"lime_concrete_powder", arnis::LIME_CONCRETE_POWDER},
+				{"moss_block", arnis::MOSS_BLOCK},
+				{"sand", arnis::SAND},
+				{"light_blue_concrete", arnis::LIGHT_BLUE_CONCRETE},
+				{"gray_stained_glass", arnis::GRAY_STAINED_GLASS},
+				{"calcite", arnis::CALCITE},
+				{"netherrack", arnis::NETHERRACK},
+				{"fire", arnis::FIRE},
+				{"minecraft:granite", arnis::GRANITE},
+		}};
+		for (const auto &[name, expected] : landmark_blocks)
+			UASSERT(arnis::structures::resolve_schem_block(name) == expected);
 
 		const auto trapdoor = arnis::structures::resolve_schem_block_with_properties(
 				"minecraft:oak_trapdoor");

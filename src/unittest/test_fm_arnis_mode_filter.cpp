@@ -167,6 +167,33 @@ public:
 		lake.emplace("water", "lake");
 		arnis::osm_parser::filter_tags(lake);
 		UASSERT(lake.size() == 2);
+
+		arnis::tags_t cadastre;
+		cadastre.emplace("building", "yes");
+		cadastre.emplace("start_date", "1890");
+		cadastre.emplace("source", "cadastre");
+		cadastre.emplace("ref:bag", "12345");
+		cadastre.emplace("ref:ruian:building", "9876");
+		cadastre.emplace("ref:bygningsnr", "4567");
+		cadastre.emplace("source:geometry:ref", "  Gbg/7654321");
+		cadastre.emplace("source:geometry:date", "2020-01-01");
+		arnis::osm_parser::filter_tags(cadastre);
+		UASSERT(cadastre.get("start_date") == "1890");
+		UASSERT(cadastre.get("source") == "cadastre");
+		UASSERT(cadastre.get("ref:bag") == "12345");
+		UASSERT(cadastre.get("ref:ruian:building").empty());
+		UASSERT(cadastre.get("ref:bygningsnr").empty());
+		UASSERT(cadastre.get("source:geometry:ref") == "Gbg/");
+		UASSERT(!cadastre.contains("source:geometry:date"));
+
+		arnis::tags_t non_building;
+		non_building.emplace("highway", "service");
+		non_building.emplace("start_date", "1890");
+		non_building.emplace("source", "survey");
+		non_building.emplace("ref:bygningsnr", "4567");
+		arnis::osm_parser::filter_tags(non_building);
+		UASSERT(non_building.size() == 1);
+		UASSERT(non_building.get("highway") == "service");
 	}
 
 	void testRustPrioritySortLeavesBroadLanduseLast()
