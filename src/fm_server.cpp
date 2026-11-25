@@ -1003,6 +1003,7 @@ void *WorldMergeThread::run()
 	g_settings->getU64NoEx("world_merge_min", world_merge_min);
 	constexpr auto idle_delay = std::chrono::seconds(300);
 	std::optional<std::chrono::steady_clock::time_point> idle_since;
+	bool idle_logged = false;
 
 	while (!stopRequested()) {
 		if (m_server->getEnv().getPlayerCount() == 0) {
@@ -1013,11 +1014,14 @@ void *WorldMergeThread::run()
 		} else {
 			idle_since.reset();
 			idle_drain = false;
+			idle_logged = false;
 		}
 		auto &changed = m_server->getEnv().getServerMap().changed_blocks_for_merge;
-		if (idle_drain && !changed.empty())
+		if (idle_drain && !idle_logged && !changed.empty()) {
 			actionstream << "World merge: idle drain of " << changed.size()
 						 << " queued blocks\n";
+			idle_logged = true;
+		}
 		if (merger.merge_server_diff(changed, idle_drain ? 1 : world_merge_min)) {
 			break;
 		}
