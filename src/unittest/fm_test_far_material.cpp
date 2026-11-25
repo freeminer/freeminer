@@ -68,11 +68,46 @@ public:
 		TEST(testOpaqueUnderCover);
 		TEST(testCoverOccupancy);
 		TEST(testLeafCanopy);
+		TEST(testSourceLiquidSurface);
 		TEST(testOpaqueSurfaceVote);
 		TEST(testFarCoverRendering);
 		TEST(testOverlayAndNearTextures);
 		TEST(testTextureDefinitionAndClassification);
 		TEST(testOpaqueFarImage);
+	}
+
+	void testSourceLiquidSurface()
+	{
+		FmMockGameDef gamedef;
+		ItemDefinition item;
+		item.type = ITEM_NODE;
+		item.name = "test:water";
+		ContentFeatures water;
+		water.name = item.name;
+		water.drawtype = NDT_LIQUID;
+		water.liquid_type = LIQUID_SOURCE;
+		const auto source = gamedef.registerNode(item, std::move(water));
+		const auto stone = gamedef.addSimpleNode("stone", 42);
+		gamedef.finalize();
+		std::array<MapNode, 8> samples;
+		samples.fill(MapNode(stone));
+		for (const size_t i : {0u, 4u, 5u, 7u})
+			samples[i] = MapNode(source);
+		auto selected = world_merge::selectFarNodeIndex(samples, nullptr, gamedef.ndef());
+		UASSERT(selected && samples[*selected].getContent() == source);
+		samples.fill(MapNode(CONTENT_AIR));
+		for (const size_t i : {1u, 2u, 3u, 6u})
+			samples[i] = MapNode(source);
+		selected = world_merge::selectFarNodeIndex(samples, nullptr, gamedef.ndef());
+		UASSERT(selected && samples[*selected].getContent() == source);
+		samples.fill(MapNode(stone));
+		for (const size_t i : {1u, 2u, 3u, 6u})
+			samples[i] = MapNode(source);
+		std::array<bool, 8> exposed{};
+		for (const size_t i : {0u, 4u, 5u, 7u})
+			exposed[i] = true;
+		selected = world_merge::selectFarNodeIndex(samples, &exposed, gamedef.ndef());
+		UASSERT(selected && samples[*selected].getContent() == stone);
 	}
 
 	void testLeafCanopy()
