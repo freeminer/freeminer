@@ -221,6 +221,27 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	const auto is_flowing = [&](content_t content) {
 		return ndef && ndef->get(content).liquid_type == LIQUID_FLOWING;
 	};
+	// A complete horizontal source-liquid layer represents a continuous surface.
+	// Keep it even when the other half of the coarse cell is air or riverbed.
+	if (ndef) {
+		constexpr std::array<size_t, 4> upper{{0, 4, 5, 7}};
+		constexpr std::array<size_t, 4> lower{{1, 2, 3, 6}};
+		const auto full_source = [&](const auto &layer) {
+			const auto content = samples[layer[0]].getContent();
+			return content != CONTENT_IGNORE && content != CONTENT_UNKNOWN &&
+				   ndef->get(content).liquid_type == LIQUID_SOURCE &&
+				   std::all_of(layer.begin(), layer.end(), [&](size_t index) {
+					   return samples[index].getContent() == content;
+				   });
+		};
+		if (full_source(upper))
+			return upper[0];
+		if (full_source(lower) &&
+				std::all_of(upper.begin(), upper.end(), [&](size_t index) {
+					return samples[index].getContent() == CONTENT_AIR;
+				}))
+			return lower[0];
+	}
 
 	for (size_t i = 0; i < samples.size(); ++i) {
 		const auto content = samples[i].getContent();
@@ -557,7 +578,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 						sample_pos.Z %= MAP_BLOCKSIZE;
 						return sample_block->getNodeNoLock(sample_pos);
 					};
-					// TODO: tune block selector
+			// TODO: tune block selector
 
 #if 0
 // Simple grid aligned
