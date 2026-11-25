@@ -49,6 +49,7 @@ public:
 	void testFailedLightingFallback(IGameDef *gamedef);
 	void testSynchronousLightingRefresh(IGameDef *gamedef);
 	void testDeferredGroupCoalescing(IGameDef *gamedef);
+	void testSurfaceAcrossMergeBoundary(IGameDef *gamedef);
 	// ===
 };
 
@@ -79,6 +80,7 @@ void TestFmWorldMerge::runTests(IGameDef *gamedef)
 	TEST(testFailedLightingFallback, gamedef);
 	TEST(testSynchronousLightingRefresh, gamedef);
 	TEST(testDeferredGroupCoalescing, gamedef);
+	TEST(testSurfaceAcrossMergeBoundary, gamedef);
 	// ===
 }
 
@@ -539,6 +541,35 @@ void TestFmWorldMerge::testDeferredGroupCoalescing(IGameDef *gamedef)
 	merger.merge_server_diff(map.changed_blocks_for_merge, 1);
 	UASSERTEQ(size_t, map.changed_blocks_for_merge.size(), 1);
 	UASSERT(map.changed_blocks_for_merge.contains(v3bpos_t(0, 0, 0)));
+}
+
+void TestFmWorldMerge::testSurfaceAcrossMergeBoundary(IGameDef *gamedef)
+{
+	Map map(gamedef);
+	Database_Dummy source, target;
+	ServerMap::far_dbases_t far_dbases;
+	auto ground = map.createBlankBlockNoInsert(v3bpos_t(0, 1, 0));
+	ground->fill(MapNode(t_CONTENT_STONE));
+	ground->setGenerated(true);
+	for (pos_t x = 0; x < MAP_BLOCKSIZE; ++x)
+		for (pos_t z = 0; z < MAP_BLOCKSIZE; ++z)
+			ground->setNodeNoLock(
+					v3pos_t(x, MAP_BLOCKSIZE - 1, z), MapNode(t_CONTENT_GRASS), true);
+	UASSERT(ServerMap::saveBlock(ground.get(), &source, 1));
+	auto air = map.createBlankBlockNoInsert(v3bpos_t(0, 2, 0));
+	air->fill(MapNode(CONTENT_AIR));
+	air->setGenerated(true);
+	UASSERT(ServerMap::saveBlock(air.get(), &source, 1));
+	WorldMerger merger{.ndef{gamedef->ndef()}, .smap{&map}, .far_dbases{far_dbases}};
+	merger.merge_one_block(&source, &target, v3bpos_t(0, 0, 0), 0);
+	std::string blob;
+	target.loadBlock(v3bpos_t(0, 0, 0), &blob);
+	UASSERT(!blob.empty());
+	std::istringstream stream(blob, std::ios::binary);
+	const auto version = static_cast<u8>(stream.get());
+	auto merged = map.createBlankBlockNoInsert(v3bpos_t(0, 0, 0));
+	UASSERT(merged->deSerialize(stream, version, true));
+	UASSERT(merged->getNodeNoLock(v3pos_t(0, 15, 0)).getContent() == t_CONTENT_GRASS);
 }
 
 void TestFmWorldMerge::testLightOnlyBlockPersistence(IGameDef *gamedef)

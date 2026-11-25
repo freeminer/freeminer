@@ -67,11 +67,43 @@ public:
 		setFmLightDecodeTable();
 		TEST(testOpaqueUnderCover);
 		TEST(testCoverOccupancy);
+		TEST(testLeafCanopy);
 		TEST(testOpaqueSurfaceVote);
 		TEST(testFarCoverRendering);
 		TEST(testOverlayAndNearTextures);
 		TEST(testTextureDefinitionAndClassification);
 		TEST(testOpaqueFarImage);
+	}
+
+	void testLeafCanopy()
+	{
+		FmMockGameDef gamedef;
+		ItemDefinition item;
+		item.type = ITEM_NODE;
+		item.name = "test:leaves";
+		ContentFeatures leaves;
+		leaves.name = item.name;
+		leaves.groups["leaves"] = 1;
+		leaves.drawtype = NDT_ALLFACES_OPTIONAL;
+		const auto leaf = gamedef.registerNode(item, std::move(leaves));
+		item.name = "test:trunk";
+		ContentFeatures trunk;
+		trunk.name = item.name;
+		trunk.groups["tree"] = 1;
+		trunk.drawtype = NDT_NORMAL;
+		const auto wood = gamedef.registerNode(item, std::move(trunk));
+		const auto stone = gamedef.addSimpleNode("stone", 42);
+		gamedef.finalize();
+		std::array<MapNode, 8> samples;
+		samples.fill(MapNode(CONTENT_AIR));
+		samples[0] = samples[1] = MapNode(leaf);
+		samples[3] = MapNode(wood);
+		auto selected = world_merge::selectFarNodeIndex(samples, nullptr, gamedef.ndef());
+		UASSERT(selected && samples[*selected].getContent() == leaf);
+		samples.fill(MapNode(leaf));
+		samples[3] = MapNode(stone);
+		selected = world_merge::selectFarNodeIndex(samples, nullptr, gamedef.ndef());
+		UASSERT(selected && samples[*selected].getContent() == stone);
 	}
 
 	void testOpaqueUnderCover()
@@ -210,7 +242,6 @@ public:
 		UASSERT(!farmesh::isTransparentCover(liquid));
 		UASSERT(!farmesh::isOpaqueStructure(liquid));
 	}
-
 
 	void testOpaqueFarImage()
 	{

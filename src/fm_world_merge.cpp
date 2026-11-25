@@ -215,6 +215,9 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 	size_t solid_count = 0;
 	bool has_opaque_structure = false;
 	std::optional<size_t> flowing_index;
+	std::optional<size_t> leaf_index;
+	size_t leaf_count = 0;
+	bool has_non_tree_structure = false;
 	const auto is_flowing = [&](content_t content) {
 		return ndef && ndef->get(content).liquid_type == LIQUID_FLOWING;
 	};
@@ -232,10 +235,28 @@ std::optional<size_t> world_merge::selectFarNodeIndex(
 		++valid_count;
 		if (content != CONTENT_AIR) {
 			++solid_count;
-			if (ndef && farmesh::isOpaqueStructure(ndef->get(content)))
-				has_opaque_structure = true;
+			if (ndef) {
+				const auto &features = ndef->get(content);
+				const auto leaves = features.groups.find("leaves");
+				if (leaves != features.groups.end() && leaves->second > 0) {
+					++leaf_count;
+					if (!leaf_index || i == main_sample)
+						leaf_index = i;
+				}
+				if (farmesh::isOpaqueStructure(features) &&
+						(leaves == features.groups.end() || leaves->second <= 0)) {
+					has_opaque_structure = true;
+					const auto tree = features.groups.find("tree");
+					if (tree == features.groups.end() || tree->second <= 0)
+						has_non_tree_structure = true;
+				}
+			}
 		}
 	}
+	// Keep supported foliage around trunks and in sparse canopy edges, while
+	// preserving walls and terrain where foliage overlaps a solid structure.
+	if (leaf_count >= 2 && !has_non_tree_structure)
+		return leaf_index;
 
 	if (!valid_count)
 		return flowing_index;
@@ -336,6 +357,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 	std::unordered_map<v3bpos_t, light_points_t> generated_light_points;
 	// Cache source-neighbour blocks used by six-sided light exposure checks.
 	std::unordered_map<v3bpos_t, MapBlockPtr> light_neighbor_blocks;
+	std::unordered_map<v3bpos_t, MapBlockPtr> surface_neighbor_blocks;
 	{
 		for (bpos_t x = 0; x < step_size; ++x)
 			for (bpos_t y = 0; y < step_size; ++y)
@@ -495,8 +517,7 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 							(z << step_pow) % MAP_BLOCKSIZE);
 					// Resolve samples through the loaded 2x2x2 source-block group so
 					// surface exposure is correct at a source mapblock boundary as well.
-					const auto get_source_node = [&blocks, &bbpos, &block](
-														 v3pos_t sample_pos) {
+					const auto get_source_node = [&](v3pos_t sample_pos) {
 						// Most samples are inside the current source block. Avoid a hash
 						// lookup and coordinate division for each of those node reads.
 						if (sample_pos.X < MAP_BLOCKSIZE &&
@@ -511,12 +532,30 @@ WorldMerger::one_block_stat_t WorldMerger::merge_one_block(MapDatabase *dbase,
 								static_cast<bpos_t>(
 										bbpos.Z + sample_pos.Z / MAP_BLOCKSIZE)};
 						const auto sample_block_it = blocks.find(sample_bbpos);
-						if (sample_block_it == blocks.end() || !sample_block_it->second)
+						MapBlockPtr sample_block;
+						if (sample_block_it != blocks.end()) {
+							sample_block = sample_block_it->second;
+						} else {
+							const v3bpos_t source_pos(
+									bpos_aligned.X + (sample_bbpos.X << step),
+									bpos_aligned.Y + (sample_bbpos.Y << step),
+									bpos_aligned.Z + (sample_bbpos.Z << step));
+							auto [it, inserted] =
+									surface_neighbor_blocks.try_emplace(source_pos);
+							if (inserted) {
+								if (!step)
+									it->second = smap->getBlock(source_pos);
+								if (!it->second || !it->second->isGenerated())
+									it->second = load_block(smap, dbase, source_pos);
+							}
+							sample_block = it->second;
+						}
+						if (!sample_block || !sample_block->isGenerated())
 							return MapNode(CONTENT_IGNORE);
 						sample_pos.X %= MAP_BLOCKSIZE;
 						sample_pos.Y %= MAP_BLOCKSIZE;
 						sample_pos.Z %= MAP_BLOCKSIZE;
-						return sample_block_it->second->getNodeNoLock(sample_pos);
+						return sample_block->getNodeNoLock(sample_pos);
 					};
 					// TODO: tune block selector
 
