@@ -11,7 +11,7 @@ include(FetchContent)
 FetchContent_Declare(mandelbulber2
     GIT_REPOSITORY https://github.com/buddhi1980/mandelbulber2
     GIT_TAG 18e749d04e09d3b12df8efc3d808a507b1e616be
-    GIT_SHALLOW TRUE
+    # GIT_SHALLOW TRUE # Only with tags
     SOURCE_SUBDIR build/cmake
     SOURCE_DIR "${DEPS_SOURCE_ROOT}/mandelbulber2"
     BINARY_DIR "${DEPS_BINARY_ROOT}/mandelbulber2"
