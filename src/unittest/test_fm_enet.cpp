@@ -68,7 +68,7 @@ public:
 		con::EnetWakeup wakeup;
 		ENetAddress address{};
 #if defined(ENET_IPV6)
-		UASSERT(enet_address_set_host_ip(&address, "::1") == 0);
+		reinterpret_cast<unsigned char *>(&address.host)[15] = 1;
 #else
 		UASSERT(enet_address_set_host_ip(&address, "127.0.0.1") == 0);
 #endif
