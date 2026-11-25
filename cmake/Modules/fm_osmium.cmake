@@ -164,6 +164,22 @@ target_link_libraries(
 if(TARGET Boost::geometry)
     target_link_libraries(fm_osmium INTERFACE Boost::geometry)
 endif()
+
+# LASzip is optional: when available, Arnis can decode LAZ survey tiles and EPT nodes.
+option(ENABLE_LASZIP "Enable LASzip decoding for Arnis survey data" ON)
+if(ENABLE_LASZIP)
+    find_path(FM_LASZIP_INCLUDE_DIR NAMES laszip_api.h PATH_SUFFIXES laszip)
+    find_library(FM_LASZIP_LIBRARY NAMES laszip_api laszip)
+    if(FM_LASZIP_INCLUDE_DIR AND FM_LASZIP_LIBRARY)
+        target_include_directories(fm_osmium SYSTEM INTERFACE ${FM_LASZIP_INCLUDE_DIR})
+        target_link_libraries(fm_osmium INTERFACE ${FM_LASZIP_LIBRARY})
+        target_compile_definitions(fm_osmium INTERFACE ARNIS_WITH_LASZIP=1)
+        message(STATUS "Arnis LAZ decoding enabled: ${FM_LASZIP_LIBRARY}")
+    else()
+        message(STATUS "Arnis LAZ decoding disabled: LASzip headers/library not found")
+    endif()
+endif()
+
 if(TARGET Protozero::Protozero)
     target_link_libraries(fm_osmium INTERFACE Protozero::Protozero)
 endif()

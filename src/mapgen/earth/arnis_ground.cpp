@@ -16,6 +16,7 @@
 #include "arnis-cpp/src/land_cover/osm_water_override.h"
 #include "arnis-cpp/src/land_cover/naturalize.h"
 #include "arnis-cpp/src/osm_parser.h"
+#include "arnis-cpp/src/landmarks.h"
 #include "arnis-cpp/src/elevation/peaks.h"
 #include "arnis-cpp/src/water_depth.h"
 #include "arnis-cpp/src/water_detail.h"
@@ -100,8 +101,7 @@ elevation::TerrainHints terrain_hints_for(const Args &args,
 			args.use_3d && !args.skip_objects(), wants_structures,
 			args.overture && wants_structures, collect_graded,
 			collect_graded && !args.skip_objects());
-	if (args.resolved_props().has(arnis::structures::Prop::Landmark) && args.buildings &&
-			!args.skip_objects()) {
+	if (landmarks::placed(args)) {
 		auto landmark_models = elevation::landmark_tall_models_in(osm, bbox);
 		hints.tall_models.insert(
 				hints.tall_models.end(), landmark_models.begin(), landmark_models.end());
@@ -309,9 +309,20 @@ GroundFrame GroundFrame::from_args(const Args &args, const geographic::LLBBox &b
 					stored.blocks_per_meter, stored.ground_level, soft_top});
 		}
 		try {
-			return projected(bbox, spec.scale,
+			auto frame = projected(bbox, spec.scale,
 					static_cast<std::size_t>(one_world::ground_pad_blocks(args.scale)),
 					policy, spec.origin);
+			if (args.one_world_run->unit && frame.mercator) {
+				const auto &job = args.one_world_run->unit->job;
+				const cartesian::XZBBoxRect job_rect{{job[0], job[1]}, {job[2], job[3]}};
+				try {
+					frame.anchor = projection::llbbox_for_rect(*frame.mercator, job_rect);
+				} catch (const std::exception &) {
+					// Rust drops only the optional anchor when its rectangle cannot
+					// be projected; keep the otherwise valid One World frame.
+				}
+			}
+			return frame;
 		} catch (const std::exception &) {
 			// ProjectionSpec::transformer in Rust returns an error for a bbox
 			// outside the supported projected domain, and GroundFrame deliberately
@@ -346,7 +357,8 @@ GroundFrame GroundFrame::projected(const geographic::LLBBox &bbox, double scale,
 
 double GroundFrame::anchor_lat(const geographic::LLBBox &bbox) const
 {
-	return (bbox.min().lat() + bbox.max().lat()) * 0.5;
+	const auto &bounds = anchor.value_or(bbox);
+	return (bounds.min().lat() + bounds.max().lat()) * 0.5;
 }
 
 std::pair<int, int> GroundFrame::origin_for(const geographic::LLBBox &bbox) const
@@ -359,8 +371,9 @@ std::pair<int, int> GroundFrame::origin_for(const geographic::LLBBox &bbox) cons
 
 biome::Climate GroundFrame::climate(const geographic::LLBBox &bbox) const
 {
-	return climate::classify_bbox(
-			bbox.min().lat(), bbox.min().lng(), bbox.max().lat(), bbox.max().lng());
+	const auto &bounds = anchor.value_or(bbox);
+	return climate::classify_bbox(bounds.min().lat(), bounds.min().lng(),
+			bounds.max().lat(), bounds.max().lng());
 }
 
 std::pair<climate::GeoFunction, std::pair<int, int>> GroundFrame::geography(

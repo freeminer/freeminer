@@ -202,6 +202,14 @@ public:
 		return std::get<ProcessedRelation>(*this);
 	}
 
+	ProcessedRelation &as_relation()
+	{
+		if (!is_relation()) {
+			throw std::runtime_error("ProcessedElement: not a Relation");
+		}
+		return std::get<ProcessedRelation>(*this);
+	}
+
 	std::uint64_t id() const noexcept
 	{
 		if (is_node()) {

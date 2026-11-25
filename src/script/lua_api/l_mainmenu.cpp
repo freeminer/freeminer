@@ -25,6 +25,9 @@
 #include "client/texturepaths.h"
 #include "network/networkprotocol.h"
 #include "content/mod_configuration.h"
+// fm: share automatic dependency selection with the server
+#include "content/fm_mod_dependencies.h"
+// ===
 #include "common/c_converter.h"
 #include "gui/guiOpenURL.h"
 #include "gettext.h"
@@ -551,6 +554,10 @@ int ModApiMainMenu::l_check_mod_configuration(lua_State *L)
 	}
 
 	modmgr.addMods(modSpecs);
+	// fm: match the server's automatically selected dependencies
+	modmgr.addMods(fm_select_dependency_mods(modmgr.getUnsatisfiedMods(),
+			gamespec.addon_mods_paths, worldpath + DIR_DELIM + "world.mt"));
+	// ===
 	try {
 		modmgr.checkConflictsAndDeps();
 	} catch (const ModError &err) {

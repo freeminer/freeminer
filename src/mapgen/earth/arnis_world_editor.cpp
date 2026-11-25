@@ -287,7 +287,11 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.water_probe = water_probe;
 	worker.walk_probe = walk_probe;
 	worker.sealed_surface = sealed_surface;
+	worker.water_areas = water_areas;
+	worker.garden_land = garden_land;
+	worker.ground_marks = ground_marks;
 	worker.carriageway = carriageway;
+	worker.rail_bed = rail_bed;
 	worker.kerb_strips = kerb_strips;
 	worker.clear_corridors = clear_corridors;
 	worker.tree_keep_clear = tree_keep_clear;
@@ -362,6 +366,11 @@ WorldEditor WorldEditor::make_tile_worker() const
 	worker.generation_bounds = generation_bounds;
 	worker.generation_outline = generation_outline;
 	return worker;
+}
+
+bool WorldEditor::on_rail_bed(int x, int z) const
+{
+	return rail_bed && rail_bed->contains(x, z);
 }
 
 bool WorldEditor::merge_tile_worker(WorldEditor &&worker, int min_x, int min_z, int max_x,
@@ -1396,6 +1405,19 @@ int WorldEditor::get_ground_level(int x, int z) const
 	}
 	return level;
 }
+std::optional<double> WorldEditor::elevation_blocks_per_meter() const
+{
+	if (!ground)
+		return std::nullopt;
+	const auto affine = ground->elevation_affine();
+	if (!affine || affine->soft_top)
+		return std::nullopt;
+	return affine->blocks_per_meter;
+}
+double WorldEditor::ground_blocks_per_meter() const
+{
+	return ground ? ground->blocks_per_meter() : 1.0;
+}
 std::optional<int> WorldEditor::terrain_level(int x, int z) const
 {
 	if (!ground)
@@ -1545,7 +1567,7 @@ bool WorldEditor::is_lc_water(int x, int z) const
 }
 bool WorldEditor::is_mapped_water(int x, int z) const
 {
-	return is_lc_water(x, z) ||
+	return (water_areas && water_areas->contains(x, z)) || is_lc_water(x, z) ||
 		   (ground && ground->inland_water_mapped(ground_point(x, z)));
 }
 std::optional<Block> WorldEditor::forest_floor_at(int x, int z) const

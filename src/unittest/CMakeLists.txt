@@ -2,6 +2,9 @@ file(GLOB unittest_HDRS "${CMAKE_CURRENT_SOURCE_DIR}/*.h")
 
 # fm:
 list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_multi.cpp)
+if(MANDELBULBER2_DIR)
+	list(APPEND unittest_SRCS ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_mandelbulber2.cpp)
+endif()
 
 # ENet payload ownership and worker wakeup regressions.
 if(USE_ENET)
@@ -59,6 +62,7 @@ if(USE_OSMIUM)
 endif()
 
 list(APPEND unittest_SRCS
+	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_mod_dependencies.cpp
 	# ${CMAKE_CURRENT_SOURCE_DIR}/test_fm_gravity.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_weather.cpp
 	${CMAKE_CURRENT_SOURCE_DIR}/test_fm_indev.cpp

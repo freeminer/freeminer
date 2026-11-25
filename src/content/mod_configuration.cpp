@@ -158,8 +158,11 @@ void ModConfiguration::addModsFromConfig(
 				} else {
 					candidates[pair->first].emplace_back(mod.virtual_path);
 				}
-			} else {
+			// fm: retain explicit false entries so automatic dependencies respect them
+/*
+		} else {
 				conf.remove("load_mod_" + mod.name);
+*/
 			}
 		}
 	}

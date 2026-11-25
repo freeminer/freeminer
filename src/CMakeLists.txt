@@ -483,6 +483,11 @@ if(BUILD_BENCHMARKS)
 	add_subdirectory(benchmark)
 endif()
 
+# fm:
+include(fm_mandelbulber2_sources)
+# ===
+
+
 # Source files that are identical between server & client builds.
 # This means they don't use or include anything that depends on the
 # CHECK_CLIENT_BUILD() macro. If you wrongly add something here there will be

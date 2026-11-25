@@ -63,8 +63,14 @@
 #include "arnis-cpp/src/overture.h"
 #include "arnis-cpp/src/element_processing/way_segments.h"
 #include "arnis-cpp/src/element_processing/road_detail.h"
+#include "arnis-cpp/src/element_processing/parking_lots.h"
+#include "arnis-cpp/src/element_processing/field_texture.h"
+#include "arnis-cpp/src/element_processing/camp_sites.h"
+#include "arnis-cpp/src/element_processing/cemetery.h"
 #include "arnis-cpp/src/water_detail.h"
 #include "arnis-cpp/src/models_3d/wikidata/prescan.h"
+#include "arnis-cpp/src/models_3d/three_dmr/prescan.h"
+#include "arnis-cpp/src/unicode_text.h"
 
 #if 0
 static constexpr auto floor_height = 4;
@@ -362,6 +368,16 @@ public:
 		// separate topology list only for ways where unresolved refs were dropped.
 		if (way_missing_nodes)
 			processed_way.source_node_refs = std::move(source_node_refs);
+		const bool closed_field =
+				processed_way.nodes.size() >= 3 &&
+				(processed_way.nodes.front().id == processed_way.nodes.back().id ||
+						(processed_way.nodes.front().x == processed_way.nodes.back().x &&
+								processed_way.nodes.front().z ==
+										processed_way.nodes.back().z));
+		if (processed_way.tags.get("landuse") == "farmland" && closed_field) {
+			if (const auto frame = arnis::field_texture::frame_tag(processed_way.nodes))
+				processed_way.tags.insert_or_assign(frame->first, frame->second);
+		}
 		// This handler populates an extract-wide cache shared by many mapchunks.
 		// Keep source geometry here: clipping to the first caller's mapchunk loses
 		// all the other chunks' buildings/roads before their views are constructed.
@@ -553,12 +569,25 @@ public:
 					pending.relation.members.emplace_back(member_ways[i], *roles[i]);
 			}
 			const auto &tags = pending.relation.tags;
+			if (tags.get("landuse") == "farmland") {
+				for (std::size_t i = 0; i < member_ways.size(); ++i) {
+					if (!member_ways[i] || !roles[i] || *roles[i] != MemberRole::Outer ||
+							!closed_ring(*member_ways[i]))
+						continue;
+					if (const auto frame = arnis::field_texture::frame_tag(
+								member_ways[i]->nodes))
+						member_ways[i]->tags.insert_or_assign(
+								frame->first, frame->second);
+				}
+			}
 			const auto man_made = tags.get("man_made");
 			// fm: Golf-course relations need their outer member rings assembled before
 			// the per-relation golf renderer can rasterize them.
 			const bool filled_area =
 					tags.contains("natural") || tags.contains("landuse") ||
 					tags.contains("leisure") ||
+					arnis::element_processing::parking_lots::is_surface_lot(tags) ||
+					arnis::camp_sites::claims(tags) || arnis::cemetery::claims(tags) ||
 					arnis::element_processing::relation_area(tags) ==
 							arnis::element_processing::RelationArea::Golf ||
 					(man_made == "pier" || man_made == "breakwater" ||
@@ -629,6 +658,12 @@ public:
 																			: 0U) |
 								 (current_index & 0x7fff);
 						way.nodes = std::move(ring);
+						if (role == arnis::ProcessedMemberRole::Outer &&
+								tags.get("landuse") == "farmland") {
+							if (const auto frame =
+											arnis::field_texture::frame_tag(way.nodes))
+								way.tags.insert_or_assign(frame->first, frame->second);
+						}
 						assembled.push_back({std::move(way), role});
 					}
 				}
@@ -667,6 +702,9 @@ public:
 														  element.as_way().id));
 							   }),
 				elements.end());
+		// Rust lays out every lot while the full source outline and parking aisles are still
+		// available. The tag survives chunk clipping, keeping stall rows aligned across chunks.
+		arnis::element_processing::parking_lots::lay_out_whole_lots(elements);
 		if (unresolved_node_refs > 0) {
 			const double percent =
 					100.0 * unresolved_node_refs /
@@ -1813,8 +1851,15 @@ public:
 			std::call_once(chunk->elements_once, [&]() {
 				constexpr int extra = MAP_BLOCKSIZE * 2;
 				const auto args = earth_osmium_detail::earth_arnis_args();
+				// Keep complete mapped geometry for either model provider. The
+				// placement anchor and raw footprint must not shift when a feature
+				// crosses chunk boundaries; 3DMR models can extend farther than the
+				// Wikidata voxelizer's maximum footprint.
 				const double model_halo =
-						arnis::models_3d::wikidata::MAX_XZ_EXTENT_M * args.scale;
+						std::max(static_cast<double>(
+										 arnis::models_3d::wikidata::MAX_XZ_EXTENT_M),
+								arnis::models_3d::three_dmr::ASSUMED_HALF_EXTENT_M) *
+						args.scale;
 				const XZBBox context_bbox(mg->node_min.X - extra, mg->node_min.Z - extra,
 						mg->node_max.X + extra, mg->node_max.Z + extra);
 				// Native routing can detour up to 48 nodes from source geometry.
@@ -1825,9 +1870,16 @@ public:
 					const auto &source = cached.elements[i];
 					const auto &tags = source.tags();
 					const auto wikidata = tags.find("wikidata");
+					bool indexed_wikidata = false;
+					if (wikidata != tags.end()) {
+						const std::string_view value(wikidata->second);
+						const auto [begin, end] =
+								arnis::unicode_text::trim_whitespace(value);
+						indexed_wikidata = arnis::models_3d::lookup_wikidata(
+								std::string(value.substr(begin, end - begin)));
+					}
 					const bool model =
-							args.use_3d && wikidata != tags.end() &&
-							arnis::models_3d::lookup_wikidata(wikidata->second);
+							args.use_3d && (tags.contains("3dmr") || indexed_wikidata);
 					const auto &bounds = cached.element_bounds[i];
 					const bool model_intersects =
 							model && bounds.valid &&
